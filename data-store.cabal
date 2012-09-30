@@ -1,0 +1,54 @@
+name:                data-store
+version:             0.0.0
+
+synopsis:            A multi-key multi-value store.
+
+homepage:            
+
+license:             BSD3
+license-file:        LICENSE
+
+author:              Petr Pilař
+maintainer:          maintainer+the.palmik@gmail.com
+
+category:            Data
+
+build-type:          Simple
+cabal-version:       >=1.6
+
+
+library
+  hs-source-dirs:      src
+  exposed-modules:
+      Data.Store
+    , Data.Store.Key
+  
+  other-modules:
+      Data.Store.Internal
+    , Data.Store.Internal.DimensionIndex
+
+    , Data.Vector.Extra
+
+  build-depends:
+      base       >= 4.5
+    , vector     >= 0.9
+    , containers >= 0.5
+
+test-suite data-store-tests
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: tests, src
+  main-is:        Main.hs
+
+  other-modules:
+      Test.Data.Store
+
+    , Data.Store    
+  
+  build-depends:
+      base       >= 4.5
+    , vector     >= 0.9
+    , containers >= 0.5
+
+    , test-framework             >= 0.6
+    , test-framework-quickcheck2 >= 0.2
+    , QuickCheck                 >= 2.5 && < 2.6
