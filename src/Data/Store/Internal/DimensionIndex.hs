@@ -14,7 +14,8 @@ import qualified Data.IntSet as IS
 import qualified Data.Map    as M
 import qualified Data.List   as L
 --------------------------------------------------------------------------------
-import qualified Data.Store.Key as I
+import qualified Data.Store.Key          as I
+import qualified Data.Store.Internal.Key as I
 --------------------------------------------------------------------------------
 
 moduleName :: String
@@ -36,17 +37,17 @@ data DimensionIndex where
         -> k
         -> DimensionIndex
 
-insert :: I.Dimension k d
+insert :: I.Dimension k dt
        -> Int            
        -> DimensionIndex
-       -> (DimensionIndex, I.DimensionInsertResult (I.Dimension k d))
+       -> (DimensionIndex, I.DimensionInternal k dt)
 insert (I.Dimension ks) oid (DimensionIndex imap) =
-    (DimensionIndex $ L.foldl' go imap ks, ())
+    (DimensionIndex $ L.foldl' go imap ks, I.IDimension ks)
     where
       go acc k = M.insertWith IS.union (Unsafe.unsafeCoerce k) (IS.singleton oid) acc
 insert (I.Dimension _) _ _ = error (moduleName ++ ".insert: non-matching dimension and dimension index constructors.") 
 insert I.DimensionAuto oid (DimensionIndexAuto imap inext) = 
-    (DimensionIndexAuto inew $ I.nextValue inext, Unsafe.unsafeCoerce inext)
+    (DimensionIndexAuto inew $ I.nextValue inext, I.IDimensionAuto $ Unsafe.unsafeCoerce inext)
     where
       inew  = M.insertWith IS.union (Unsafe.unsafeCoerce inext) (IS.singleton oid) imap
 insert I.DimensionAuto _ _ = error (moduleName ++ ".insert: non-matching dimension and dimension index constructors.") 

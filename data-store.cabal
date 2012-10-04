@@ -1,7 +1,7 @@
 name:                data-store
 version:             0.0.0
 
-synopsis:            A multi-key multi-value store.
+synopsis:            A multi-key multi-value store with type-safe interface.
 
 homepage:            
 
@@ -22,9 +22,12 @@ library
   exposed-modules:
       Data.Store
     , Data.Store.Key
+    , Data.Store.Query
+    , Data.Store.Query.Selection
   
   other-modules:
       Data.Store.Internal
+    , Data.Store.Internal.Key
     , Data.Store.Internal.DimensionIndex
 
     , Data.Vector.Extra
@@ -33,6 +36,8 @@ library
       base       >= 4.5
     , vector     >= 0.9
     , containers >= 0.5
+    , tagged     >= 0.4
+    , mtl        >= 2.1
 
 test-suite data-store-tests
   type:           exitcode-stdio-1.0
@@ -48,6 +53,8 @@ test-suite data-store-tests
       base       >= 4.5
     , vector     >= 0.9
     , containers >= 0.5
+    , tagged     >= 0.4
+    , mtl        >= 2.1
 
     , test-framework             >= 0.6
     , test-framework-quickcheck2 >= 0.2

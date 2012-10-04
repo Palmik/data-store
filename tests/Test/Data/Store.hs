@@ -8,8 +8,9 @@ module Test.Data.Store
 import           Test.Framework
 import           Test.Framework.Providers.QuickCheck2
 --------------------------------------------------------------------------------
-import qualified Data.Store     as I
-import qualified Data.Store.Key as I
+import qualified Data.Store              as I
+import qualified Data.Store.Key          as I
+import qualified Data.Store.Internal.Key as I
 --------------------------------------------------------------------------------
 
 instance I.Auto Int where

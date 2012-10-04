@@ -22,6 +22,7 @@ import qualified Data.Vector        as V
 import qualified Data.Vector.Extra  as V
 --------------------------------------------------------------------------------
 import qualified Data.Store.Key                     as I
+import qualified Data.Store.Internal.Key            as I
 import qualified Data.Store.Internal                as I
 import qualified Data.Store.Internal.DimensionIndex as I
 --------------------------------------------------------------------------------
@@ -48,41 +49,50 @@ empty = I.Store
 insert :: I.Key kh kd kt                  
        -> v                           
        -> I.Store tag (I.Key kh kd kt) v
-       -> (I.Store tag (I.Key kh kd kt) v, I.KeyInsertResult (I.Key kh kd kt))
-insert key v I.Store{..} = (I.Store
-    { I.storeValues = IM.insert storeNextID v storeValues
+       -> (I.Store tag (I.Key kh kd kt) v, I.KeyInsertResult (I.ToKeyInternal (I.Key kh kd kt)))
+insert key value I.Store{..} = (I.Store
+    { I.storeValues = IM.insert storeNextID (value, keyInternal) storeValues
     , I.storeIndex  = newStoreIndex 
     , I.storeNextID = succ storeNextID 
-    }, result)
+    }, toInsertResult keyInternal)
     where
-      (newStoreIndex, result) = insertToIndex 0 key storeIndex
+      (newStoreIndex, keyInternal) = insertToIndex 0 key storeIndex
 
       -- | Recursively inserts the new ID under indices of every dimension
       -- of the key.
-      insertToIndex :: Int -- ^ The position of the dimension of the head of the key in the store index vector.
+      insertToIndex :: Int            -- ^ The position of the dimension of the head of the key in the store index vector.
                     -> I.Key kh kd kt -- ^ The key.
-                    -> I.StoreIndex -- ^ The store index.
-                    -> (I.StoreIndex, I.KeyInsertResult (I.Key kh kd kt))
+                    -> I.StoreIndex   -- ^ The store index.
+                    -> (I.StoreIndex, I.ToKeyInternal (I.Key kh kd kt))
       -- Standard dimension, 1-dimensional key.
       insertToIndex d (I.K1 kh@(I.Dimension _)) index =
-          second (const ()) $ indexUpdate kh d index
+          second I.K1 $ indexUpdate kh d index
+
       -- Auto-increment dimension, 1-dimensional key.
       insertToIndex d (I.K1 kh@I.DimensionAuto) index =
-          second (I.:.  ()) $ indexUpdate kh d index
+          second I.K1 $ indexUpdate kh d index
+
       -- Standard dimension, (n + 1)-dimensional key.
       insertToIndex d (I.KN kh@(I.Dimension _) kt) index =
-          let (nindex, _) = indexUpdate kh d index
-          in  insertToIndex (d + 1) kt nindex
+          let (nindex, res) = indexUpdate kh d index
+          in  second (I.KN res) $ insertToIndex (d + 1) kt nindex    
+
       -- Auto-increment dimension (n + 1)-dimensional key.
       insertToIndex d (I.KN kh@I.DimensionAuto kt) index =
           let (nindex, res) = indexUpdate kh d index
-          in  second (res I.:.) $ insertToIndex (d + 1) kt nindex    
+          in  second (I.KN res) $ insertToIndex (d + 1) kt nindex    
 
       -- | Inserts the new ID under indices of the given dimension.
       indexUpdate :: I.Dimension a d -- ^ The dimension to be inserted.
-                  -> Int -- ^ The position of the dimension in the store index vector.
-                  -> I.StoreIndex -- The store index.
-                  -> (I.StoreIndex, I.DimensionInsertResult (I.Dimension a d))
+                  -> Int             -- ^ The position of the dimension in the store index vector.
+                  -> I.StoreIndex    -- ^ The store index.
+                  -> (I.StoreIndex, I.DimensionInternal a d)
       indexUpdate d = V.updateAt' (I.insert d storeNextID)
 
+      toInsertResult :: I.KeyInternal kh kd kt
+                     -> I.KeyInsertResult (I.KeyInternal kh kd kt)
+      toInsertResult (I.K1 (I.IDimensionAuto v)) = v I.:. ()
+      toInsertResult (I.K1 (I.IDimension _))     = ()
+      toInsertResult (I.KN (I.IDimensionAuto v) kt) = v I.:. toInsertResult kt
+      toInsertResult (I.KN (I.IDimension _) kt)     = toInsertResult kt
 
