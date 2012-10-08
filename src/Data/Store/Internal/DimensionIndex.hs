@@ -4,6 +4,7 @@
 module Data.Store.Internal.DimensionIndex
 ( DimensionIndex(..)
 , insert
+, split
 , empty
 ) where
 
@@ -37,10 +38,23 @@ data DimensionIndex where
         -> k
         -> DimensionIndex
 
-insert :: I.Dimension k dt
+split :: Ord k => k -> DimensionIndex -> (IS.IntSet, IS.IntSet)
+split dkey dindex =
+    case dindex of
+        (DimensionIndex m) -> go m
+        (DimensionIndexAuto m _) -> go m
+    where
+      go :: Ord k => M.Map k IS.IntSet -> (IS.IntSet, IS.IntSet)
+      go m = mapTuple (IS.unions . map snd . M.toList) $ M.split (Unsafe.unsafeCoerce dkey) m
+
+      -- | join (***)
+      mapTuple :: (a -> b) -> (a, a) -> (b, b)
+      mapTuple f (x, y) = (f x, f y) 
+
+insert :: I.Dimension a dt
        -> Int            
        -> DimensionIndex
-       -> (DimensionIndex, I.DimensionInternal k dt)
+       -> (DimensionIndex, I.DimensionInternal a dt)
 insert (I.Dimension ks) oid (DimensionIndex imap) =
     (DimensionIndex $ L.foldl' go imap ks, I.IDimension ks)
     where

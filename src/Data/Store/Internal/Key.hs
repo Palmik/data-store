@@ -6,6 +6,7 @@
 {-# LANGUAGE EmptyDataDecls        #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Data.Store.Internal.Key
 (
@@ -25,6 +26,7 @@ module Data.Store.Internal.Key
 , N8
 , N9
 , N10
+, ToInt(toInt)
 
   -- * Key & co.
 , KeyGeneric(..)
@@ -49,6 +51,9 @@ module Data.Store.Internal.Key
 , ToKeyInternal
 ) where
 
+--------------------------------------------------------------------------------
+import           Data.Proxy
+--------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- | INTERNAL KEY TYPE
@@ -84,6 +89,14 @@ type N8 = S N7
 type N9 = S N8
 type N10 = S N9
 
+class ToInt n where
+    toInt :: Proxy n -> Int
+
+instance ToInt Z where
+    toInt _ = 0
+
+instance forall n . ToInt n => ToInt (S n) where
+    toInt _ = 1 + toInt (Proxy :: Proxy n)
 
 --------------------------------------------------------------------------------
 -- | DIMENSION
