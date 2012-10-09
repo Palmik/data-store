@@ -19,15 +19,15 @@ import qualified Data.Vector as V
 import           Data.Proxy
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Key            as I
-import qualified Data.Store.Internal.DimensionIndex as I
+import qualified Data.Store.Internal.Index as I
 --------------------------------------------------------------------------------
 
-type StoreIndex = V.Vector I.DimensionIndex
+type StoreIndex = V.Vector I.Index
 
 data Store tag k v = Store
-    { storeValues :: IM.IntMap (v, I.ToKeyInternal k) -- ^ Map from ID to (value, key).
-    , storeIndex  :: StoreIndex                       -- ^ Vector of maps from key to IDs. Each map represents a single dimension of the key.
-    , storeNextID :: Int                              -- ^ The next ID.
+    { storeValues :: IM.IntMap (v, I.KeyInternal k) -- ^ Map from ID to (value, key).
+    , storeIndex  :: StoreIndex                     -- ^ Vector of maps from key to IDs. Each map represents a single dimension of the key.
+    , storeNextID :: Int                            -- ^ The next ID.
     }  
 
 newtype Query tag k v a = Query

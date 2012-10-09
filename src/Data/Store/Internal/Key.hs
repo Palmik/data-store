@@ -48,7 +48,6 @@ module Data.Store.Internal.Key
 
 , DimensionInternal(..)
 , KeyInternal
-, ToKeyInternal
 ) where
 
 --------------------------------------------------------------------------------
@@ -63,10 +62,6 @@ data DimensionInternal a dt where
     IDimensionAuto :: a   -> DimensionInternal a DimAuto
 
 type KeyInternal = KeyGeneric DimensionInternal
-
-type family   ToKeyInternal a :: *
-type instance ToKeyInternal K0 = K0
-type instance ToKeyInternal (KeyGeneric dim a dt t) = KeyInternal a dt (ToKeyInternal t)
 
 
 --------------------------------------------------------------------------------
@@ -111,17 +106,17 @@ data DimAuto
 data K0
 
 -- | Generic key type.
-data KeyGeneric dim a1 dt1 t where
+data KeyGeneric dim spec  where
     -- | Creates key (n + 1)-dimensional key from n-dimensional one.
     KN :: Ord a1
        => dim a1 dt1
-       -> KeyGeneric dim a2 dt2 r
-       -> KeyGeneric dim a1 dt1 (KeyGeneric dim a2 dt2 r)
+       -> KeyGeneric dim ((a2, dt2) :. s)
+       -> KeyGeneric dim ((a1, dt1) :. (a2, dt2) :. s)
     
     -- | Creates 1-dimensional key.
     K1 :: Ord a1
        => dim a1 dt1
-       -> KeyGeneric dim a1 dt1 K0 
+       -> KeyGeneric dim ((a1, dt1) :. K0) 
 
 ------
 -- | KEY TYPE CONSTRUCTION
@@ -131,17 +126,19 @@ data KeyGeneric dim a1 dt1 t where
 
 -- | This type family lets us determine the number of dimensions of the given key.
 type family   Dimensions a :: *
-type instance Dimensions (KeyGeneric dim a d K0)                       = S Z
-type instance Dimensions (KeyGeneric dim a d (KeyGeneric dim a2 d2 x)) =
-    S (Dimensions (KeyGeneric dim a2 d2 x))
+type instance Dimensions (KeyGeneric dim ((t, dt) :. K0)) = S Z
+type instance Dimensions (KeyGeneric dim ((t, dt) :. (t2, dt2) :. s)) =
+    S (Dimensions (KeyGeneric dim ((t2, dt2) :. s)))
 
 -- | This type family lets us determine the type of the given dimension.
 type family   DimensionType a n :: *
-type instance DimensionType (KeyGeneric dim a d x) (S Z)                 = a
-type instance DimensionType (KeyGeneric dim a d (KeyGeneric dim a2 d2 x)) (S (S n)) =
-    DimensionType (KeyGeneric dim a2 d2 x) (S n)
+type instance DimensionType (KeyGeneric dim ((t, dt) :. s)) (S Z) = t
+type instance DimensionType (KeyGeneric dim ((t, dt) :. (t2, dt2) :. s)) (S (S n)) =
+    DimensionType (KeyGeneric dim ((t2, dt2) :. s)) (S n)
 
 data h :. t = h :. t
+
+infixr 3 :.
 
 ------
 -- | KEY CONSTRUCTION
@@ -149,8 +146,8 @@ data h :. t = h :. t
 -- | Creates (n + 1)-dimensional key from n-dimensional key.
 (.:) :: Ord a1
      => dim a1 dt1
-     -> KeyGeneric dim a2 dt2 r
-     -> KeyGeneric dim a1 dt1 (KeyGeneric dim a2 dt2 r)
+     -> KeyGeneric dim ((a2, dt2) :. s)
+     -> KeyGeneric dim ((a1, dt1) :. (a2, dt2) :. s)
 (.:) = KN
 {-# INLINE (.:) #-}
 
@@ -172,7 +169,7 @@ infixr 3 .:
 -- >>> 2
 -- > dimensions p3
 -- >>> 3
-dimensions :: KeyGeneric dim a d t -> Int
+dimensions :: KeyGeneric dim ((a, d) :. t) -> Int
 dimensions (K1   _) = 1
 dimensions (KN _ l) = dimensions l + 1
 

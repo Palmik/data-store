@@ -28,7 +28,7 @@ library
   other-modules:
       Data.Store.Internal
     , Data.Store.Internal.Key
-    , Data.Store.Internal.DimensionIndex
+    , Data.Store.Internal.Index
 
     , Data.Vector.Extra
 
