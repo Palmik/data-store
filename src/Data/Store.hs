@@ -17,8 +17,13 @@ module Data.Store
 
   -- ** Updates
 , update
+
+  -- ** Lookup
+, lookup
 ) where
 
+--------------------------------------------------------------------------------
+import           Prelude hiding (lookup)
 --------------------------------------------------------------------------------
 import           Control.Arrow
 import           Control.Applicative hiding (empty)
@@ -28,33 +33,43 @@ import qualified Data.IntSet        as IS
 import qualified Data.Map           as M
 import qualified Data.Vector        as V
 import qualified Data.Vector.Extra  as V
+import           Data.Proxy
 --------------------------------------------------------------------------------
 import qualified Data.Store.Key                     as I
 import qualified Data.Store.Query                   as I
-import qualified Data.Store.Query.Selection         as I
 import qualified Data.Store.Internal                as I
 import qualified Data.Store.Internal.Key            as I
 import qualified Data.Store.Internal.Index          as I
 --------------------------------------------------------------------------------
 
+-- | The name of this module.
 moduleName :: String
 moduleName = "Data.Store"
 
+-- | Given a key specification, this type family gives you the type
+-- of result of inserting into a 'Data.Store.Store' with that key
+-- specification.
+--
+-- Examples:
+--
+-- > InsertResult ((String, Dim) :. (Int, DimAuto) :. K0) ~ (Int :. ())
+-- > InsertResult ((Int, DimAuto) :. (Int, DimAuto) :. K0) ~ (Int :. Int :. ())
 type family   InsertResult a :: *
 type instance InsertResult ((a, I.Dim)     I.:. I.K0) = ()
 type instance InsertResult ((a, I.DimAuto) I.:. I.K0) = a I.:. ()
 type instance InsertResult ((a, I.Dim)     I.:. (b, dt) I.:. r) = InsertResult ((I.:.) (b, dt) r)
 type instance InsertResult ((a, I.DimAuto) I.:. (b, dt) I.:. r) = (I.:.) a (InsertResult ((I.:.) (b, dt) r))
 
--- | Creates an empty 'Store'.
+-- | Returns an empty 'Store'.
 --
--- TODO: Find a way to remove the 'CEmptyKey' context.
+-- TODO: Find a way to remove the 'CEmptyKey' context. Find a way to get
+-- rid of the scoped type varaibles.
 empty :: forall tag spec v . (I.CEmptyKey (I.Key spec))
       => I.Store tag spec v
 empty = I.Store
     { I.storeValues = IM.empty
     , I.storeIndex  = emptyStoreIndex ekey
-    , I.storeNextID = 0
+    , I.storeNextID = 1
     }
     where
       ekey :: I.Key spec 
@@ -68,8 +83,23 @@ empty = I.Store
       emptyIndex (I.Dimension _) = I.Index     (M.empty :: M.Map a IS.IntSet)
       emptyIndex I.DimensionAuto = I.IndexAuto (M.empty :: M.Map a IS.IntSet) I.initValue
 
+-- | The expression @('lookup' sel store)@ gives you a list of the elements
+-- in the given selection.
+--
+-- TODO: Examples, Complexity.
+lookup :: I.Selection tag k
+       -> I.Store tag k v
+       -> [v]
+lookup selection = I.runQuery (go <$> resolve selection <*> I.queryStore)
+    where
+      go :: IS.IntSet -> I.Store tag k v -> [v]
+      go oids (I.Store values _ _) =
+          IS.foldl' (\acc oid -> maybe acc (\x -> fst x : acc) $ IM.lookup oid values) [] oids
 
--- | Inserts the given element into existing 'Store'.
+-- | The expression @('insert' k v store)@ inserts the given
+-- value @v@ under the key @k@. 
+--
+-- TODO: Examples, Complexity.
 insert :: I.Key spec                  
        -> v                           
        -> I.Store tag spec v
@@ -120,16 +150,22 @@ insert key value I.Store{..} = (I.Store
       toInsertResult (I.KN (I.IDimensionAuto v) kt) = v I.:. toInsertResult kt
       toInsertResult (I.KN (I.IDimension _) kt)     = toInsertResult kt
 
-
-update :: forall tag k v . I.QuerySelection tag k v
-       -> (v -> Maybe (v, Maybe (I.Key k)))
-       -> I.Query tag k v (I.Store tag k v)
-update querySelection fun = go <$> resolve querySelection <*> I.queryStore
+-- | The expression @('update' f sel store)@ updates all values @x@ that are
+-- part of the selection @sel@. If @(f x)@ is 'Nothing', the element is
+-- deleted. If it is @(Just (y, Nothing))@, it's changed under its current
+-- key. If it is @(Just (y, Just k))@ it's changed together with its key.
+--
+-- TODO: Examples, Complexity.
+update :: (v -> Maybe (v, Maybe (I.Key k)))
+       -> I.Selection tag k
+       -> I.Store tag k v 
+       -> I.Store tag k v 
+update fun querySelection = I.runQuery (go <$> resolve querySelection <*> I.queryStore)
     where
-      go :: IS.IntSet -> I.Store tag k v -> I.Store tag k v
+      -- go :: IS.IntSet -> I.Store tag k v -> I.Store tag k v
       go selection store = IS.foldl' step store selection
 
-      step :: I.Store tag k v -> Int -> I.Store tag k v
+      -- step :: I.Store tag k v -> Int -> I.Store tag k v
       step acc@(I.Store values index _) oid =
           case IM.lookup oid values of
               -- | Object with the given ID does not exist.
@@ -153,7 +189,9 @@ update querySelection fun = go <$> resolve querySelection <*> I.queryStore
                       , I.storeIndex  = deleteByKey k index
                       }
 
-      
+      -- | Gven a 'KeyInternal' and a 'Key', it merges them into a new
+      -- 'KeyInternal'. The values of auto-increment dimensions are from
+      -- the original 'KeyInternal'.
       makeKey :: I.KeyInternal kx -> I.Key kx -> I.KeyInternal kx
       makeKey (I.K1 (I.IDimension _)) (I.K1 (I.Dimension xs)) = I.K1 (I.IDimension xs)
       makeKey (I.K1 (I.IDimensionAuto k)) (I.K1 I.DimensionAuto) = I.K1 (I.IDimensionAuto k)
@@ -161,6 +199,7 @@ update querySelection fun = go <$> resolve querySelection <*> I.queryStore
       makeKey (I.KN (I.IDimensionAuto k) r) (I.KN I.DimensionAuto nr) = I.KN (I.IDimensionAuto k) (makeKey r nr)
       makeKey _ _ = error $ moduleName ++ ".update: impossible happened." -- This can not happen.
 
+      -- | Deletes all object IDs from index under the given key.
       deleteByKey :: I.KeyInternal spec -> I.StoreIndex -> I.StoreIndex 
       deleteByKey ikey sindex = go' ikey sindex 0
         where
@@ -169,7 +208,8 @@ update querySelection fun = go <$> resolve querySelection <*> I.queryStore
           go' (I.K1 (I.IDimensionAuto k)) acc n = V.updateAt (I.delete [k]) n acc
           go' (I.KN (I.IDimension ks) r)    acc n = V.updateAt (I.delete ks)  n $ go' r acc (n + 1) 
           go' (I.KN (I.IDimensionAuto k) r) acc n = V.updateAt (I.delete [k]) n $ go' r acc (n + 1) 
-      
+     
+      -- | Inserts the given object ID under the given key.
       insertByKey :: I.KeyInternal spec -> I.ObjectID -> I.StoreIndex -> I.StoreIndex 
       insertByKey ikey oid sindex = go' ikey sindex 0
         where
@@ -177,12 +217,22 @@ update querySelection fun = go <$> resolve querySelection <*> I.queryStore
           go' (I.K1 d)   acc n = V.updateAt (I.insertDimensionInternal d oid) n acc
           go' (I.KN d r) acc n = V.updateAt (I.insertDimensionInternal d oid) n $ go' r acc (n + 1) 
 
-resolve :: I.QuerySelection tag k v -> I.Query tag k v IS.IntSet
-resolve querySelection = go <$> querySelection <*> I.queryStore
+resolve :: I.Selection tag k -> I.Query tag k v IS.IntSet
+resolve selection = go selection <$> I.queryStore
     where
       go :: I.Selection tag k -> I.Store tag k v -> IS.IntSet
-      go (I.SelectGT p x) (I.Store _ index _) = snd $ I.split x (index V.! I.toInt p)
-      go (I.SelectLT p x) (I.Store _ index _) = fst $ I.split x (index V.! I.toInt p)
+      go (I.SelectGT p x) (I.Store _ index _) = snd $ I.split x $ index V.! I.toInt (sndProxy p)
+      go (I.SelectLT p x) (I.Store _ index _) = fst $ I.split x $ index V.! I.toInt (sndProxy p)
+      go (I.SelectEQ p x) (I.Store _ index _) = I.lookup x $ index V.! I.toInt (sndProxy p) 
+      go (I.SelectGTE p x) (I.Store _ index _) =
+          let (_, e, g) = I.splitLookup x $ index V.! I.toInt (sndProxy p)
+          in  IS.union e g
+      go (I.SelectLTE p x) (I.Store _ index _) =  
+          let (l, e, _) = I.splitLookup x $ index V.! I.toInt (sndProxy p)
+          in  IS.union l e
       go (I.SelectUnion s1 s2) st = go s1 st `IS.union` go s2 st
       go (I.SelectIntersection s1 s2) st = go s1 st `IS.intersection` go s2 st
 
+      sndProxy :: Proxy (a, b) -> Proxy b
+      sndProxy = reproxy
+      {-# INLINEABLE sndProxy #-}

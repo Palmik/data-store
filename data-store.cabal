@@ -45,7 +45,7 @@ test-suite data-store-tests
   main-is:        Main.hs
 
   other-modules:
-      Test.Data.Store
+      Test.Data.Store01
 
     , Data.Store    
   

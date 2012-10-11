@@ -50,9 +50,16 @@ instance Monad (Query tag k v) where
 
 data Selection tag k where
     SelectGT :: (I.ToInt n, Ord (I.DimensionType k n))
-             => Proxy n -> I.DimensionType k n -> Selection tag k
+             => Proxy (tag, n) -> I.DimensionType k n -> Selection tag k
     SelectLT :: (I.ToInt n, Ord (I.DimensionType k n))
-             => Proxy n -> I.DimensionType k n -> Selection tag k
+             => Proxy (tag, n) -> I.DimensionType k n -> Selection tag k
+    SelectGTE :: (I.ToInt n, Ord (I.DimensionType k n))
+              => Proxy (tag, n) -> I.DimensionType k n -> Selection tag k
+    SelectLTE :: (I.ToInt n, Ord (I.DimensionType k n))
+              => Proxy (tag, n) -> I.DimensionType k n -> Selection tag k
+    SelectEQ :: (I.ToInt n, Ord (I.DimensionType k n), (I.DimensionType k n) ~ d)
+             => Proxy (tag, n) -> d -> Selection tag k
     SelectUnion :: Selection tag k -> Selection tag k -> Selection tag k
     SelectIntersection :: Selection tag k -> Selection tag k -> Selection tag k
+
 

@@ -5,11 +5,11 @@ module Main
 ------------------------------------------------------------------------------
 import           Test.Framework (defaultMain, testGroup)
 ------------------------------------------------------------------------------
-import qualified Test.Data.Store 
+import qualified Test.Data.Store01 
 ------------------------------------------------------------------------------
 
 main :: IO ()
 main = defaultMain
-    [ testGroup "Data.Store" Test.Data.Store.tests
+    [ testGroup "Data.Store01" Test.Data.Store01.tests
     ]
 

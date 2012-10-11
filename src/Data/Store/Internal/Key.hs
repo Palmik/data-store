@@ -126,15 +126,15 @@ data KeyGeneric dim spec  where
 
 -- | This type family lets us determine the number of dimensions of the given key.
 type family   Dimensions a :: *
-type instance Dimensions (KeyGeneric dim ((t, dt) :. K0)) = S Z
-type instance Dimensions (KeyGeneric dim ((t, dt) :. (t2, dt2) :. s)) =
-    S (Dimensions (KeyGeneric dim ((t2, dt2) :. s)))
+type instance Dimensions ((t, dt) :. K0) = S Z
+type instance Dimensions ((t, dt) :. (t2, dt2) :. s) =
+    S (Dimensions ((t2, dt2) :. s))
 
 -- | This type family lets us determine the type of the given dimension.
 type family   DimensionType a n :: *
-type instance DimensionType (KeyGeneric dim ((t, dt) :. s)) (S Z) = t
-type instance DimensionType (KeyGeneric dim ((t, dt) :. (t2, dt2) :. s)) (S (S n)) =
-    DimensionType (KeyGeneric dim ((t2, dt2) :. s)) (S n)
+type instance DimensionType ((t, dt) :. s) Z = t
+type instance DimensionType ((t, dt) :. (t2, dt2) :. s) (S n) =
+    DimensionType ((t2, dt2) :. s) n
 
 data h :. t = h :. t
 

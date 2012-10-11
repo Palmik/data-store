@@ -7,15 +7,20 @@ module Data.Store.Internal.Index
 , insertDimension
 , insertDimensionInternal
 , split
+, splitLookup
+, lookup
 , delete
 ) where
 
+--------------------------------------------------------------------------------
+import           Prelude hiding (lookup)
 --------------------------------------------------------------------------------
 import qualified Unsafe.Coerce as Unsafe
 --------------------------------------------------------------------------------
 import qualified Data.IntSet as IS
 import qualified Data.Map    as M
 import qualified Data.List   as L
+import           Data.Maybe
 --------------------------------------------------------------------------------
 import qualified Data.Store.Key          as I
 import qualified Data.Store.Internal.Key as I
@@ -49,11 +54,41 @@ split dkey dindex =
         (IndexAuto m _) -> go m
     where
       go :: Ord k => M.Map k IS.IntSet -> (IS.IntSet, IS.IntSet)
-      go m = mapTuple (IS.unions . map snd . M.toList) $ M.split (Unsafe.unsafeCoerce dkey) m
+      go = mapTuple (IS.unions . map snd . M.toList) . M.split (Unsafe.unsafeCoerce dkey)
+      {-# INLINEABLE go #-}
 
       -- | join (***)
       mapTuple :: (a -> b) -> (a, a) -> (b, b)
       mapTuple f (x, y) = (f x, f y) 
+      {-# INLINEABLE mapTuple #-}
+
+-- |
+-- WARNING: Uses 'Unsafe.Coerce.unsafeCoerce' internally. Assumes, that the
+-- passed key of type 'k' is of the same type as the key the index is based
+-- on.
+splitLookup :: Ord k => k -> Index -> (IS.IntSet, IS.IntSet, IS.IntSet)
+splitLookup dkey dindex =
+    case dindex of
+        (Index m) -> go m
+        (IndexAuto m _) -> go m
+    where
+      go :: Ord k => M.Map k IS.IntSet -> (IS.IntSet, IS.IntSet, IS.IntSet)
+      go = mapTuple (IS.unions . map snd . M.toList) (fromMaybe IS.empty) . M.splitLookup (Unsafe.unsafeCoerce dkey)
+      {-# INLINEABLE go #-}
+
+      mapTuple :: (a -> b) -> (c -> d) -> (a, c, a) -> (b, d, b)
+      mapTuple f g (x, y, z) = (f x, g y, f z) 
+      {-# INLINEABLE mapTuple #-}
+
+-- |
+-- WARNING: Uses 'Unsafe.Coerce.unsafeCoerce' internally. Assumes, that the
+-- passed key of type 'k' is of the same type as the key the index is based
+-- on.
+lookup :: Ord k => k -> Index -> IS.IntSet
+lookup dkey dindex =
+    case dindex of
+        (Index m) -> fromMaybe IS.empty $ M.lookup (Unsafe.unsafeCoerce dkey) m
+        (IndexAuto m _) -> fromMaybe IS.empty $ M.lookup (Unsafe.unsafeCoerce dkey) m
 
 -- |
 -- WARNING: Uses 'Unsafe.Coerce.unsafeCoerce' internally. Assumes, that the
