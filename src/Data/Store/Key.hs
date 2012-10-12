@@ -9,6 +9,8 @@
 module Data.Store.Key
 ( Auto(..)
 , Dimension(..)
+, dimA
+, dimN
 , Key
 , CEmptyKey(..)
 , module Export
@@ -23,6 +25,14 @@ import           Data.Store.Internal.Key as Export ( Z(..), S(..), K0, Dim, DimA
                                                    )
 --------------------------------------------------------------------------------
 
+dimN :: Ord a => [a] -> Dimension a I.Dim
+dimN = Dimension
+{-# INLINEABLE dimN #-}
+
+dimA :: (Ord a, Auto a) => Dimension a I.DimAuto
+dimA = DimensionAuto
+{-# INLINEABLE dimA #-}
+
 --------------------------------------------------------------------------------
 -- | KEY
 
@@ -36,8 +46,8 @@ class Auto a where
     nextValue :: a -> a
 
 data Dimension a dt where
-    Dimension     :: Ord a => [a] -> Dimension a Dim
-    DimensionAuto :: (Ord a, Auto a) => Dimension a DimAuto
+    Dimension     :: Ord a => [a] -> Dimension a I.Dim
+    DimensionAuto :: (Ord a, Auto a) => Dimension a I.DimAuto
 
 class CEmptyKey k where
     emptyKey :: k
