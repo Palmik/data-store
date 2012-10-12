@@ -57,9 +57,11 @@ data Selection tag k where
               => Proxy (tag, n) -> I.DimensionType k n -> Selection tag k
     SelectLTE :: (I.ToInt n, Ord (I.DimensionType k n))
               => Proxy (tag, n) -> I.DimensionType k n -> Selection tag k
-    SelectEQ :: (I.ToInt n, Ord (I.DimensionType k n), (I.DimensionType k n) ~ d)
-             => Proxy (tag, n) -> d -> Selection tag k
-    SelectUnion :: Selection tag k -> Selection tag k -> Selection tag k
-    SelectIntersection :: Selection tag k -> Selection tag k -> Selection tag k
+    SelectEQ :: (I.ToInt n, Ord (I.DimensionType k n))
+             => Proxy (tag, n) -> I.DimensionType k n -> Selection tag k
+    SelectOR :: Selection tag k -> Selection tag k -> Selection tag k
+    SelectAND :: Selection tag k -> Selection tag k -> Selection tag k
+    SelectALL :: Selection tag k
+    SelectNONE :: Selection tag k    
 
 

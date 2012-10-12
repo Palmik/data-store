@@ -3,14 +3,19 @@
 
 module Data.Store.Query.Selection
 ( -- * Selection
+  -- ** Selection Data Type
+  I.Selection
+
   -- ** Selection Operators
-  (.||)
+, (.||)
 , (.&&)
 , (.<)
 , (.>)
 , (.<=)
 , (.>=)
 , (.==)
+, everything
+, nothing
 ) where
 
 --------------------------------------------------------------------------------
@@ -21,12 +26,12 @@ import qualified Data.Store.Internal.Key            as I
 --------------------------------------------------------------------------------
 
 (.||) :: I.Selection tag k -> I.Selection tag k -> I.Selection tag k
-(.||) = I.SelectUnion
+(.||) = I.SelectOR
 {-# INLINEABLE (.||) #-}
-infixr 3 .||
+infixr 2 .||
 
 (.&&) :: I.Selection tag k -> I.Selection tag k -> I.Selection tag k
-(.&&) = I.SelectIntersection
+(.&&) = I.SelectAND
 {-# INLINEABLE (.&&) #-}
 infixr 3 .&&
 
@@ -36,7 +41,7 @@ infixr 3 .&&
      -> I.Selection tag k
 (.>) = I.SelectGT
 {-# INLINEABLE (.>) #-}
-infixr 3 .>
+infix 4 .>
 
 (.<) :: (I.ToInt n, Ord (I.DimensionType k n))
      => Proxy (tag, n)
@@ -44,7 +49,7 @@ infixr 3 .>
      -> I.Selection tag k
 (.<) = I.SelectLT
 {-# INLINEABLE (.<) #-}
-infixr 3 .<
+infix 4 .<
 
 (.<=) :: (I.ToInt n, Ord (I.DimensionType k n))
      => Proxy (tag, n)
@@ -52,7 +57,7 @@ infixr 3 .<
      -> I.Selection tag k
 (.<=) = I.SelectLTE
 {-# INLINEABLE (.<=) #-}
-infixr 3 .<=
+infix 4 .<=
 
 (.>=) :: (I.ToInt n, Ord (I.DimensionType k n))
      => Proxy (tag, n)
@@ -60,13 +65,22 @@ infixr 3 .<=
      -> I.Selection tag k
 (.>=) = I.SelectGTE
 {-# INLINEABLE (.>=) #-}
-infixr 3 .>=
+infix 4 .>=
 
-(.==) :: (I.ToInt n, Ord (I.DimensionType k n), (I.DimensionType k n) ~ d)
+(.==) :: (I.ToInt n, Ord (I.DimensionType k n))
      => Proxy (tag, n)
-     -> d
+     -> I.DimensionType k n
      -> I.Selection tag k
 (.==) = I.SelectEQ
 {-# INLINEABLE (.==) #-}
-infixr 3 .==
+infix 4 .==
+
+everything :: I.Selection tag k
+everything = I.SelectALL
+{-# INLINEABLE everything #-}
+
+nothing :: I.Selection tag k
+nothing = I.SelectNONE
+{-# INLINEABLE nothing #-}
+
 

@@ -18,8 +18,9 @@ module Data.Store
   -- ** Updates
 , update
 
-  -- ** Lookup
+  -- ** Query
 , lookup
+, size
 ) where
 
 --------------------------------------------------------------------------------
@@ -89,12 +90,35 @@ empty = I.Store
 -- TODO: Examples, Complexity.
 lookup :: I.Selection tag k
        -> I.Store tag k v
-       -> [v]
+       -> [(v, InsertResult k)]
 lookup selection = I.runQuery (go <$> resolve selection <*> I.queryStore)
     where
-      go :: IS.IntSet -> I.Store tag k v -> [v]
+      go :: IS.IntSet -> I.Store tag k v -> [(v, InsertResult k)]
       go oids (I.Store values _ _) =
-          IS.foldl' (\acc oid -> maybe acc (\x -> fst x : acc) $ IM.lookup oid values) [] oids
+          IS.foldl' (\acc oid -> maybe acc (\(v, k) -> (v, insertResult k) : acc)
+                                           (IM.lookup oid values)
+                    ) [] oids
+
+      insertResult :: I.KeyInternal k -> InsertResult k
+      insertResult (I.K1 (I.IDimension _)) = ()
+      insertResult (I.K1 (I.IDimensionAuto x)) = x I.:. ()
+      insertResult (I.KN (I.IDimension _) r) = insertResult r
+      insertResult (I.KN (I.IDimensionAuto x) r) = x I.:. insertResult r
+
+-- | The expression @('size' store)@ gives you number of elements currently
+-- in the store.
+--
+-- Examples:
+--
+-- > size empty
+-- >>> 0
+-- > size $ insert key value empty
+-- >>> 1
+--
+-- Complexity: /O(1)/
+size :: I.Store tag k v -> Int
+size (I.Store values _ _) = IM.size values
+{-# INLINEABLE size #-}
 
 -- | The expression @('insert' k v store)@ inserts the given
 -- value @v@ under the key @k@. 
@@ -230,8 +254,24 @@ resolve selection = go selection <$> I.queryStore
       go (I.SelectLTE p x) (I.Store _ index _) =  
           let (l, e, _) = I.splitLookup x $ index V.! I.toInt (sndProxy p)
           in  IS.union l e
-      go (I.SelectUnion s1 s2) st = go s1 st `IS.union` go s2 st
-      go (I.SelectIntersection s1 s2) st = go s1 st `IS.intersection` go s2 st
+
+      -- | Union
+      go (I.SelectOR I.SelectALL _) st = go I.SelectALL st
+      go (I.SelectOR _ I.SelectALL) st = go I.SelectALL st
+      go (I.SelectOR I.SelectNONE s) st = go s st
+      go (I.SelectOR s I.SelectNONE) st = go s st
+      go (I.SelectOR  s1 s2) st = go s1 st `IS.union` go s2 st
+
+      -- | Intersection
+      go (I.SelectAND I.SelectNONE _) st = go I.SelectNONE st
+      go (I.SelectAND _ I.SelectNONE) st = go I.SelectNONE st
+      go (I.SelectAND I.SelectALL s) st = go s st
+      go (I.SelectAND s I.SelectALL) st = go s st
+      go (I.SelectAND s1 s2) st = go s1 st `IS.intersection` go s2 st
+
+      go I.SelectNONE _ = IS.empty
+      go I.SelectALL (I.Store values _ _) =
+          IM.foldlWithKey' (\acc oid _ -> IS.insert oid $! acc) IS.empty values
 
       sndProxy :: Proxy (a, b) -> Proxy b
       sndProxy = reproxy
