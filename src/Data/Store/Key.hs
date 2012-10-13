@@ -34,12 +34,12 @@ dimA = DimensionAuto
 {-# INLINEABLE dimA #-}
 
 --------------------------------------------------------------------------------
--- | KEY
+-- KEY
 
 type Key spec = I.KeyGeneric Dimension spec
 
 --------------------------------------------------------------------------------
--- | DIMENSION
+-- DIMENSION
 
 class Auto a where
     initValue :: a

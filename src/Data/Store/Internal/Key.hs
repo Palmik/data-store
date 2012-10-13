@@ -93,36 +93,36 @@ instance ToInt Z where
 instance forall n . ToInt n => ToInt (S n) where
     toInt _ = 1 + toInt (Proxy :: Proxy n)
 
---------------------------------------------------------------------------------
--- | DIMENSION
+------
+-- DIMENSION
 
 data Dim
 data DimAuto
 
---------------------------------------------------------------------------------
--- | KEY
+------
+-- KEY
 
 -- | Key with zero dimensions.
 data K0
 
 -- | Generic key type.
 data KeyGeneric dim spec  where
-    -- | Creates key (n + 1)-dimensional key from n-dimensional one.
+    -- Creates key (n + 1)-dimensional key from n-dimensional one.
     KN :: Ord a1
        => dim a1 dt1
        -> KeyGeneric dim ((a2, dt2) :. s)
        -> KeyGeneric dim ((a1, dt1) :. (a2, dt2) :. s)
     
-    -- | Creates 1-dimensional key.
+    -- Creates 1-dimensional key.
     K1 :: Ord a1
        => dim a1 dt1
        -> KeyGeneric dim ((a1, dt1) :. K0) 
 
 ------
--- | KEY TYPE CONSTRUCTION
+-- KEY TYPE CONSTRUCTION
 
 ------
--- | KEY TYPE OPERATONS
+-- KEY TYPE OPERATONS
 
 -- | This type family lets us determine the number of dimensions of the given key.
 type family   Dimensions a :: *
@@ -141,7 +141,7 @@ data h :. t = h :. t
 infixr 3 :.
 
 ------
--- | KEY CONSTRUCTION
+-- KEY CONSTRUCTION
 
 -- | Creates (n + 1)-dimensional key from n-dimensional key.
 (.:) :: Ord a1
@@ -154,21 +154,21 @@ infixr 3 :.
 infixr 3 .:
 
 ------
--- | KEY OPERATIONS
+-- KEY OPERATIONS
 
--- | Type-class for retrieving the number of dimension of the given key.
+-- | Function for retrieving the number of dimension of the given key.
 --
 -- Examples:
 --
--- > let p1 = key1 'a'
--- > let p2 = key2 'a' 'a'
--- > let p3 = key3 'a' 'a' 'a'
--- > dimensions p1
--- >>> 1
--- > dimensions p2
--- >>> 2
--- > dimensions p3
--- >>> 3
+-- >>> let p1 = key1 'a'
+-- >>> let p2 = key2 'a' 'a'
+-- >>> let p3 = key3 'a' 'a' 'a'
+-- >>> dimensions p1
+-- 1
+-- >>> dimensions p2
+-- 2
+-- >>> dimensions p3
+-- 3
 dimensions :: KeyGeneric dim ((a, d) :. t) -> Int
 dimensions (K1   _) = 1
 dimensions (KN _ l) = dimensions l + 1

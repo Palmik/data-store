@@ -4,9 +4,85 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
-
+--------------------------------------------------------------------------------
+-- |
+--
+-- Module    : Data.Store
+-- Copyright : (c) Petr Pilar 2012
+-- License   : BSD-style
+--
+-- Simple multi-key multi-value store with type-safe interface.
+--
+-- These modules are intended to be imported qualified to avoid name
+-- clashes with prelude, e.g.:
+--
+-- > import qualified Data.Store as DS
+-- > import           Data.Store.Key ((.:), (:.)(..))
+-- > import           Data.Store.Query.Selection
+--
+-- Throughout out the documentation, the examples will be based on this
+-- code:
+--
+-- > --------------------------------------------------------------------------------
+-- > -- | TYPES
+-- > 
+-- > -- | Simple ADT representing an article.
+-- > data Article = Article
+-- >     { articleName :: TS.Text
+-- >     , articleBody :: TS.Text
+-- >     , articleTags :: [TS.Text]
+-- >     } deriving (Eq, Ord, Show)
+-- > 
+-- > newtype ArticleID = ArticleID Int deriving (Eq, Ord, Show)
+-- > 
+-- > instance DS.Auto ArticleID where
+-- >     initValue = ArticleID 1
+-- >     nextValue (ArticleID n) = ArticleID $ n + 1
+-- > 
+-- > --------------------------------------------------------------------------------
+-- > -- | BOILERPLATE 
+-- > 
+-- > -- | Type synonym for key key specification.
+-- > type ArticleKeySpec =
+-- >     (  (ArticleID, DS.DimAuto)
+-- >     :. (TS.Text, DS.Dim)
+-- >     :. (TS.Text, DS.Dim)
+-- >     :. (TS.Text, DS.Dim) :. DS.K0)
+-- > 
+-- > data ArticleStoreTag 
+-- > type ArticleStore    = DS.Store ArticleStoreTag ArticleKeySpec Article
+-- > 
+-- > type ArticleSelection = DS.Selection ArticleStoreTag ArticleKeySpec
+-- > type ArticleKey = DS.Key ArticleKeySpec
+-- > 
+-- > articleKey :: Article -> ArticleKey
+-- > articleKey (Article n b ts) = DS.dimA
+-- >                            .: DS.dimN [n]
+-- >                            .: DS.dimN [b]
+-- >                            .: DS.K1 (DS.dimN ts)
+-- > 
+-- > -- | Shortcut for selecting on article ID.
+-- > sArticleID :: Proxy (ArticleStoreTag, DS.N0)
+-- > sArticleID = Proxy
+-- > 
+-- > -- | Shortcut for selecting on article name.
+-- > sArticleName :: Proxy (ArticleStoreTag, DS.N1)
+-- > sArticleName = Proxy
+-- > 
+-- > -- | Shortcut for selecting on article body.
+-- > sArticleBody :: Proxy (ArticleStoreTag, DS.N2)
+-- > sArticleBody = Proxy
+-- > 
+-- > -- | Shortcut for selecting on article tags.
+-- > sArticleTag :: Proxy (ArticleStoreTag, DS.N3)
+-- > sArticleTag = Proxy
+-- > 
+-- > -- | BOILERPLATE 
+-- > --------------------------------------------------------------------------------
+-- 
+-- See the 'examples' directory for more complete examples.
 module Data.Store
-( I.Store(..)
+( I.Store
 
   -- * Store Operations
   -- ** Creation
@@ -87,7 +163,13 @@ empty = I.Store
 -- | The expression @('lookup' sel store)@ gives you a list of the elements
 -- in the given selection.
 --
--- TODO: Examples, Complexity.
+-- Examples:
+--
+-- >>> -- Fetch articles with title "Haskell" or that are tagged with the "Haskell" tag.
+-- >>> lookup (sArticleTitle .== "Haskell" .|| sArticleTag .== "Haskell") store
+-- [(Article <something>, ArticleID 1 :. ())]
+--
+-- TODO: Complexity.
 lookup :: I.Selection tag k
        -> I.Store tag k v
        -> [(v, InsertResult k)]
@@ -105,15 +187,15 @@ lookup selection = I.runQuery (go <$> resolve selection <*> I.queryStore)
       insertResult (I.KN (I.IDimension _) r) = insertResult r
       insertResult (I.KN (I.IDimensionAuto x) r) = x I.:. insertResult r
 
--- | The expression @('size' store)@ gives you number of elements currently
+-- | The expression @('size' store)@ gives you the number of elements currently
 -- in the store.
 --
 -- Examples:
 --
--- > size empty
--- >>> 0
--- > size $ insert key value empty
--- >>> 1
+-- >>> size empty
+-- 0
+-- >>> size $ insert key value empty
+-- > 1
 --
 -- Complexity: /O(1)/
 size :: I.Store tag k v -> Int
@@ -123,6 +205,10 @@ size (I.Store values _ _) = IM.size values
 -- | The expression @('insert' k v store)@ inserts the given
 -- value @v@ under the key @k@. 
 --
+-- >>> let article = Article "About Haskell" "Haskell is great!" ["Haskell"]
+-- >>> insert (articleKey article) article store
+-- (<updated_store>, ArticleID 1 :. ())
+-- 
 -- TODO: Examples, Complexity.
 insert :: I.Key spec                  
        -> v                           
@@ -176,10 +262,26 @@ insert key value I.Store{..} = (I.Store
 
 -- | The expression @('update' f sel store)@ updates all values @x@ that are
 -- part of the selection @sel@. If @(f x)@ is 'Nothing', the element is
--- deleted. If it is @(Just (y, Nothing))@, it's changed under its current
--- key. If it is @(Just (y, Just k))@ it's changed together with its key.
+-- deleted. If it is @('Just' (y, 'Nothing'))@, it's changed under its current
+-- key. If it is @('Just' (y, 'Just' k))@ it's changed together with its key.
 --
--- TODO: Examples, Complexity.
+-- Examples:
+--
+-- >>> -- Deletes the elements that fit the selection criteria.
+-- >>> update (const Nothing) (sArticleTag .== "Python") store
+-- <updated_store>
+--
+-- >>> -- Changes the elements that fit the selection, but keeps their old keys.
+-- >>> let article = Article "Untitled" "No Content." []
+-- >>> update (const $ Just (article, Nothing)) everything store
+-- <updated_store>
+--
+-- >>> -- Changes the elements and associated keys that fit the selection criteria
+-- >>> let article = Article "Untitled" "No Content." []
+-- >>> update (const $ Just (article, Just $ articleKey article)) everything store
+-- <updated_store>
+--
+-- TODO: Complexity.
 update :: (v -> Maybe (v, Maybe (I.Key k)))
        -> I.Selection tag k
        -> I.Store tag k v 
@@ -192,22 +294,22 @@ update fun querySelection = I.runQuery (go <$> resolve querySelection <*> I.quer
       -- step :: I.Store tag k v -> Int -> I.Store tag k v
       step acc@(I.Store values index _) oid =
           case IM.lookup oid values of
-              -- | Object with the given ID does not exist.
+              -- Object with the given ID does not exist.
               Nothing -> acc
               Just (v, k) ->
                 case fun v of
-                    -- | We are changing the value of the object.
+                    -- We are changing the value of the object.
                     Just (nv, Nothing) -> acc
                       { I.storeValues = IM.insert oid (nv, k) values
                       }
-                    -- | We are changing the value and key of the object.
+                    -- We are changing the value and key of the object.
                     Just (nv, Just nk) -> acc
                       { I.storeValues = IM.insert oid (nv, newKey) values
                       , I.storeIndex  = insertByKey newKey oid $ deleteByKey k index
                       }
                       where
                         newKey = makeKey k nk
-                    -- | We are deleting the object. 
+                    -- We are deleting the object. 
                     Nothing -> acc
                       { I.storeValues = IM.delete oid values
                       , I.storeIndex  = deleteByKey k index
@@ -255,14 +357,14 @@ resolve selection = go selection <$> I.queryStore
           let (l, e, _) = I.splitLookup x $ index V.! I.toInt (sndProxy p)
           in  IS.union l e
 
-      -- | Union
+      -- Union
       go (I.SelectOR I.SelectALL _) st = go I.SelectALL st
       go (I.SelectOR _ I.SelectALL) st = go I.SelectALL st
       go (I.SelectOR I.SelectNONE s) st = go s st
       go (I.SelectOR s I.SelectNONE) st = go s st
       go (I.SelectOR  s1 s2) st = go s1 st `IS.union` go s2 st
 
-      -- | Intersection
+      -- Intersection
       go (I.SelectAND I.SelectNONE _) st = go I.SelectNONE st
       go (I.SelectAND _ I.SelectNONE) st = go I.SelectNONE st
       go (I.SelectAND I.SelectALL s) st = go s st
@@ -276,3 +378,4 @@ resolve selection = go selection <$> I.queryStore
       sndProxy :: Proxy (a, b) -> Proxy b
       sndProxy = reproxy
       {-# INLINEABLE sndProxy #-}
+
