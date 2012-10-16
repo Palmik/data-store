@@ -270,7 +270,7 @@ prop_update3 = lookupOld && lookupNew && lookupByID
 
 
 insertList :: [(v, I.Key k)] -> I.Store tag k v -> I.Store tag k v
-insertList es st = L.foldl' (\acc (e, k) -> fst $ I.insert k e acc) st es
+insertList es st = L.foldl' (\acc (e, k) -> I.insert' k e acc) st es
 
 --------------------------------------------------------------------------------
 -- | QuickCheck machinery.

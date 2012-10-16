@@ -87,15 +87,18 @@ module Data.Store
   -- * Store Operations
   -- ** Creation
 , empty
+, fromList
 
   -- ** Insertion
 , insert
+, insert'
 
   -- ** Updates
 , update
 
   -- ** Query
 , lookup
+, lookup'
 , size
 ) where
 
@@ -105,11 +108,12 @@ import           Prelude hiding (lookup)
 import           Control.Arrow
 import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
-import qualified Data.IntMap        as IM
-import qualified Data.IntSet        as IS
-import qualified Data.Map           as M
-import qualified Data.Vector        as V
-import qualified Data.Vector.Extra  as V
+import qualified Data.IntMap       as IM
+import qualified Data.IntSet       as IS
+import qualified Data.Map          as M
+import qualified Data.Vector       as V
+import qualified Data.Vector.Extra as V
+import qualified Data.List         as L
 import           Data.Proxy
 --------------------------------------------------------------------------------
 import qualified Data.Store.Key                     as I
@@ -137,7 +141,7 @@ type instance InsertResult ((a, I.DimAuto) I.:. I.K0) = a I.:. ()
 type instance InsertResult ((a, I.Dim)     I.:. (b, dt) I.:. r) = InsertResult ((I.:.) (b, dt) r)
 type instance InsertResult ((a, I.DimAuto) I.:. (b, dt) I.:. r) = (I.:.) a (InsertResult ((I.:.) (b, dt) r))
 
--- | Returns an empty 'Store'.
+-- | Creates an empty 'Store'.
 --
 -- TODO: Find a way to remove the 'CEmptyKey' context. Find a way to get
 -- rid of the scoped type varaibles.
@@ -159,6 +163,13 @@ empty = I.Store
       emptyIndex :: forall a d . I.Dimension a d -> I.Index
       emptyIndex (I.Dimension _) = I.Index     (M.empty :: M.Map a IS.IntSet)
       emptyIndex I.DimensionAuto = I.IndexAuto (M.empty :: M.Map a IS.IntSet) I.initValue
+
+-- | Creates a 'Store' that contains the given key-value pairs.
+--
+-- TODO: Examples, Complexity.
+fromList :: I.CEmptyKey (I.Key spec) => [(I.Key spec, v)] -> I.Store tag spec v
+fromList = L.foldl' (\acc (k, v) -> insert' k v acc) empty
+{-# INLINEABLE fromList #-}
 
 -- | The expression @('lookup' sel store)@ gives you a list of the elements
 -- in the given selection.
@@ -187,6 +198,30 @@ lookup selection = I.runQuery (go <$> resolve selection <*> I.queryStore)
       insertResult (I.KN (I.IDimension _) r) = insertResult r
       insertResult (I.KN (I.IDimensionAuto x) r) = x I.:. insertResult r
 
+-- | The expression @('lookup'' sel store)@ gives you a list of the elements
+-- in the given selection. It does not include the 'InsertResult' as
+-- 'lookup' does.
+--
+-- Semantically equivalent to @(map fst $ 'lookup' sel store)@.
+--
+-- Examples:
+--
+-- >>> -- Fetch articles with title "Haskell" or that are tagged with the "Haskell" tag.
+-- >>> lookup (sArticleTitle .== "Haskell" .|| sArticleTag .== "Haskell") store
+-- [(Article <something>)]
+--
+-- TODO: Complexity.
+lookup' :: I.Selection tag k
+        -> I.Store tag k v
+        -> [v]
+lookup' selection = I.runQuery (go <$> resolve selection <*> I.queryStore)
+    where
+      go :: IS.IntSet -> I.Store tag k v -> [v]
+      go oids (I.Store values _ _) =
+          IS.foldl' (\acc oid -> maybe acc (\(v, _) -> v : acc)
+                                           (IM.lookup oid values)
+                    ) [] oids
+
 -- | The expression @('size' store)@ gives you the number of elements currently
 -- in the store.
 --
@@ -197,7 +232,7 @@ lookup selection = I.runQuery (go <$> resolve selection <*> I.queryStore)
 -- >>> size $ insert key value empty
 -- > 1
 --
--- Complexity: /O(1)/
+-- Complexity: /O(n)/
 size :: I.Store tag k v -> Int
 size (I.Store values _ _) = IM.size values
 {-# INLINEABLE size #-}
@@ -209,7 +244,7 @@ size (I.Store values _ _) = IM.size values
 -- >>> insert (articleKey article) article store
 -- (<updated_store>, ArticleID 1 :. ())
 -- 
--- TODO: Examples, Complexity.
+-- TODO: Complexity.
 insert :: I.Key spec                  
        -> v                           
        -> I.Store tag spec v
@@ -260,6 +295,23 @@ insert key value I.Store{..} = (I.Store
       toInsertResult (I.KN (I.IDimensionAuto v) kt) = v I.:. toInsertResult kt
       toInsertResult (I.KN (I.IDimension _) kt)     = toInsertResult kt
 
+-- | The expression @('insert'' k v store)@ inserts the given
+-- value @v@ under the key @k@. Unlike 'insert', tt does not return the assigned values of
+-- automatic dimension of the key.
+--
+-- Semantically equivalent to @(fst $ 'insert' k v store)@.
+--
+-- >>> let article = Article "About Haskell" "Haskell is great!" ["Haskell"]
+-- >>> insert (articleKey article) article store
+-- <updated_store>
+-- 
+-- TODO: Complexity.
+insert' :: I.Key spec                  
+        -> v                           
+        -> I.Store tag spec v
+        -> I.Store tag spec v
+insert' k v = fst . insert k v
+
 -- | The expression @('update' f sel store)@ updates all values @x@ that are
 -- part of the selection @sel@. If @(f x)@ is 'Nothing', the element is
 -- deleted. If it is @('Just' (y, 'Nothing'))@, it's changed under its current
@@ -305,14 +357,14 @@ update fun querySelection = I.runQuery (go <$> resolve querySelection <*> I.quer
                     -- We are changing the value and key of the object.
                     Just (nv, Just nk) -> acc
                       { I.storeValues = IM.insert oid (nv, newKey) values
-                      , I.storeIndex  = insertByKey newKey oid $ deleteByKey k index
+                      , I.storeIndex  = insertByKey newKey oid $ deleteByKey k index -- TODO: Terribly inefficient.
                       }
                       where
                         newKey = makeKey k nk
                     -- We are deleting the object. 
                     Nothing -> acc
                       { I.storeValues = IM.delete oid values
-                      , I.storeIndex  = deleteByKey k index
+                      , I.storeIndex  = deleteByKey k index -- TODO: Terribly inefficient.
                       }
 
       -- | Gven a 'KeyInternal' and a 'Key', it merges them into a new
