@@ -32,7 +32,7 @@ data Person = Person
     { personName :: String
     , personAge :: Int
     , personCredits :: Int
-    } deriving Show
+    } deriving (Eq, Show)
 
 data PersonStoreTag 
 
@@ -70,6 +70,7 @@ tests =
     , testProperty "update1" prop_update1
     , testProperty "update2" prop_update2
     , testProperty "update3" prop_update3
+    , testProperty "update4" prop_update4
     ]
 
 -- | Tests insert (auto-incrementation) #1.
@@ -268,6 +269,31 @@ prop_update3 = lookupOld && lookupNew && lookupByID
       
       persons = map (\x -> Person (show x) x x) [1..100] 
 
+-- | Tests insert, update (deleting) #4
+prop_update4 = delete1XX && delete11X && deleteX12 
+  where
+    delete1XX :: Bool
+    delete1XX = I.size res == 2                
+      where
+        res = I.update (const Nothing) (sPersonName .== "1") store
+
+    delete11X :: Bool
+    delete11X = (I.size res == 2) && (resLookup == [ Person "2" 1 2 ])
+      where
+        res = I.update (const Nothing) (sPersonName .== "1" .&& sPersonAge .== 1) store
+        resLookup = map fst $ I.lookup (sPersonAge .== 1) res    
+
+    deleteX12 :: Bool
+    deleteX12 = (I.size res == 2) && (resLookup1 == [ Person "1" 1 1 ])
+                                  && (resLookup2 == [ Person "3" 2 2 ])
+      where
+        res = I.update (const Nothing) (sPersonAge .== 1 .&& sPersonCredits .== 2) store
+        resLookup1 = map fst $ I.lookup (sPersonAge .== 1) res
+        resLookup2 = map fst $ I.lookup (sPersonCredits .== 2) res
+
+    store :: PersonStore
+    store = insertList (map (id &&& personKey) persons) I.empty
+    persons = [ Person "1" 1 1, Person "2" 1 2, Person "3" 2 2 ]
 
 insertList :: [(v, I.Key k)] -> I.Store tag k v -> I.Store tag k v
 insertList es st = L.foldl' (\acc (e, k) -> I.insert' k e acc) st es

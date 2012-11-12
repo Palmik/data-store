@@ -61,6 +61,10 @@ data DimensionInternal a dt where
     IDimension     :: [a] -> DimensionInternal a Dim
     IDimensionAuto :: a   -> DimensionInternal a DimAuto
 
+instance Show a => Show (DimensionInternal a dt) where
+    show (IDimension xs) = "(N " ++ show xs ++ ")"
+    show (IDimensionAuto x) = "(A " ++ show x ++ ")"
+
 type KeyInternal = KeyGeneric DimensionInternal
 
 
@@ -117,6 +121,12 @@ data KeyGeneric dim spec  where
     K1 :: Ord a1
        => dim a1 dt1
        -> KeyGeneric dim ((a1, dt1) :. K0) 
+
+instance (Show (dim a1 dt1)) => Show (KeyGeneric dim ((a1, dt1) :. K0)) where
+    show (K1 h) = show h
+
+instance (Show (dim a1 dt1), Show (KeyGeneric dim ((a2, dt2) :. s))) => Show (KeyGeneric dim ((a1, dt1) :. (a2, dt2) :. s)) where
+    show (KN h t) = show h ++ ", " ++ show t
 
 ------
 -- KEY TYPE CONSTRUCTION

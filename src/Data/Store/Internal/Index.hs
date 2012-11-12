@@ -17,9 +17,9 @@ import           Prelude hiding (lookup)
 --------------------------------------------------------------------------------
 import qualified Unsafe.Coerce as Unsafe
 --------------------------------------------------------------------------------
-import qualified Data.IntSet as IS
-import qualified Data.Map    as M
-import qualified Data.List   as L
+import qualified Data.IntSet     as IS
+import qualified Data.Map.Strict as M
+import qualified Data.List       as L
 import           Data.Maybe
 --------------------------------------------------------------------------------
 import qualified Data.Store.Key          as I
@@ -32,16 +32,20 @@ moduleName = "Data.Store.Internal.Index"
 data Index where
     Index
         :: Ord k
-        => M.Map k IS.IntSet
+        => !(M.Map k IS.IntSet)
         -> Index
     
     IndexAuto
         :: (Ord k, I.Auto k)
-        => M.Map k IS.IntSet
-        -> k
+        => !(M.Map k IS.IntSet)
+        -> !k
         -> Index
 
 type ObjectID = Int
+
+instance Show Index where
+    show (Index m) = show $ map snd $ M.toList m
+    show (IndexAuto m _) = show $ map snd $ M.toList $ m 
 
 -- |
 -- WARNING: Uses 'Unsafe.Coerce.unsafeCoerce' internally. Assumes, that the
@@ -138,11 +142,19 @@ insertDimensionInternal (I.IDimensionAuto _) _ _ =
 -- passed key of type 'k' is of the same type as the key the index is based
 -- on.
 delete :: [k]
+       -> ObjectID
        -> Index
        -> Index
-delete [] x = x
-delete [k] (Index imap) = Index $ M.delete (Unsafe.unsafeCoerce k) imap
-delete [k] (IndexAuto imap inext) = IndexAuto (M.delete (Unsafe.unsafeCoerce k) imap) inext
-delete ks (Index imap) = Index $ L.foldl' (\acc k -> M.delete (Unsafe.unsafeCoerce k) acc) imap ks
-delete ks (IndexAuto imap inext) = IndexAuto (L.foldl' (\acc k -> M.delete (Unsafe.unsafeCoerce k) acc) imap ks) inext
+delete [] _ x = x
+delete [k] oid (Index imap) = Index $ deleteFromSet oid (Unsafe.unsafeCoerce k) imap
+delete [k] oid (IndexAuto imap inext) = IndexAuto (deleteFromSet oid (Unsafe.unsafeCoerce k) imap) inext
+delete ks oid (Index imap) = Index $ L.foldl' (\acc k -> deleteFromSet oid (Unsafe.unsafeCoerce k) acc) imap ks
+delete ks oid (IndexAuto imap inext) = IndexAuto (L.foldl' (\acc k -> deleteFromSet oid (Unsafe.unsafeCoerce k) acc) imap ks) inext
+
+deleteFromSet :: Ord k => ObjectID -> k -> M.Map k IS.IntSet -> M.Map k IS.IntSet
+deleteFromSet oid k imap = M.update go k imap
+    where
+      go is = let res = IS.delete oid is
+              in  if IS.null res then Nothing else Just $! res
+
 

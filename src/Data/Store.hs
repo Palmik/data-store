@@ -100,6 +100,8 @@ module Data.Store
 , lookup
 , lookup'
 , size
+
+, debugShow
 ) where
 
 --------------------------------------------------------------------------------
@@ -357,14 +359,14 @@ update fun querySelection = I.runQuery (go <$> resolve querySelection <*> I.quer
                     -- We are changing the value and key of the object.
                     Just (nv, Just nk) -> acc
                       { I.storeValues = IM.insert oid (nv, newKey) values
-                      , I.storeIndex  = insertByKey newKey oid $ deleteByKey k index -- TODO: Terribly inefficient.
+                      , I.storeIndex  = insertByKey newKey oid $ deleteByKey k oid index -- TODO: Look into efficiency here.
                       }
                       where
                         newKey = makeKey k nk
                     -- We are deleting the object. 
                     Nothing -> acc
                       { I.storeValues = IM.delete oid values
-                      , I.storeIndex  = deleteByKey k index -- TODO: Terribly inefficient.
+                      , I.storeIndex  = deleteByKey k oid index -- TODO: Look into efficiency here.
                       }
 
       -- | Gven a 'KeyInternal' and a 'Key', it merges them into a new
@@ -377,17 +379,17 @@ update fun querySelection = I.runQuery (go <$> resolve querySelection <*> I.quer
       makeKey (I.KN (I.IDimensionAuto k) r) (I.KN I.DimensionAuto nr) = I.KN (I.IDimensionAuto k) (makeKey r nr)
       makeKey _ _ = error $ moduleName ++ ".update: impossible happened." -- This can not happen.
 
-      -- | Deletes all object IDs from index under the given key.
-      deleteByKey :: I.KeyInternal spec -> I.StoreIndex -> I.StoreIndex 
-      deleteByKey ikey sindex = go' ikey sindex 0
+      -- | Deletes the given object ID from the index under the given key.
+      deleteByKey :: I.KeyInternal spec -> I.ObjectID -> I.StoreIndex -> I.StoreIndex 
+      deleteByKey ikey oid sindex = go' ikey sindex 0
         where
           go' :: I.KeyInternal spec -> I.StoreIndex -> Int -> I.StoreIndex
-          go' (I.K1 (I.IDimension ks))    acc n = V.updateAt (I.delete ks)  n acc
-          go' (I.K1 (I.IDimensionAuto k)) acc n = V.updateAt (I.delete [k]) n acc
-          go' (I.KN (I.IDimension ks) r)    acc n = V.updateAt (I.delete ks)  n $ go' r acc (n + 1) 
-          go' (I.KN (I.IDimensionAuto k) r) acc n = V.updateAt (I.delete [k]) n $ go' r acc (n + 1) 
+          go' (I.K1 (I.IDimension ks))    acc n = V.updateAt (I.delete ks oid)  n acc
+          go' (I.K1 (I.IDimensionAuto k)) acc n = V.updateAt (I.delete [k] oid) n acc
+          go' (I.KN (I.IDimension ks) r)    acc n = V.updateAt (I.delete ks oid)  n $ go' r acc (n + 1) 
+          go' (I.KN (I.IDimensionAuto k) r) acc n = V.updateAt (I.delete [k] oid) n $ go' r acc (n + 1) 
      
-      -- | Inserts the given object ID under the given key.
+      -- | Inserts the given object ID into the index under the given key.
       insertByKey :: I.KeyInternal spec -> I.ObjectID -> I.StoreIndex -> I.StoreIndex 
       insertByKey ikey oid sindex = go' ikey sindex 0
         where
@@ -430,4 +432,11 @@ resolve selection = go selection <$> I.queryStore
       sndProxy :: Proxy (a, b) -> Proxy b
       sndProxy = reproxy
       {-# INLINEABLE sndProxy #-}
+
+debugShow :: (Show a1, Show a2, Show a3, Show a4, Show v) => I.Store tag ((a1, dt1) I.:. (a2, dt2) I.:. (a3, dt3) I.:. (a4, dt4) I.:. I.K0) v -> String
+debugShow (I.Store values index noid) = unlines
+    [ "Store values: " ++ show values
+    , "Store index: " ++ show index
+    , "Store next oid: " ++ show noid
+    ]
 
