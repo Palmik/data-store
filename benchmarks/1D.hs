@@ -32,8 +32,6 @@ import qualified Util.Int        as UI
 import qualified Util.String     as US
 --------------------------------------------------------------------------------
 
-instance NFData BS.ByteString
-
 data B where
     B :: NFData a => a -> B
 
@@ -174,7 +172,7 @@ main = do
         ]
   where
     n :: Int
-    n = 2^(12 :: Int)
+    n = 2^(16 :: Int)
 
     elems   = zip keys [1..n]
     keys    = US.rnd 8 n
