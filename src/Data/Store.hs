@@ -15,6 +15,7 @@ import           Control.Arrow
 import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
 import           Data.Maybe
+import           Data.Monoid ((<>))
 import qualified Data.Map    
 import qualified Data.Map.Extra
 import qualified Data.Set    
@@ -22,7 +23,9 @@ import qualified Data.IntMap
 import qualified Data.IntSet
 import qualified Data.Foldable as F
 --------------------------------------------------------------------------------
-import qualified Data.Store.Internal.Type as I
+import qualified Data.Store.Internal.Type     as I
+import qualified Data.Store.Internal.Function as I
+import qualified Data.Store.Selection         as Selection
 --------------------------------------------------------------------------------
 
 -- | The name of this module.
@@ -32,7 +35,6 @@ moduleName = "Data.Store"
 empty :: I.EmptyIndex (I.IndexSpec s) => I.Store s v
 empty = I.Store
     { I.storeV = Data.IntMap.empty
-    , I.storeK = Data.IntMap.empty
     , I.storeI = I.emptyIndex
     , I.storeNID = minBound :: Int
     }
@@ -41,32 +43,27 @@ insert :: I.ZipDimensions (I.IndexSpec s) (I.KeySpec s)
        => I.Key (I.KeySpec s)
        -> v
        -> I.Store s v
-       -> Maybe (I.Store s v)
-insert k v (I.Store vs ks ix nid) = mk <$> I.zipDimensions (zipInsert nid) ix k 
+       -> Maybe (I.RawKeyType (I.KeySpec s), I.Store s v)
+insert k v (I.Store vs ix nid) =
+    (\res -> (I.keyInternalToRaw internal, mk res)) <$> I.indexInsertID internal nid ix
     where
       mk ix' = I.Store
-        { I.storeV = Data.IntMap.insert nid v vs
-        , I.storeK = Data.IntMap.insert nid k ks
+        { I.storeV = Data.IntMap.insert nid (internal, k, v) vs
         , I.storeI = ix'
         , I.storeNID = nid + 1
         }
+      
+      internal = toInternal ix k
 
-zipInsert :: Ord a => Int -> I.IndexDimension ti a -> I.KeyDimension tk a -> Maybe (I.IndexDimension ti a)
-zipInsert v index key =
-    case (index, key) of
-      (I.IndexDimensionO m, I.KeyDimensionO k)  -> I.IndexDimensionO <$> goO k v m
-      (I.IndexDimensionO m, I.KeyDimensionM ks) -> I.IndexDimensionO <$> F.foldrM (\k acc -> goO k v acc) m ks
-      (I.IndexDimensionM m, I.KeyDimensionO k)  -> Just . I.IndexDimensionM $ goM k v m
-      (I.IndexDimensionM m, I.KeyDimensionM ks) -> Just . I.IndexDimensionM $ F.foldr (\k acc -> goM k v acc) m ks
-    where
-      goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Maybe (Data.Map.Map k Int)
-      goO = Data.Map.Extra.insertUnique
-
-      goM :: Ord k => k -> Int -> Data.Map.Map k Data.IntSet.IntSet -> Data.Map.Map k Data.IntSet.IntSet
-      goM k v = Data.Map.insertWith (\_ s -> Data.IntSet.insert v s) k (Data.IntSet.singleton v)
+      toInternal :: I.Index si -> I.Key sk -> I.IKey sk
+      toInternal _ (I.K1 (I.KeyDimensionO x)) = I.K1 (I.IKeyDimensionO x) 
+      toInternal _ (I.K1 (I.KeyDimensionM x)) = I.K1 (I.IKeyDimensionM x) 
+      toInternal (I.IN _ ix) (I.KN (I.KeyDimensionO x) s) = I.KN (I.IKeyDimensionO x) $ toInternal ix s
+      toInternal (I.IN _ ix) (I.KN (I.KeyDimensionM x) s) = I.KN (I.IKeyDimensionM x) $ toInternal ix s 
+      toInternal _ _ = error $ moduleName <> ".insert.toInternal: Impossible happened."
 
 showIndex :: Show (I.Index (I.IndexSpec s)) => I.Store s v -> String
-showIndex (I.Store _ _ i _) = show i
+showIndex (I.Store _ i _) = show i
 
 printIndex :: Show (I.Index (I.IndexSpec s)) => I.Store s v -> IO ()
 printIndex = putStrLn . showIndex
@@ -95,10 +92,10 @@ myStore0 :: MyStore
 myStore0 = empty
 
 myStore1 :: MyStore
-myStore1 = fromJust $ insert (makeMyStoreKey 1.5 ["aa", "bb", "cc"]) 0 myStore0 
+myStore1 = snd . fromJust $ insert (makeMyStoreKey 1.5 ["aa", "bb", "cc"]) 0 myStore0 
 
 myStore2 :: MyStore
-myStore2 = fromJust $ insert (makeMyStoreKey 3.5 ["aaa", "bbb", "ccc"]) 1 myStore1 
+myStore2 = snd . fromJust $ insert (makeMyStoreKey 3.5 ["aaa", "bbb", "ccc"]) 1 myStore1 
 
 -- print myStore0
 -- printIndex myStore0
