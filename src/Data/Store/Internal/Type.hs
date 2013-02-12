@@ -14,16 +14,16 @@ module Data.Store.Internal.Type
 where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative ((<$>), (<*>))
---------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
 import qualified Data.Map    
-import qualified Data.Set    
 import qualified Data.IntMap
 import qualified Data.IntSet
 import qualified Data.List
 import qualified Data.Foldable as F
 --------------------------------------------------------------------------------
+
+moduleName :: String
+moduleName = "Data.Store.Internal.Type"
 
 data M 
 data O
@@ -54,7 +54,6 @@ type instance DimensionType Z M t = t
 type instance DimensionType Z O t = t
 type instance DimensionType Z (r :. rt) (t :. tt) = t
 type instance DimensionType (S n) (r :. rt) (t :. tt) = DimensionType n rt tt
-
 
 type family   RawDimensionType n a :: *
 type instance RawDimensionType n (Index irs ts) = IndexDimension (DimensionRelation n irs ts) (DimensionType n irs ts)
@@ -87,27 +86,39 @@ data GenericKey dim rs ts where
 type  Key = GenericKey  KeyDimension
 type IKey = GenericKey IKeyDimension
 
-instance Show t => Show (Key r t) where
+instance Show t => Show (Key O t) where
+    show (K1 d) = show d 
+
+instance Show t => Show (Key M t) where
     show (K1 d) = show d 
 
 instance (Show t, Show (Key rt tt)) => Show (Key (r :. rt) (t :. tt)) where
     show (KN d k) = show d <> ", " <> show k
+    show (K1 _) = error $ moduleName <> ".Key.show: The impossible happened."
 
-instance Show t => Show (IKey r t) where
+instance Show t => Show (IKey O t) where
+    show (K1 d) = show d 
+
+instance Show t => Show (IKey M t) where
     show (K1 d) = show d 
 
 instance (Show t, Show (IKey rt tt)) => Show (IKey (r :. rt) (t :. tt)) where
     show (KN d k) = show d <> ", " <> show k
+    show (K1 _) = error $ moduleName <> ".IKey.show: The impossible happened."
 
 data Index rs ts where
     I1 :: Ord t => IndexDimension r t -> Index r t
     IN :: Ord t => IndexDimension r t -> Index rt tt -> Index (r :. rt) (t :. tt)
 
-instance Show t => Show (Index r t) where
+instance Show t => Show (Index O t) where
+    show (I1 d) = show d
+
+instance Show t => Show (Index M t) where
     show (I1 d) = show d
 
 instance (Show t, Show (Index rt tt)) => Show (Index (r :. rt) (t :. tt)) where
     show (IN d i) = show d <> "\n" <> show i
+    show (I1 _) = error $ moduleName <> ".Index.show: The impossible happened."
 
 data KeyDimension r t where
     KeyDimensionM :: Ord t => [t] -> KeyDimension M t
@@ -117,6 +128,7 @@ data KeyDimension r t where
 instance Show t => Show (KeyDimension r t) where
     show (KeyDimensionM ts) = show ts
     show (KeyDimensionO t)  = show t
+    show  KeyDimensionA     = show "Auto"
 
 data IKeyDimension r t where
     IKeyDimensionM :: Ord t => [t] -> IKeyDimension M t
@@ -150,9 +162,11 @@ instance GetDimension Z (Index M t) where
 
 instance GetDimension Z (Index (r :. rt) (t :. tt)) where
     getDimension _ (IN ixd _) = ixd
+    getDimension _ (I1 _) = error $ moduleName <> ".Index.getDimension: The impossible happened."
 
 instance GetDimension n (Index rt tt) => GetDimension (S n) (Index (r :. rt) (t :. tt)) where
     getDimension (S n) (IN _ ixt) = getDimension n ixt
+    getDimension _ (I1 _) = error $ moduleName <> ".Index.getDimension: The impossible happened."
 
 class Empty a where
     empty :: a
@@ -168,27 +182,6 @@ instance (Ord t, Empty (Index rt tt)) => Empty (Index (O :. rt) (t :. tt)) where
 
 instance (Ord t, Empty (Index rt tt)) => Empty (Index (M :. rt) (t :. tt)) where
     empty = IN (IndexDimensionM Data.Map.empty) empty
-
--- | SELECTION
-
-class IsSelection sel where
-    resolve :: sel krs irs ts -> Store krs irs ts v -> Data.IntSet.IntSet
-    
-    lookup :: sel krs irs ts -> Store krs irs ts v -> [(RawKeyType krs ts, v)]
-    
-    update :: (v -> Maybe (v, Maybe (Key krs ts)))
-           -> sel krs irs ts
-           -> Store krs irs ts v
-           -> Maybe (Store krs irs ts v)
-
-    updateValues :: (v -> Maybe v)
-                 -> sel krs irs ts
-                 -> Store krs irs ts v
-                 -> Store krs irs ts v
-
-    delete :: sel krs irs ts
-           -> Store krs irs ts v
-           -> Store krs irs ts v
 
 data h :. t = h :. t
 infixr 3 :.

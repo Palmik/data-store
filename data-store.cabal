@@ -1,5 +1,5 @@
 name:                data-store
-version:             0.0.0
+version:             0.2.0
 
 synopsis:            A multi-key multi-value store with type-safe interface.
 
@@ -25,7 +25,7 @@ library
   
   other-modules:
       Data.Store.Internal.Type
-    , Data.Store.Internal.Functions
+    , Data.Store.Internal.Function
     , Data.Map.Extra
     , Data.IntSet.Extra
 

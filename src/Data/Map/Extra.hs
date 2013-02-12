@@ -9,9 +9,9 @@ import qualified Data.Map
 -- anything under the key @k@, otherwise returns @Nothing@.
 insertUnique :: Ord k => k -> a -> Data.Map.Map k a -> Maybe (Data.Map.Map k a)
 insertUnique k a m =
-    case Data.Map.insertLookupWithKey (\k' n' o' -> o') k a m of
+    case Data.Map.insertLookupWithKey (\_ _ o' -> o') k a m of
         (Nothing, res) -> Just res
-        (Just _,  res) -> Nothing
-{-# INLINEABLE insertUnique #-}
+        (Just _,  _) -> Nothing
+{-# INLINE insertUnique #-}
 
 

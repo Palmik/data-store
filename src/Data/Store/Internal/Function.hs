@@ -8,6 +8,7 @@ where
 --------------------------------------------------------------------------------
 import           Control.Applicative
 --------------------------------------------------------------------------------
+import           Data.Monoid ((<>))
 import           Data.Maybe
 import qualified Data.Foldable as F 
 import qualified Data.Map
@@ -16,6 +17,9 @@ import qualified Data.IntSet
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type as I
 --------------------------------------------------------------------------------
+
+moduleName :: String
+moduleName = "Data.Store.Internal.Function"
 
 keyInternalToRaw :: I.IKey krs ts -> I.RawKeyType krs ts
 keyInternalToRaw (I.K1 (I.IKeyDimensionO x)) = x
@@ -32,12 +36,12 @@ indexInsertID ik i ix = zipDimensions (zipInsert i) ik ix
 {-# INLINE indexInsertID #-}
 
 zipInsert :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> Maybe (I.IndexDimension ir t)
-zipInsert v key index =
+zipInsert val key index =
     case (index, key) of
-      (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO <$> goO k v m
-      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO <$> F.foldrM (\k acc -> goO k v acc) m ks
-      (I.IndexDimensionM m, I.IKeyDimensionO k)  -> Just . I.IndexDimensionM $ goM k v m
-      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> Just . I.IndexDimensionM $ F.foldr (\k acc -> goM k v acc) m ks
+      (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO <$> goO k val m
+      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO <$> F.foldrM (\k acc -> goO k val acc) m ks
+      (I.IndexDimensionM m, I.IKeyDimensionO k)  -> Just . I.IndexDimensionM $ goM k val m
+      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> Just . I.IndexDimensionM $ F.foldr (\k acc -> goM k val acc) m ks
     where
       goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Maybe (Data.Map.Map k Int)
       goO = Data.Map.Extra.insertUnique
@@ -56,12 +60,12 @@ indexDeleteID ik i ix = fromJust $ zipDimensions (zipDelete i) ik ix
 {-# INLINE indexDeleteID #-}
 
 zipDelete :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> Maybe (I.IndexDimension ir t)
-zipDelete v key index = Just $
+zipDelete val key index = Just $
     case (index, key) of
-      (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO $ goO k v m
-      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $ F.foldr (\k acc -> goO k v acc) m ks
-      (I.IndexDimensionM m, I.IKeyDimensionO k)  -> I.IndexDimensionM $ goM k v m
-      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ F.foldr (\k acc -> goM k v acc) m ks
+      (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO $ goO k val m
+      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $ F.foldr (\k acc -> goO k val acc) m ks
+      (I.IndexDimensionM m, I.IKeyDimensionO k)  -> I.IndexDimensionM $ goM k val m
+      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ F.foldr (\k acc -> goM k val acc) m ks
     where
       goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Data.Map.Map k Int
       goO k _ = Data.Map.delete k
@@ -81,7 +85,8 @@ zipDimensions :: (forall ir kr t . Ord t => I.IKeyDimension kr t -> I.IndexDimen
               -> I.IKey  krs ts
               -> I.Index irs ts
               -> Maybe (I.Index irs ts)
-zipDimensions combine (I.K1 kd) (I.I1 id) = I.I1 <$> combine kd id
-zipDimensions combine (I.KN kd kt) (I.IN id it) = I.IN <$> combine kd id <*> zipDimensions combine kt it
+zipDimensions combine (I.K1 kd) (I.I1 ixd) = I.I1 <$> combine kd ixd
+zipDimensions combine (I.KN kd kt) (I.IN ixd it) = I.IN <$> combine kd ixd <*> zipDimensions combine kt it
+zipDimensions _ _ _ = error $ moduleName <> ".zipDimensions: The impossible happened."
 {-# INLINEABLE zipDimensions #-}
 
