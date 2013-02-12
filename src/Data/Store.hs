@@ -3,13 +3,85 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
-
--- Because of Functor.
 {-# OPTIONS_GHC -fno-warn-orphans #-} 
-
+--------------------------------------------------------------------------------
+-- |
+--
+-- Module : Data.Store
+-- Copyright : (c) Petr Pilar 2012
+-- License : BSD-style
+--
+-- Multi-key multi-value store with type-safe interface.
+--
+-- These modules are intended to be imported qualified to avoid name
+-- clashes with prelude, e.g.:
+--
+-- > import qualified Data.Store as S
+-- > import           Data.Store (M, O, (.:), (.:.), (:.), (.<), (.<=), (.>), (.>=), (./=), (.==), (.&&), (.||))
+--
+-- Throughout out the documentation, the examples will be based on this
+-- code:
+--
+-- > {-# LANGUAGE TypeOperators #-}
+-- > 
+-- > module Example01
+-- > where
+-- > 
+-- > import qualified Data.Store as S
+-- > import           Data.Store (M, O, (.:), (.:.), (:.), (.<), (.<=), (.>), (.>=), (./=), (.==), (.&&), (.||))
+-- > 
+-- > data Content = Content
+-- >     { contentName :: String  
+-- >     , contentBody :: String  
+-- >     , contentTags :: [String]
+-- >     , contentRating :: Double
+-- >     }
+-- > 
+-- > type ContentID = Int
+-- > 
+-- > -- Content has one ID, only one content can have a given ID.
+-- > -- Content has one name, only one content can have a given name.
+-- > -- Content has one body, many contents can have the same content.
+-- > -- Content has many tags, many contents can have the same tag.
+-- > -- Content has one rating, many contents can have the same rating.
+-- > 
+-- > -- BOILERPLATE
+-- > 
+-- > type ContentStoreTS  = ContentID :. String :. String :. String :. Double
+-- > type ContentStoreKRS = O         :. O      :. O      :. M      :. O
+-- > type ContentStoreIRS = O         :. O      :. M      :. M      :. M
+-- > type ContentStore = S.Store ContentStoreKRS ContentStoreIRS ContentStoreTS
+-- > type ContentStoreKey = S.Key ContentStoreKRS ContentStoreTS
+-- > 
+-- > sContentID :: S.N0
+-- > sContentID = S.n0
+-- > 
+-- > sContentName :: S.N1
+-- > sContentName = S.n1
+-- > 
+-- > sContentBody :: S.N2
+-- > sContentBody = S.n2
+-- > 
+-- > sContentTag :: S.N3
+-- > sContentTag = S.n3
+-- > 
+-- > sContentRating :: S.N4
+-- > sContentRating = S.n4
+-- > 
+-- > -- BOILERPLATE
+-- > 
+-- > makeKey :: Content -> ContentStoreKey
+-- > makeKey (Content cn cb ct cr) =
+-- >    S.dimA .: S.dimO cn .: S.dimO cb .: S.dimM ct .:. S.dimO cr
+-- > 
 module Data.Store
 ( I.Store
 , I.Key
+, I.KeyDimension
+, I.M
+, I.O
+, (I.:.)(..)
+, I.Auto
 
   -- * Creating
 , empty
@@ -35,7 +107,39 @@ module Data.Store
 , (.&&)
 , (.||)
 
+  -- * Constructing Key
+, dimA
+, dimO
+, dimM
+, (.:)
+, (.:.)
+
   -- * Utility
+, I.S(..)
+, I.Z
+, I.N0
+, I.N1
+, I.N2
+, I.N3
+, I.N4
+, I.N5
+, I.N6
+, I.N7
+, I.N8
+, I.N9
+, I.N10
+, I.n0
+, I.n1
+, I.n2
+, I.n3
+, I.n4
+, I.n5
+, I.n6
+, I.n7
+, I.n8
+, I.n9
+, I.n10
+
 , showIndex
 , printIndex
 ) where
@@ -61,6 +165,32 @@ moduleName = "Data.Store"
 {-# INLINE moduleName #-}
 
 -- INTERFACE
+
+dimA :: I.Auto t => I.KeyDimension I.O t
+dimA = I.KeyDimensionA
+{-# INLINE dimA #-}
+
+dimO :: Ord t => t -> I.KeyDimension I.O t
+dimO = I.KeyDimensionO
+{-# INLINE dimO #-}
+
+dimM :: Ord t => [t] -> I.KeyDimension I.M t
+dimM = I.KeyDimensionM
+{-# INLINE dimM #-}
+
+(.:) :: dim r t
+     -> I.GenericKey dim rs1 ts1 
+     -> I.GenericKey dim (r I.:. rs1) (t I.:. ts1)
+(.:) = I.KN
+{-# INLINE (.:) #-}
+infixr 3 .:
+
+(.:.) :: dim r1 t1
+      -> dim r2 t2
+      -> I.GenericKey dim (r1 I.:. r2) (t1 I.:. t2)
+(.:.) d1 d2 = I.KN d1 (I.K1 d2)
+{-# INLINE (.:.) #-}
+infixr 3 .:.
 
 -- | The expression @'Data.Store.empty'@ is empty store.
 empty :: I.Empty (I.Index irs ts) => I.Store krs irs ts v

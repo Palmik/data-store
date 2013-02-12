@@ -43,6 +43,29 @@ type N8 = S N7
 type N9 = S N8
 type N10 = S N9
 
+n0 :: N0
+n0 = Z
+n1 :: N1
+n1 = S n0
+n2 :: N2
+n2 = S n1
+n3 :: N3
+n3 = S n2
+n4 :: N4
+n4 = S n3
+n5 :: N5
+n5 = S n4
+n6 :: N6
+n6 = S n5
+n7 :: N7
+n7 = S n6
+n8 :: N8
+n8 = S n7
+n9 :: N9
+n9 = S n8
+n10 :: N10
+n10 = S n9
+
 type family   DimensionRelation n rs ts :: *
 type instance DimensionRelation Z O ts = O
 type instance DimensionRelation Z M ts = M
