@@ -21,11 +21,13 @@ library
   hs-source-dirs:      src
   exposed-modules:
       Data.Store
-    , Data.Store.Key
+    , Data.Store.Selection
   
   other-modules:
       Data.Store.Internal.Type
-    , Data.Store.Internal.TypeFamily
+    , Data.Store.Internal.Functions
+    , Data.Map.Extra
+    , Data.IntSet.Extra
 
   build-depends:
       base       >= 4.6

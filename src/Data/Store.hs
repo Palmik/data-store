@@ -9,7 +9,7 @@ module Data.Store
 ) where
 
 --------------------------------------------------------------------------------
-import           Prelude hiding (lookup)
+import           Prelude hiding (lookup, map)
 --------------------------------------------------------------------------------
 import           Control.Arrow
 import           Control.Applicative hiding (empty)
@@ -31,19 +31,27 @@ import qualified Data.Store.Selection         as Selection
 -- | The name of this module.
 moduleName :: String
 moduleName = "Data.Store"
+{-# INLINE moduleName #-}
 
-empty :: I.EmptyIndex (I.IndexSpec s) => I.Store s v
+-- | INTERFACE
+
+empty :: I.Empty (I.Index irs ts) => I.Store krs irs ts v
 empty = I.Store
     { I.storeV = Data.IntMap.empty
-    , I.storeI = I.emptyIndex
-    , I.storeNID = minBound :: Int
+    , I.storeI = I.empty
+    , I.storeNID = minBound
     }
+{-# INLINE empty #-}
 
-insert :: I.ZipDimensions (I.IndexSpec s) (I.KeySpec s)
-       => I.Key (I.KeySpec s)
+singleton :: I.Empty (I.Index irs ts)
+          => I.Key krs ts -> v -> I.Store krs irs ts v
+singleton k v = snd . fromJust $ insert k v empty
+{-# INLINE singleton #-}
+
+insert :: I.Key krs ts
        -> v
-       -> I.Store s v
-       -> Maybe (I.RawKeyType (I.KeySpec s), I.Store s v)
+       -> I.Store krs irs ts v
+       -> Maybe (I.RawKeyType krs ts, I.Store krs irs ts v)
 insert k v (I.Store vs ix nid) =
     (\res -> (I.keyInternalToRaw internal, mk res)) <$> I.indexInsertID internal nid ix
     where
@@ -52,29 +60,64 @@ insert k v (I.Store vs ix nid) =
         , I.storeI = ix'
         , I.storeNID = nid + 1
         }
+      {-# INLINE mk #-}
       
       internal = toInternal ix k
+      {-# INLINE internal #-}
 
-      toInternal :: I.Index si -> I.Key sk -> I.IKey sk
-      toInternal _ (I.K1 (I.KeyDimensionO x)) = I.K1 (I.IKeyDimensionO x) 
-      toInternal _ (I.K1 (I.KeyDimensionM x)) = I.K1 (I.IKeyDimensionM x) 
-      toInternal (I.IN _ ix) (I.KN (I.KeyDimensionO x) s) = I.KN (I.IKeyDimensionO x) $ toInternal ix s
-      toInternal (I.IN _ ix) (I.KN (I.KeyDimensionM x) s) = I.KN (I.IKeyDimensionM x) $ toInternal ix s 
+      toInternal :: I.Index irs ts -> I.Key krs ts -> I.IKey krs ts
+      toInternal (I.I1 ix) (I.K1 I.KeyDimensionA) = I.K1 (I.IKeyDimensionO $! nextKey ix) 
+      toInternal (I.I1 ix) (I.K1 (I.KeyDimensionO x)) = I.K1 (I.IKeyDimensionO x) 
+      toInternal (I.I1 ix) (I.K1 (I.KeyDimensionM x)) = I.K1 (I.IKeyDimensionM x) 
+      toInternal (I.IN ix is) (I.KN I.KeyDimensionA s) = I.KN (I.IKeyDimensionO $! nextKey ix) $ toInternal is s
+      toInternal (I.IN ix is) (I.KN (I.KeyDimensionO x) s) = I.KN (I.IKeyDimensionO x) $ toInternal is s
+      toInternal (I.IN ix is) (I.KN (I.KeyDimensionM x) s) = I.KN (I.IKeyDimensionM x) $ toInternal is s 
       toInternal _ _ = error $ moduleName <> ".insert.toInternal: Impossible happened."
+      {-# INLINE toInternal #-}
 
-showIndex :: Show (I.Index (I.IndexSpec s)) => I.Store s v -> String
+      nextKey :: I.Auto t => I.IndexDimension r t -> t
+      nextKey i =
+        case i of
+            (I.IndexDimensionM m) -> nextKey' m
+            (I.IndexDimensionO m) -> nextKey' m
+        where
+          nextKey' m = if Data.Map.null m
+                          then minBound
+                          else succ . fst $! Data.Map.findMax m
+          {-# INLINE nextKey' #-}
+      {-# INLINE nextKey #-}
+
+map :: (v1 -> v2) -> I.Store krs irs ts v1 -> I.Store krs irs ts v2
+map tr store@(I.Store vs _ _) = store
+    { I.storeV = Data.IntMap.map (\(ik, k, v) -> (ik, k, tr v)) vs
+    }
+{-# INLINE map #-}
+
+-- | INSTANCES
+
+instance Functor (I.Store krs irs ts) where
+    fmap = map
+    {-# INLINE fmap #-}
+
+-- | UTILITY
+
+showIndex :: Show (I.Index irs ts) => I.Store krs irs ts v -> String
 showIndex (I.Store _ i _) = show i
+{-# INLINE showIndex #-}
 
-printIndex :: Show (I.Index (I.IndexSpec s)) => I.Store s v -> IO ()
+printIndex :: Show (I.Index irs ts) => I.Store krs irs ts v -> IO ()
 printIndex = putStrLn . showIndex
+{-# INLINE printIndex #-}
 
 -- | TEST
 
 type Account = Int
-type MyStoreSpec = (I.DimensionOneMany, Double) I.:. (I.DimensionManyMany, String)
-type MyStore = I.Store MyStoreSpec Account 
+type MyKRS = I.O    I.:. I.M
+type MyIRS = I.M    I.:. I.M
+type MyTS  = Double I.:. String
+type MyStore = I.Store MyKRS MyIRS MyTS Account 
 
-type MyStoreKey = I.Key (I.KeySpec MyStoreSpec)
+type MyStoreKey = I.Key MyKRS MyTS
 
 type AccountBalance = I.N0
 type AccountName = I.N1

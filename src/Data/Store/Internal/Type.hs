@@ -25,16 +25,8 @@ import qualified Data.List
 import qualified Data.Foldable as F
 --------------------------------------------------------------------------------
 
-data DimensionOneOne
-data DimensionOneMany
-data DimensionManyOne
-data DimensionManyMany
-
-data IndexDimensionM
-data IndexDimensionO
-
-data KeyDimensionO
-data KeyDimensionM
+data M 
+data O
 
 data Z = Z
 data S n = S n
@@ -51,201 +43,153 @@ type N8 = S N7
 type N9 = S N8
 type N10 = S N9
 
-type family   DimensionType t n :: *
-type instance DimensionType (Key ((t, a) :. s)) (S n) = DimensionType (Key s) n
-type instance DimensionType (Key (t, a)) Z = KeyDimension t a
-type instance DimensionType (Key ((t, a) :. s)) Z = KeyDimension t a
+type family   DimensionRelation n rs ts :: *
+type instance DimensionRelation Z O ts = O
+type instance DimensionRelation Z M ts = M
+type instance DimensionRelation Z (r :. rt) (t :. tt) = r
+type instance DimensionRelation (S n) (r :. rt) (t :. tt) = DimensionRelation n rt tt
 
-type instance DimensionType (IKey ((t, a) :. s)) (S n) = DimensionType (IKey s) n
-type instance DimensionType (IKey (t, a)) Z = IKeyDimension t a
-type instance DimensionType (IKey ((t, a) :. s)) Z = IKeyDimension t a
+type family   DimensionType n rs ts :: *
+type instance DimensionType Z M t = t
+type instance DimensionType Z O t = t
+type instance DimensionType Z (r :. rt) (t :. tt) = t
+type instance DimensionType (S n) (r :. rt) (t :. tt) = DimensionType n rt tt
 
-type instance DimensionType (Index ((t, a) :. s)) (S n) = DimensionType (Index s) n
-type instance DimensionType (Index (t, a)) Z = IndexDimension t a
-type instance DimensionType (Index ((t, a) :. s)) Z = IndexDimension t a
 
-type family   RawKeyType t :: *
-type instance RawKeyType ((KeyDimensionO, a) :. s) =  a  :. RawKeyType s
-type instance RawKeyType ((KeyDimensionM, a) :. s) = [a] :. RawKeyType s
-type instance RawKeyType (KeyDimensionO, a) =  a
-type instance RawKeyType (KeyDimensionM, a) = [a]
+type family   RawDimensionType n a :: *
+type instance RawDimensionType n (Index irs ts) = IndexDimension (DimensionRelation n irs ts) (DimensionType n irs ts)
 
-type family   KeyTag t :: *
-type instance KeyTag DimensionOneOne   = KeyDimensionO
-type instance KeyTag DimensionOneMany  = KeyDimensionO
-type instance KeyTag DimensionManyOne  = KeyDimensionM
-type instance KeyTag DimensionManyMany = KeyDimensionM
+type family   RawKeyType kspec tspec :: *
+type instance RawKeyType (O :. rt) (t :. tt) =  t  :. RawKeyType rt tt
+type instance RawKeyType (M :. rt) (t :. tt) = [t] :. RawKeyType rt tt
+type instance RawKeyType O t =  t
+type instance RawKeyType M t = [t]
 
-type family   IndexTag t :: *
-type instance IndexTag DimensionOneOne   = IndexDimensionO
-type instance IndexTag DimensionOneMany  = IndexDimensionM
-type instance IndexTag DimensionManyOne  = IndexDimensionO
-type instance IndexTag DimensionManyMany = IndexDimensionM
+class (Ord k, Enum k, Bounded k) => Auto k where
+instance (Ord k, Enum k, Bounded k) => Auto k where
 
-type family   KeySpec s :: *
-type instance KeySpec ((t, a) :. s) = (KeyTag t, a) :. KeySpec s
-type instance KeySpec  (t, a)       = (KeyTag t, a)
-
-type family   IndexSpec s :: *
-type instance IndexSpec ((t, a) :. s) = (IndexTag t, a) :. IndexSpec s
-type instance IndexSpec  (t, a)       = (IndexTag t, a)
-
-type family   SelectionDimensionType s n :: *
-type instance SelectionDimensionType ((t, a) :. s) (S n) = SelectionDimensionType s n
-type instance SelectionDimensionType ((t, a) :. s)  Z    = a
-type instance SelectionDimensionType  (t, a)        Z    = a
-
-data Store s v = Store
-    { storeV :: Data.IntMap.IntMap (IKey (KeySpec s), Key (KeySpec s), v)
-    , storeI :: Index (IndexSpec s)
+data Store krs irs ts v = Store
+    { storeV :: Data.IntMap.IntMap (IKey krs ts, Key krs ts, v)
+    , storeI :: Index irs ts
     , storeNID :: Int
     }
 
-instance (Show (Key (KeySpec s)), Show v) => Show (Store s v) where
+instance (Show (Key krs ts), Show v) => Show (Store krs irs ts v) where
     show (Store vs _ _) = "[" <> go <> "]"
       where
         go = Data.List.intercalate "," $ map (\(_, k, v) -> "((" <> show k <> "), " <> show v <> ")")
                                        $ F.toList vs
 
-data GenericKey dim spec where
-    K1 :: dim t1 a1 -> GenericKey dim (t1, a1)
-    KN :: dim t1 a1 -> GenericKey dim s -> GenericKey dim ((t1, a1) :. s)
+data GenericKey dim rs ts where
+    K1 :: dim r t -> GenericKey dim r t
+    KN :: dim r t -> GenericKey dim rt tt -> GenericKey dim (r :. rt) (t :. tt)
 
 type  Key = GenericKey  KeyDimension
 type IKey = GenericKey IKeyDimension
 
-instance Show a1 => Show (Key (t1, a1)) where
+instance Show t => Show (Key r t) where
     show (K1 d) = show d 
 
-instance (Show a1, Show (Key s)) => Show (Key ((t1, a1) :. s)) where
+instance (Show t, Show (Key rt tt)) => Show (Key (r :. rt) (t :. tt)) where
     show (KN d k) = show d <> ", " <> show k
 
-instance Show a1 => Show (IKey (t1, a1)) where
+instance Show t => Show (IKey r t) where
     show (K1 d) = show d 
 
-instance (Show a1, Show (IKey s)) => Show (IKey ((t1, a1) :. s)) where
+instance (Show t, Show (IKey rt tt)) => Show (IKey (r :. rt) (t :. tt)) where
     show (KN d k) = show d <> ", " <> show k
 
-data Index spec where
-    I1 :: IndexDimension t1 k1 -> Index (t1, k1)
-    IN :: IndexDimension t1 k1 -> Index s -> Index ((t1, k1) :. s)
+data Index rs ts where
+    I1 :: Ord t => IndexDimension r t -> Index r t
+    IN :: Ord t => IndexDimension r t -> Index rt tt -> Index (r :. rt) (t :. tt)
 
-instance Show k1 => Show (Index (t1, k1)) where
+instance Show t => Show (Index r t) where
     show (I1 d) = show d
 
-instance (Show k1, Show (Index s)) => Show (Index ((t1, k1) :. s)) where
+instance (Show t, Show (Index rt tt)) => Show (Index (r :. rt) (t :. tt)) where
     show (IN d i) = show d <> "\n" <> show i
 
-data KeyDimension t k where
-    KeyDimensionM :: [k] -> KeyDimension KeyDimensionM k
-    KeyDimensionO ::  k  -> KeyDimension KeyDimensionO k
+data KeyDimension r t where
+    KeyDimensionM :: Ord t => [t] -> KeyDimension M t
+    KeyDimensionO :: Ord t =>  t  -> KeyDimension O t
+    KeyDimensionA :: Auto t => KeyDimension O t
 
-instance Show k => Show (KeyDimension t k) where
-    show (KeyDimensionM ks) = show ks
-    show (KeyDimensionO k)  = show k
+instance Show t => Show (KeyDimension r t) where
+    show (KeyDimensionM ts) = show ts
+    show (KeyDimensionO t)  = show t
 
-data IKeyDimension t k where
-    IKeyDimensionM :: [k] -> IKeyDimension KeyDimensionM k
-    IKeyDimensionO ::  k  -> IKeyDimension KeyDimensionO k
+data IKeyDimension r t where
+    IKeyDimensionM :: Ord t => [t] -> IKeyDimension M t
+    IKeyDimensionO :: Ord t => t  -> IKeyDimension O t
 
-instance Show k => Show (IKeyDimension t k) where
-    show (IKeyDimensionM ks) = show ks
-    show (IKeyDimensionO k)  = show k
+instance Show t => Show (IKeyDimension r t) where
+    show (IKeyDimensionM ts) = show ts
+    show (IKeyDimensionO t)  = show t
 
-data IndexDimension t k where
-    IndexDimensionM :: Data.Map.Map k Data.IntSet.IntSet
-                    -> IndexDimension IndexDimensionM k
+data IndexDimension r t where
+    IndexDimensionM :: Ord t
+                    => Data.Map.Map t Data.IntSet.IntSet
+                    -> IndexDimension M t
     
-    IndexDimensionO :: Data.Map.Map k Int
-                    -> Maybe k
-                    -> IndexDimension IndexDimensionO k
+    IndexDimensionO :: Ord t
+                    => Data.Map.Map t Int
+                    -> IndexDimension O t
 
-instance Show k => Show (IndexDimension t k) where
+instance Show t => Show (IndexDimension r t) where
     show (IndexDimensionM m) = show $ map (\(k, vs) -> (k, Data.IntSet.toList vs)) $ Data.Map.toList m
-    show (IndexDimensionO m _) = show $ Data.Map.toList m
+    show (IndexDimensionO m) = show $ Data.Map.toList m
 
-class ZipDimensions si sk where
-    zipDimensions :: (forall a ti tk . Ord a
-                                    => IndexDimension ti a
-                                    -> IKeyDimension tk a
-                                    -> Maybe (IndexDimension ti a)
-                     )
-                  -> Index si
-                  -> IKey sk
-                  -> Maybe (Index si)
+class GetDimension n a where
+    getDimension :: n -> a -> RawDimensionType n a
 
-instance Ord a => ZipDimensions (ti, a) (tk, a) where
-    zipDimensions combine (I1 id) (K1 kd) = I1 <$> combine id kd
+instance GetDimension Z (Index O t) where
+    getDimension _ (I1 ixd) = ixd
 
-instance (Ord a, ZipDimensions si sk) => ZipDimensions ((ti, a) :. si) ((tk, a) :. sk) where
-    zipDimensions combine (IN id is) (KN kd ks) = IN <$> combine id kd <*> zipDimensions combine is ks
+instance GetDimension Z (Index M t) where
+    getDimension _ (I1 ixd) = ixd
 
-class EmptyIndex si where
-    emptyIndex :: Index si
+instance GetDimension Z (Index (r :. rt) (t :. tt)) where
+    getDimension _ (IN ixd _) = ixd
 
-instance EmptyIndex (IndexDimensionO, a) where
-    emptyIndex = I1 (IndexDimensionO Data.Map.empty Nothing)
+instance GetDimension n (Index rt tt) => GetDimension (S n) (Index (r :. rt) (t :. tt)) where
+    getDimension (S n) (IN _ ixt) = getDimension n ixt
 
-instance EmptyIndex (IndexDimensionM, a) where
-    emptyIndex = I1 (IndexDimensionM Data.Map.empty)
+class Empty a where
+    empty :: a
 
-instance EmptyIndex s => EmptyIndex ((IndexDimensionO, a) :. s) where
-    emptyIndex = IN (IndexDimensionO Data.Map.empty Nothing) emptyIndex
+instance Ord t => Empty (Index O t) where
+    empty = I1 (IndexDimensionO Data.Map.empty)
 
-instance EmptyIndex s => EmptyIndex ((IndexDimensionM, a) :. s) where
-    emptyIndex = IN (IndexDimensionM Data.Map.empty) emptyIndex
+instance Ord t => Empty (Index M t) where
+    empty = I1 (IndexDimensionM Data.Map.empty)
+
+instance (Ord t, Empty (Index rt tt)) => Empty (Index (O :. rt) (t :. tt)) where
+    empty = IN (IndexDimensionO Data.Map.empty) empty
+
+instance (Ord t, Empty (Index rt tt)) => Empty (Index (M :. rt) (t :. tt)) where
+    empty = IN (IndexDimensionM Data.Map.empty) empty
 
 -- | SELECTION
 
-data Condition = Condition Bool Bool Bool
+class IsSelection sel where
+    resolve :: sel krs irs ts -> Store krs irs ts v -> Data.IntSet.IntSet
+    
+    lookup :: sel krs irs ts -> Store krs irs ts v -> [(RawKeyType krs ts, v)]
+    
+    update :: (v -> Maybe (v, Maybe (Key krs ts)))
+           -> sel krs irs ts
+           -> Store krs irs ts v
+           -> Maybe (Store krs irs ts v)
 
-data SelectionDimension n spec where
-    SelectionDimension :: (Ord (SelectionDimensionType (IndexSpec spec) n), MapIndexDimension (IndexSpec spec) n)
-                       => n
-                       -> Condition
-                       -> SelectionDimensionType (IndexSpec spec) n
-                       -> SelectionDimension n spec
+    updateValues :: (v -> Maybe v)
+                 -> sel krs irs ts
+                 -> Store krs irs ts v
+                 -> Store krs irs ts v
 
-class MapIndexDimension si n where
-    mapIndexDimension :: forall b . 
-                       ( forall ti a . Ord (SelectionDimensionType si n)
-                                    => IndexDimension ti (SelectionDimensionType si n)
-                                    -> b
-                       )
-                      -> n
-                      -> Index si
-                      -> b
-
-instance Ord a => MapIndexDimension (t, a) Z where
-    mapIndexDimension mapper _ (I1 d) = mapper d
-
-instance Ord a => MapIndexDimension ((t, a) :. s) Z where
-    mapIndexDimension mapper _ (IN d _) = mapper d
-
-instance (Ord a, MapIndexDimension s n) => MapIndexDimension ((t, a) :. s) (S n) where
-    mapIndexDimension mapper (S n) (IN _ s) = mapIndexDimension mapper n s
-
+    delete :: sel krs irs ts
+           -> Store krs irs ts v
+           -> Store krs irs ts v
 
 data h :. t = h :. t
 infixr 3 :.
-
--- | TEST
-
-{-
-
-
-type TestKeyType = Key ((KeyDimensionO, Int) :. (KeyDimensionM, String))
-type TestIndexType = Index ((IndexDimensionM, Int) :. (IndexDimensionO, String))
-
-testKey :: TestKeyType
-testKey = KN (KeyDimensionO 1) $ K1 (KeyDimensionM ["Test1", "Test2"])
-
-testRawKey :: RawKeyType TestKeyType
-testRawKey = 5 :. ["aa", "bb"]
-
-testIndexEmpty :: TestIndexType Double
-testIndexEmpty = emptyIndex
-
--}
-
 
