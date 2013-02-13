@@ -48,15 +48,14 @@ test-suite data-store-tests
     , Data.Store    
   
   build-depends:
-      base       >= 4.5
-    , vector     >= 0.9
+      base       >= 4.6
+    , vector     >= 0.10
     , containers >= 0.5
     , tagged     >= 0.4
-    , mtl        >= 2.1
 
-    , test-framework             >= 0.6
-    , test-framework-quickcheck2 >= 0.2
-    , QuickCheck                 >= 2.5 && < 2.6
+    , test-framework             >= 0.8
+    , test-framework-quickcheck2 >= 0.3
+    , QuickCheck                 >= 2.4 && < 2.6
 
 benchmark data-store-benchmark-1D
   type:           exitcode-stdio-1.0

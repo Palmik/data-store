@@ -68,7 +68,7 @@ zipDelete val key index = Just $
       (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ F.foldr (\k acc -> goM k val acc) m ks
     where
       goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Data.Map.Map k Int
-      goO k _ = Data.Map.delete k
+      goO k v = Data.Map.update (\i -> if i == v then Nothing else Just i) k
       {-# INLINE goO #-}
 
       goM :: Ord k => k -> Int -> Data.Map.Map k Data.IntSet.IntSet -> Data.Map.Map k Data.IntSet.IntSet

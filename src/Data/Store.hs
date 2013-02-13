@@ -98,6 +98,7 @@ module Data.Store
 , lookup
 
   -- * Selection
+, Selection
 , (.<)
 , (.<=)
 , (.>)
