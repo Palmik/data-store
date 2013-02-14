@@ -95,6 +95,10 @@ module Data.Store
 , map
 
   -- * Folding
+, foldr
+, foldrWithKey
+, foldrWithRawKey
+, foldrWithKeys
 
   -- * Querying
 , size
@@ -152,7 +156,7 @@ module Data.Store
 ) where
 
 --------------------------------------------------------------------------------
-import           Prelude hiding (lookup, map)
+import           Prelude hiding (lookup, map, foldr)
 --------------------------------------------------------------------------------
 import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
@@ -220,6 +224,8 @@ infixr 3 .:
 {-# INLINE (.:.) #-}
 infixr 3 .:.
 
+-- CREATING
+
 -- | The expression @'Data.Store.empty'@ is empty store.
 empty :: I.Empty (I.Index irs ts) => I.Store krs irs ts v
 empty = I.Store
@@ -235,6 +241,8 @@ singleton :: I.Empty (I.Index irs ts)
           => I.Key krs ts -> v -> I.Store krs irs ts v
 singleton k v = snd . fromJust $ insert k v empty
 {-# INLINE singleton #-}
+
+-- INSERTING
 
 -- | The expression (@'Data.Store.insert' k v old@) is either
 -- @Nothing@ if inserting the @(k, v)@ key-value pair would cause
@@ -288,6 +296,8 @@ insert k v (I.Store values index nid) =
           {-# INLINE nextKey' #-}
       {-# INLINE nextKey #-}
 
+-- TRAVERSING
+
 -- | The expression @('Data.Store.map' tr old@) is store where every value of
 -- @old@ was transformed using the function @tr@.
 map :: (v1 -> v2) -> I.Store krs irs ts v1 -> I.Store krs irs ts v2
@@ -296,11 +306,15 @@ map tr store@(I.Store vs _ _) = store
     }
 {-# INLINE map #-}
 
+-- QUERYING
+
 -- | The expression (@'Data.Store.size' store@) is the number of elements
 -- in @store@. 
 size :: I.Store krs irs ts v -> Int
 size (I.Store vs _ _) = Data.IntMap.size vs
 {-# INLINE size #-}
+
+-- UPDATING
 
 -- | The expression (@'Data.Store.updateWithKey' tr sel s@) is equivalent
 -- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
@@ -345,6 +359,48 @@ updateValues :: IsSelection sel
              -> I.Store krs irs ts v
 updateValues tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
 {-# INLINE updateValues #-}             
+
+-- FOLDING
+
+-- | The expression (@'Data.Store.foldrWithKeys' f z s@) folds the store
+-- using the given right-associative binary operator.
+foldrWithKeys :: (I.RawKey krs ts -> I.Key krs ts -> v -> b -> b)
+              -> b
+              -> I.Store krs irs ts v
+              -> b
+foldrWithKeys accum start (I.Store vs _ _) =
+    Data.IntMap.foldr (\(ik, k, v) b -> accum (I.keyInternalToRaw ik) k v b) start vs
+{-# INLINE foldrWithKeys #-}
+
+-- | The expression (@'Data.Store.foldrWithKey' f z s@) folds the store
+-- using the given right-associative binary operator.
+foldrWithKey :: (I.Key krs ts -> v -> b -> b)
+             -> b
+             -> I.Store krs irs ts v
+             -> b
+foldrWithKey accum start (I.Store vs _ _) =
+    Data.IntMap.foldr (\(_, k, v) b -> accum k v b) start vs
+{-# INLINE foldrWithKey #-}
+
+-- | The expression (@'Data.Store.foldrWithRawKey' f z s@) folds the store
+-- using the given right-associative binary operator.
+foldrWithRawKey :: (I.RawKey krs ts -> v -> b -> b)
+                -> b
+                -> I.Store krs irs ts v
+                -> b
+foldrWithRawKey accum start (I.Store vs _ _) =
+    Data.IntMap.foldr (\(ik, _, v) b -> accum (I.keyInternalToRaw ik) v b) start vs
+{-# INLINE foldrWithRawKey #-}
+
+-- | The expression (@'Data.Store.foldr' f z s@) folds the store
+-- using the given right-associative binary operator.
+foldr :: (v -> b -> b)
+      -> b
+      -> I.Store krs irs ts v
+      -> b
+foldr accum start (I.Store vs _ _) =
+    Data.IntMap.foldr (\(_, _, v) b -> accum v b) start vs
+{-# INLINE foldr #-}
 
 -- INSTANCES
 
