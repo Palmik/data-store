@@ -37,6 +37,10 @@ moduleName = "Data.Store.Selection"
 
 -- INTERFACE
 
+infix  4  .==, ./=, .<, .<=, .>=, .>
+infixr 3  .&&
+infixr 2  .||
+
 -- | The expression (@sDim .< c@) is a selection that includes value
 -- @x@ if and only if it is indexed in the @sDim@ dimension with a key @k@
 -- such that @k < c@.
@@ -93,11 +97,8 @@ instance IsSelection Selection where
     lookup sel s = genericLookup (resolve sel s) s
     {-# INLINE lookup #-}    
 
-    update tr sel s = genericUpdate tr (resolve sel s) s
-    {-# INLINE update #-}    
-
-    updateValues tr sel s = genericUpdateValues tr (resolve sel s) s
-    {-# INLINE updateValues #-}    
+    updateWithKeys tr sel s = genericUpdateWithKeys tr (resolve sel s) s
+    {-# INLINE updateWithKeys #-}    
 
     delete sel s = genericDelete (resolve sel s) s
     {-# INLINE delete #-}
@@ -109,11 +110,8 @@ instance IsSelection (SelectionDimension n) where
     lookup sel s = genericLookup (resolve sel s) s
     {-# INLINE lookup #-}    
     
-    update tr sel s = genericUpdate tr (resolve sel s) s
-    {-# INLINE update #-}    
-    
-    updateValues tr sel s = genericUpdateValues tr (resolve sel s) s
-    {-# INLINE updateValues #-}    
+    updateWithKeys tr sel s = genericUpdateWithKeys tr (resolve sel s) s
+    {-# INLINE updateWithKeys #-}    
     
     delete sel s = genericDelete (resolve sel s) s
     {-# INLINE delete #-}
@@ -154,7 +152,7 @@ resolveSD (SelectionDimension n (Condition lt eq gt) v) (I.Store _ ix _) =
       trMaybeM _ = Data.IntSet.empty
       {-# INLINE trMaybeM #-}
 
-genericLookup :: Data.IntSet.IntSet -> I.Store krs irs ts v -> [(I.RawKeyType krs ts, v)]
+genericLookup :: Data.IntSet.IntSet -> I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
 genericLookup ids (I.Store vs _ _) =
     Data.IntSet.foldr (\i acc -> case Data.IntMap.lookup i vs of
                                    Just (ik, _, v) -> (I.keyInternalToRaw ik, v) : acc
@@ -162,16 +160,16 @@ genericLookup ids (I.Store vs _ _) =
                       ) [] ids
 {-# INLINE genericLookup #-}
 
-genericUpdate :: (v -> Maybe (v, Maybe (I.Key krs ts)))
-              -> Data.IntSet.IntSet
-              -> I.Store krs irs ts v
-              -> Maybe (I.Store krs irs ts v)
-genericUpdate tr ids old = Data.IntSet.Extra.foldrM accum old ids
+genericUpdateWithKeys :: (I.RawKey krs ts -> I.Key krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+                      -> Data.IntSet.IntSet
+                      -> I.Store krs irs ts v
+                      -> Maybe (I.Store krs irs ts v)
+genericUpdateWithKeys tr ids old = Data.IntSet.Extra.foldrM accum old ids
     where
       accum i store@(I.Store vs ix nid) =
           case Data.IntMap.lookup i vs of
             Just (ik, k, v) ->
-                case tr v of
+                case tr (I.keyInternalToRaw ik) k v of
                   -- Update the value & key.
                   Just (nv, Just nk) -> (\nix -> I.Store
                     { I.storeV = Data.IntMap.insert i (ik, k, nv) vs
@@ -203,12 +201,12 @@ genericUpdate tr ids old = Data.IntSet.Extra.foldrM accum old ids
       mkik _ _ = error $ moduleName <> ".genericUpdate.mkik: The impossible happened."
       {-# INLINEABLE mkik #-}
 
-genericUpdateValues :: (v -> Maybe v) -> Data.IntSet.IntSet -> I.Store krs irs ts v -> I.Store krs irs ts v
-genericUpdateValues tr sel s = fromJust $ genericUpdate (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
-{-# INLINE genericUpdateValues #-}
+--genericUpdateValues :: (v -> Maybe v) -> Data.IntSet.IntSet -> I.Store krs irs ts v -> I.Store krs irs ts v
+--genericUpdateValues tr sel s = fromJust $ genericUpdate (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
+--{-# INLINE genericUpdateValues #-}
 
 genericDelete :: Data.IntSet.IntSet -> I.Store krs irs ts v -> I.Store krs irs ts v 
-genericDelete sel s = fromJust $ genericUpdate (const Nothing) sel s
+genericDelete sel s = fromJust $ genericUpdateWithKeys (\_ _ _ -> Nothing) sel s
 {-# INLINE genericDelete #-}
 
 -- | TYPE
@@ -232,33 +230,26 @@ class IsSelection sel where
    
     -- | The expression (@'Data.Store.Selection.lookup' sel store@) is
     -- list of (raw-key)-value pairs that match the selection.
-    lookup :: sel krs irs ts -> I.Store krs irs ts v -> [(I.RawKeyType krs ts, v)]
-    
-    -- | The expression (@'Data.Store.Selection.update' tr sel old@) is
-    -- (@Just new@) store that updates all values @x@ of @old@ that match the
-    -- selection using the function @tr@ or @Nothing@ if the update would
-    -- cause collisions.
+    lookup :: sel krs irs ts -> I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
+   
+    -- | The expression (@'Data.Store.Selection.updateWithKeys' tr sel old@) is
+    -- either a) (@Just new@), where @new@ is store with all values @x@ of @old@ that
+    -- match the selection updated using the function @tr@; 
+    -- or b) @Nothing@ if the update would cause collisions.
     --
-    -- The update process follows these rules:
+    -- Let @(rk, k, v)@ be any on the triples of raw key, key and value
+    -- that match the selection, then the update process follows these rules:
     --
-    -- * If (@tr x@) is Nothing, @x@ is removed.
+    -- * If (@tr rk k x@) is Nothing, @x@ is deleted.
     --
-    -- * If (@tr x@) is (@Just (x', Nothing)@) the value @x@ is replaced by @x'@.
+    -- * If (@tr rk k x@) is (@Just (x', Nothing)@) the value @x@ is replaced by @x'@.
     --
-    -- * If (@tr x@) is (@Just (x', Just k')@) the value @x@ is replaced by
-    -- @x'@ and is reindexed under the new key @k'@.
-    update :: (v -> Maybe (v, Maybe (I.Key krs ts)))
-           -> sel krs irs ts
-           -> I.Store krs irs ts v
-           -> Maybe (I.Store krs irs ts v)
-
-    -- | The expression (@'Data.Store.Selection.updateValues' tr sel old@) is
-    -- equivalent to
-    -- (@'Data.Maybe.fromJust' $ 'Data.Store.Selection.update' ('Data.Maybe.maybe' Nothing (\v -> Just (v, Nothing)) . tr) sel old@). 
-    updateValues :: (v -> Maybe v)
-                 -> sel krs irs ts
-                 -> I.Store krs irs ts v
-                 -> I.Store krs irs ts v
+    -- * If (@tr rk k x@) is (@Just (x', Just k')@) the value @x@ is replaced by
+    -- @x'@ and the value is reindexed under the new key @k'@.
+    updateWithKeys :: (I.RawKey krs ts -> I.Key krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+                   -> sel krs irs ts
+                   -> I.Store krs irs ts v
+                   -> Maybe (I.Store krs irs ts v)
 
     -- | The expression (@'Data.Store.Selection.delete' sel old@) is
     -- equivalent to

@@ -21,7 +21,7 @@ import qualified Data.Store.Internal.Type as I
 moduleName :: String
 moduleName = "Data.Store.Internal.Function"
 
-keyInternalToRaw :: I.IKey krs ts -> I.RawKeyType krs ts
+keyInternalToRaw :: I.IKey krs ts -> I.RawKey krs ts
 keyInternalToRaw (I.K1 (I.IKeyDimensionO x)) = x
 keyInternalToRaw (I.K1 (I.IKeyDimensionM x)) = x
 keyInternalToRaw (I.KN (I.IKeyDimensionO x) s) = x I.:. keyInternalToRaw s

@@ -25,10 +25,55 @@ import qualified Data.Foldable as F
 moduleName :: String
 moduleName = "Data.Store.Internal.Type"
 
+-- | This is type-level tag for tagging dimensions of key and the index of a store.
+-- You can think of @'Data.Store.Internal.Type.M'@ as an abbreviation for
+-- "many".
+--
+-- * When @'Data.Store.Internal.Type.Key'@ dimension is tagged with
+-- @'Data.Store.Internal.Type.M'@, it means that a single value can be
+-- indexed under multiple <something>. Example: @Content@ has
+-- many tags.
+--
+-- * When @'Data.Store.Internal.Type.Index'@ dimension is tagged with
+-- @'Data.Store.Internal.Type.M'@, it means that a multiple values can be
+-- indexed under a single <something>. Example: One rating value can be shared by
+-- many @Content@s.
+--
+-- See also:
+--
+-- * 'Data.Store.Internal.Type.O'
+--
+-- * 'Data.Store.Internal.Type.Key'
+--
+-- * 'Data.Store.Internal.Type.Store'
 data M 
+
+-- | This is type-level tag for tagging dimensions of key and the index of a store.
+-- You can think of @'Data.Store.Internal.Type.O'@ as an abbreviation for
+-- "one".
+--
+-- * When @'Data.Store.Internal.Type.Key'@ dimension is tagged with
+-- @'Data.Store.Internal.Type.O'@, it means that a single value is indexed
+-- under exactly one <something>. Example: @Content@ has exactly one title.
+--
+-- * When @'Data.Store.Internal.Type.Index'@ dimension is tagged with
+-- @'Data.Store.Internal.Type.O'@, it means that at most one value can be
+-- indexed under one <something>. Example: One @ContentID@ value corresponds
+-- to at most one @Content@.
+--
+-- See also:
+--
+-- * 'Data.Store.Internal.Type.M'
+--
+-- * 'Data.Store.Internal.Type.Key'
+--
+-- * 'Data.Store.Internal.Type.Store'
 data O
 
+-- | Type-level zero.
 data Z = Z
+
+-- | Type-level successor of a number.
 data S n = S n
 
 type N0 = Z
@@ -81,15 +126,72 @@ type instance DimensionType (S n) (r :. rt) (t :. tt) = DimensionType n rt tt
 type family   RawDimensionType n a :: *
 type instance RawDimensionType n (Index irs ts) = IndexDimension (DimensionRelation n irs ts) (DimensionType n irs ts)
 
-type family   RawKeyType kspec tspec :: *
-type instance RawKeyType (O :. rt) (t :. tt) =  t  :. RawKeyType rt tt
-type instance RawKeyType (M :. rt) (t :. tt) = [t] :. RawKeyType rt tt
-type instance RawKeyType O t =  t
-type instance RawKeyType M t = [t]
+type family   RawKey kspec tspec :: *
+type instance RawKey (O :. rt) (t :. tt) =  t  :. RawKey rt tt
+type instance RawKey (M :. rt) (t :. tt) = [t] :. RawKey rt tt
+type instance RawKey O t =  t
+type instance RawKey M t = [t]
 
 class (Ord k, Enum k, Bounded k) => Auto k where
 instance (Ord k, Enum k, Bounded k) => Auto k where
 
+-- | The store data type has four type arguments that define what and how
+-- things are stored.
+--
+-- The @krs@ (key relation specification) and @irs@ (index relation
+-- specification) define the relations between the dimensions of the key
+-- and the values. To that end, we use @'Data.Store.Internal.Type.O'@ and
+-- @'Data.Store.Internal.Type.M'@ type-level tags and
+-- @'Data.Store.Type.Internal.(:.)'@ data type to create tuple of these
+-- tags (to describe all the dimensions).
+--
+-- The possible relations are as follows:
+--
+-- * One-one: Every value has exactly one <something>. One <something>
+-- corresponds to at most one value.
+--
+-- * One-many: Every value has exactly one <something>. One <something> can
+-- correspond to many values.
+--
+-- * Many-one: Every value can have multiple <something>. One <something>
+-- corresponds to at most one value.
+--
+-- * Many-many: Every value can have multiple <something>. One <something>
+-- can correspond to many values.
+--
+-- The @ts@ (type specification) defines the type of the key's dimensions
+-- and finally @v@ (value) is the type of the value.
+--
+-- In our example with @Content@, we have five dimensions: ID, name, body,
+-- tags and rating. We would like our store to have these properties:
+--
+-- * @Content@ has one ID, only one content can have a given ID.
+--
+-- * @Content@ has one name, only one content can have a given name.
+--
+-- * @Content@ has one body, many contents can have the same content.
+--
+-- * @Content@ has many tags, many contents can have the same tag.
+--
+-- * @Content@ has one rating, many contents can have the same rating.
+--
+-- So in our case, we define:
+--
+-- > type ContentStoreKRS = O         :. O      :. O      :. M      :. O
+-- > type ContentStoreIRS = O         :. O      :. M      :. M      :. M
+-- > type ContentStoreTS  = ContentID :. String :. String :. String :. Double
+-- > type ContentStore = Store ContentStoreKRS ContentStoreIRS ContentStoreTS Content
+--
+-- See also:
+--
+-- * 'Data.Store.Internal.Type.O'
+--
+-- * 'Data.Store.Internal.Type.M'
+--
+-- * 'Data.Store.Internal.Type.(:.)'
+--
+-- * 'Data.Store.Internal.Type.Key'
+--
 data Store krs irs ts v = Store
     { storeV :: Data.IntMap.IntMap (IKey krs ts, Key krs ts, v)
     , storeI :: Index irs ts
@@ -206,6 +308,22 @@ instance (Ord t, Empty (Index rt tt)) => Empty (Index (O :. rt) (t :. tt)) where
 instance (Ord t, Empty (Index rt tt)) => Empty (Index (M :. rt) (t :. tt)) where
     empty = IN (IndexDimensionM Data.Map.empty) empty
 
+-- | Data type for creating tuples, it is used to:
+--
+-- * Create type-level tuples of relation tags for relation specification of
+-- the key and the index of the store.
+--
+-- > M :. O :. O :. M
+--
+-- * Create type-level tuples of types for type specification of the key
+-- and index of the store.
+--
+-- > Int :. Double :. String :. String
+--
+-- * Create value-level tuples to return raw key (with resolved
+-- auto-increment dimensions).
+--
+-- > [1, 2, 3] :. 3.5 :. "Foo" :. ["Bar1", "Bar2"]
 data h :. t = h :. t
 infixr 3 :.
 

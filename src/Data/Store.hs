@@ -39,11 +39,6 @@
 -- > 
 -- > type ContentID = Int
 -- > 
--- > -- Content has one ID, only one content can have a given ID.
--- > -- Content has one name, only one content can have a given name.
--- > -- Content has one body, many contents can have the same content.
--- > -- Content has many tags, many contents can have the same tag.
--- > -- Content has one rating, many contents can have the same rating.
 -- > 
 -- > -- BOILERPLATE
 -- > 
@@ -70,12 +65,10 @@
 -- > 
 -- > -- BOILERPLATE
 -- > 
--- > makeKey :: Content -> ContentStoreKey
--- > makeKey (Content cn cb ct cr) =
--- >    S.dimA .: S.dimO cn .: S.dimO cb .: S.dimM ct .:. S.dimO cr
--- > 
 module Data.Store
-( I.Store
+(
+  -- * Types
+  I.Store
 , I.Key
 , I.KeyDimension
 , I.M
@@ -87,17 +80,27 @@ module Data.Store
 , empty
 , singleton
 
-  -- * Updating
+  -- * Inserting
 , insert
+
+  -- * Updating
 , update
 , updateValues
+, updateWithKey
+, updateWithRawKey
+, updateWithKeys
 , delete
+
+  -- * Traversing
+, map
+
+  -- * Folding
 
   -- * Querying
 , size
 , lookup
 
-  -- * Selection
+  -- ** Selection
 , Selection
 , (.<)
 , (.<=)
@@ -109,6 +112,8 @@ module Data.Store
 , (.||)
 
   -- * Constructing Key
+  -- 
+  -- $constructing-key
 , dimA
 , dimO
 , dimM
@@ -141,6 +146,7 @@ module Data.Store
 , I.n9
 , I.n10
 
+  -- * Debugging
 , showIndex
 , printIndex
 ) where
@@ -166,6 +172,27 @@ moduleName = "Data.Store"
 {-# INLINE moduleName #-}
 
 -- INTERFACE
+
+-- $constructing-key
+-- These functions are used to create a key for your store. Function for
+-- creating a key for our @Content@ data type could look like this:
+--
+-- > makeContentKey :: ContentID -> String -> String -> [String] -> Double -> ContentStoreKey
+-- > makeContentKey cid cn cb cts cr =
+-- >    S.dimO cid .: S.dimO cn .: S.dimO cb .: S.dimM cts .:. S.dimO cr
+--
+-- Notice that this function allows you to specify all the dimensions of
+-- the key, including the ID dimension. Usually we do not need this level
+-- of flexibility a would use function like this instead:
+--
+-- > contentKey :: Content -> ContentStoreKey
+-- > contentKey (Content cn cb cts cr) =
+-- >    S.dimA .: S.dimO cn .: S.dimO cb .: S.dimM cts .:. S.dimO cr
+--
+-- This function creates a key for given value of type @Content@, the ID
+-- dimension is "automatic", which means that the assigned ID will be @succ
+-- max@ where @max@ is the value of the maximum ID in the store when
+-- inserting.
 
 dimA :: I.Auto t => I.KeyDimension I.O t
 dimA = I.KeyDimensionA
@@ -221,11 +248,11 @@ singleton k v = snd . fromJust $ insert k v empty
 --
 -- See also:
 --
--- * @'Data.Store.Internal.Type.RawKey'@
+-- * 'Data.Store.Internal.Type.RawKey'
 insert :: I.Key krs ts
        -> v
        -> I.Store krs irs ts v
-       -> Maybe (I.RawKeyType krs ts, I.Store krs irs ts v)
+       -> Maybe (I.RawKey krs ts, I.Store krs irs ts v)
 insert k v (I.Store values index nid) =
     (\res -> (I.keyInternalToRaw internal, mk res)) <$> I.indexInsertID internal nid index
     where
@@ -274,6 +301,50 @@ map tr store@(I.Store vs _ _) = store
 size :: I.Store krs irs ts v -> Int
 size (I.Store vs _ _) = Data.IntMap.size vs
 {-# INLINE size #-}
+
+-- | The expression (@'Data.Store.updateWithKey' tr sel s@) is equivalent
+-- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
+-- (@tr' = (\_ k v -> tr k v) = const tr@).
+updateWithKey :: IsSelection sel
+              => (I.Key krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+              -> sel krs irs ts
+              -> I.Store krs irs ts v
+              -> Maybe (I.Store krs irs ts v)
+updateWithKey tr = updateWithKeys (\_ -> tr)
+{-# INLINE updateWithKey #-}
+
+-- | The expression (@'Data.Store.updateWithRawKey' tr sel s@) is equivalent
+-- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
+-- (@tr' = (\rk _ v -> tr rk v)@).
+updateWithRawKey :: IsSelection sel
+                 => (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+                 -> sel krs irs ts
+                 -> I.Store krs irs ts v
+                 -> Maybe (I.Store krs irs ts v)
+updateWithRawKey tr = updateWithKeys (\rk _ -> tr rk)
+{-# INLINE updateWithRawKey #-}
+
+-- | The expression (@'Data.Store.update' tr sel s@) is equivalent
+-- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
+-- (@tr' = (\_ _ v -> tr v) = const . const tr@).
+update :: IsSelection sel
+       => (v -> Maybe (v, Maybe (I.Key krs ts)))
+       -> sel krs irs ts
+       -> I.Store krs irs ts v
+       -> Maybe (I.Store krs irs ts v)
+update tr = updateWithKeys (\_ _ -> tr)
+{-# INLINE update #-}
+
+-- | The expression (@'Data.Store.updateValues' tr sel s@) is equivalent
+-- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
+-- (@tr' = (\_ _ -> maybe Nothing (\v -> Just (v, Nothing)) . tr)@).
+updateValues :: IsSelection sel
+             => (v -> Maybe v)
+             -> sel krs irs ts
+             -> I.Store krs irs ts v
+             -> I.Store krs irs ts v
+updateValues tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
+{-# INLINE updateValues #-}             
 
 -- INSTANCES
 
