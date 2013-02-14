@@ -100,6 +100,11 @@ module Data.Store
 , foldrWithRawKey
 , foldrWithKeys
 
+, foldl
+, foldlWithKey
+, foldlWithRawKey
+, foldlWithKeys
+
   -- * Querying
 , size
 , lookup
@@ -156,7 +161,7 @@ module Data.Store
 ) where
 
 --------------------------------------------------------------------------------
-import           Prelude hiding (lookup, map, foldr)
+import           Prelude hiding (lookup, map, foldr, foldl)
 --------------------------------------------------------------------------------
 import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
@@ -363,7 +368,7 @@ updateValues tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing
 -- FOLDING
 
 -- | The expression (@'Data.Store.foldrWithKeys' f z s@) folds the store
--- using the given right-associative binary operator.
+-- using the given right-associative operator.
 foldrWithKeys :: (I.RawKey krs ts -> I.Key krs ts -> v -> b -> b)
               -> b
               -> I.Store krs irs ts v
@@ -373,7 +378,7 @@ foldrWithKeys accum start (I.Store vs _ _) =
 {-# INLINE foldrWithKeys #-}
 
 -- | The expression (@'Data.Store.foldrWithKey' f z s@) folds the store
--- using the given right-associative binary operator.
+-- using the given right-associative operator.
 foldrWithKey :: (I.Key krs ts -> v -> b -> b)
              -> b
              -> I.Store krs irs ts v
@@ -383,7 +388,7 @@ foldrWithKey accum start (I.Store vs _ _) =
 {-# INLINE foldrWithKey #-}
 
 -- | The expression (@'Data.Store.foldrWithRawKey' f z s@) folds the store
--- using the given right-associative binary operator.
+-- using the given right-associative operator.
 foldrWithRawKey :: (I.RawKey krs ts -> v -> b -> b)
                 -> b
                 -> I.Store krs irs ts v
@@ -401,6 +406,47 @@ foldr :: (v -> b -> b)
 foldr accum start (I.Store vs _ _) =
     Data.IntMap.foldr (\(_, _, v) b -> accum v b) start vs
 {-# INLINE foldr #-}
+
+-- | The expression (@'Data.Store.foldlWithKeys' f z s@) folds the store
+-- using the given left-associative operator.
+foldlWithKeys :: (b -> I.RawKey krs ts -> I.Key krs ts -> v -> b)
+              -> b
+              -> I.Store krs irs ts v
+              -> b
+foldlWithKeys accum start (I.Store vs _ _) =
+    Data.IntMap.foldl (\b (ik, k, v) -> accum b (I.keyInternalToRaw ik) k v) start vs
+{-# INLINE foldlWithKeys #-}
+
+-- | The expression (@'Data.Store.foldlWithKey' f z s@) folds the store
+-- using the given left-associative operator.
+foldlWithKey :: (b -> I.Key krs ts -> v -> b)
+             -> b
+             -> I.Store krs irs ts v
+             -> b
+foldlWithKey accum start (I.Store vs _ _) =
+    Data.IntMap.foldl (\b (_, k, v) -> accum b k v) start vs
+{-# INLINE foldlWithKey #-}
+
+-- | The expression (@'Data.Store.foldlWithRawKey' f z s@) folds the store
+-- using the given left-associative operator.
+foldlWithRawKey :: (b -> I.RawKey krs ts -> v -> b)
+                -> b
+                -> I.Store krs irs ts v
+                -> b
+foldlWithRawKey accum start (I.Store vs _ _) =
+    Data.IntMap.foldl (\b (ik, _, v) -> accum b (I.keyInternalToRaw ik) v) start vs
+{-# INLINE foldlWithRawKey #-}
+
+-- | The expression (@'Data.Store.foldl' f z s@) folds the store
+-- using the given left-associative binary operator.
+foldl :: (b -> v -> b)
+      -> b
+      -> I.Store krs irs ts v
+      -> b
+foldl accum start (I.Store vs _ _) =
+    Data.IntMap.foldl (\b (_, _, v) -> accum b v) start vs
+{-# INLINE foldl #-}
+
 
 -- INSTANCES
 
