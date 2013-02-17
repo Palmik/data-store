@@ -105,6 +105,12 @@ module Data.Store
 , foldlWithRawKey
 , foldlWithKeys
 
+  -- * List
+, toList
+, values
+, keys
+, fromList
+
   -- * Querying
 , size
 , lookup
@@ -169,6 +175,8 @@ import           Data.Maybe
 import           Data.Monoid ((<>))
 import qualified Data.Map    
 import qualified Data.IntMap
+import qualified Data.List
+import qualified Data.Foldable
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type     as I
 import qualified Data.Store.Internal.Function as I
@@ -266,11 +274,11 @@ insert :: I.Key krs ts
        -> v
        -> I.Store krs irs ts v
        -> Maybe (I.RawKey krs ts, I.Store krs irs ts v)
-insert k v (I.Store values index nid) =
+insert k v (I.Store vals index nid) =
     (\res -> (I.keyInternalToRaw internal, mk res)) <$> I.indexInsertID internal nid index
     where
       mk ix = I.Store
-        { I.storeV = Data.IntMap.insert nid (internal, k, v) values
+        { I.storeV = Data.IntMap.insert nid (internal, k, v) vals
         , I.storeI = ix
         , I.storeNID = nid + 1
         }
@@ -447,6 +455,33 @@ foldl accum start (I.Store vs _ _) =
     Data.IntMap.foldl (\b (_, _, v) -> accum b v) start vs
 {-# INLINE foldl #-}
 
+-- LISTS
+
+-- | The expression (@'Data.Store.toList' store@) is a list of triples of
+-- raw key, key and a value that are stored in @store@.
+toList :: I.Store krs irs ts v -> [(I.RawKey krs ts, I.Key krs ts, v)]
+toList (I.Store vs _ _) = Data.List.map (\(ik, k, v) -> (I.keyInternalToRaw ik, k, v)) $ Data.IntMap.elems vs
+{-# INLINE toList #-}
+
+-- | The expression (@'Data.Store.values' store@) is a list of values that
+-- are stored in @store@.
+values :: I.Store krs irs ts v -> [v]
+values (I.Store vs _ _) = Data.List.map (\(_, _, v) -> v) $ Data.IntMap.elems vs
+{-# INLINE values #-}
+
+-- | The expression (@'Data.Store.values' store@) is a list of pairs of raw
+-- key and key that are stored in @store@.
+keys :: I.Store krs irs ts v -> [(I.RawKey krs ts, I.Key krs ts)]
+keys (I.Store vs _ _) = Data.List.map (\(ik, k, _) -> (I.keyInternalToRaw ik, k)) $ Data.IntMap.elems vs
+{-# INLINE keys #-}
+
+-- | The expression (@'Data.Store.fromList' kvs@) is either a) (@Just
+-- store@) where @store@ is a store containing exactly the given key-value
+-- pairs or; b) @Nothing@ if inserting any of the key-value pairs would
+-- cause a collision.
+fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store krs irs ts v)
+fromList = Data.Foldable.foldrM (\(k, v) s -> snd <$> insert k v s) empty 
+{-# INLINE fromList #-}
 
 -- INSTANCES
 
