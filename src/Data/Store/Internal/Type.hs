@@ -126,6 +126,13 @@ type instance DimensionType (S n) (r :. rt) (t :. tt) = DimensionType n rt tt
 type family   RawDimensionType n a :: *
 type instance RawDimensionType n (Index irs ts) = IndexDimension (DimensionRelation n irs ts) (DimensionType n irs ts)
 
+-- | The pupose of the @'Data.Store.Internal.Type.RawKey'@ type family is
+-- to derive a type of a "raw key" that is easier to pattern match against
+-- than @'Data.Store.Internal.Key'@.
+--
+-- Example:
+--
+-- > RawKey (O :. O :. O :. M :. O) (ContentID :. String :. String :. String :. Double) ~ (ContentID :. String :. String :. [String] :. Double)
 type family   RawKey kspec tspec :: *
 type instance RawKey (O :. rt) (t :. tt) =  t  :. RawKey rt tt
 type instance RawKey (M :. rt) (t :. tt) = [t] :. RawKey rt tt
