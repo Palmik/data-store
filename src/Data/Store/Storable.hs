@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Data.Store.Storable
 ( Storable(..)
@@ -6,10 +7,17 @@ module Data.Store.Storable
 , insert
 , update
 , updateWithRawKey
+, fromList
 ) where
 
 --------------------------------------------------------------------------------
+import           Control.Applicative ((<$>))
+--------------------------------------------------------------------------------
+import qualified Data.Foldable
+--------------------------------------------------------------------------------
+import qualified Data.Store.Internal.Type as I 
 import qualified Data.Store as S 
+import qualified Data.Store.Selection as S (IsSelection()) 
 --------------------------------------------------------------------------------
 
 -- | This type-class facilitates the common use case where the key under
@@ -59,3 +67,11 @@ updateWithRawKey :: (Storable v, S.IsSelection sel)
                  -> Maybe (S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
 updateWithRawKey tr = S.updateWithRawKey (\rk vv -> maybe Nothing (\v -> Just (v, Just $! key v)) $ tr rk vv)
 {-# INLINE updateWithRawKey #-}
+
+-- | See @'Data.Store.fromList'@.
+fromList :: (I.Empty (I.Index (StoreIRS v) (StoreTS v)), Storable v)
+         => [v]
+         -> Maybe (I.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
+fromList = Data.Foldable.foldlM (\s v -> snd <$> S.insert (key v) v s) S.empty
+{-# INLINE fromList #-}
+

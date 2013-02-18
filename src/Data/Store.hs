@@ -117,7 +117,6 @@ module Data.Store
 , lookup
 
   -- ** Selection
-, IsSelection
 , Selection
 , (.<)
 , (.<=)
@@ -486,7 +485,7 @@ keys (I.Store vs _ _) = Data.List.map (\(ik, k, _) -> (I.keyInternalToRaw ik, k)
 -- pairs or; b) @Nothing@ if inserting any of the key-value pairs would
 -- cause a collision.
 fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store krs irs ts v)
-fromList = Data.Foldable.foldrM (\(k, v) s -> snd <$> insert k v s) empty 
+fromList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) empty 
 {-# INLINE fromList #-}
 
 -- INSTANCES

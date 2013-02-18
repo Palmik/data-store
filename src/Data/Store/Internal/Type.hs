@@ -9,12 +9,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Store.Internal.Type
 where
 
 --------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
+import           Data.Data (Typeable, Typeable2)
+import qualified Data.Data
 import qualified Data.Map    
 import qualified Data.IntMap
 import qualified Data.IntSet
@@ -31,12 +35,12 @@ moduleName = "Data.Store.Internal.Type"
 --
 -- * When @'Data.Store.Internal.Type.Key'@ dimension is tagged with
 -- @'Data.Store.Internal.Type.M'@, it means that a single value can be
--- indexed under multiple <something>. Example: @Content@ has
+-- indexed under multiple \<something\>. Example: @Content@ has
 -- many tags.
 --
 -- * When @'Data.Store.Internal.Type.Index'@ dimension is tagged with
 -- @'Data.Store.Internal.Type.M'@, it means that a multiple values can be
--- indexed under a single <something>. Example: One rating value can be shared by
+-- indexed under a single \<something\>. Example: One rating value can be shared by
 -- many @Content@s.
 --
 -- See also:
@@ -54,11 +58,11 @@ data M
 --
 -- * When @'Data.Store.Internal.Type.Key'@ dimension is tagged with
 -- @'Data.Store.Internal.Type.O'@, it means that a single value is indexed
--- under exactly one <something>. Example: @Content@ has exactly one title.
+-- under exactly one \<something\>. Example: @Content@ has exactly one title.
 --
 -- * When @'Data.Store.Internal.Type.Index'@ dimension is tagged with
 -- @'Data.Store.Internal.Type.O'@, it means that at most one value can be
--- indexed under one <something>. Example: One @ContentID@ value corresponds
+-- indexed under one \<something\>. Example: One @ContentID@ value corresponds
 -- to at most one @Content@.
 --
 -- See also:
@@ -127,7 +131,7 @@ type family   RawDimensionType n a :: *
 type instance RawDimensionType n (Index irs ts) = IndexDimension (DimensionRelation n irs ts) (DimensionType n irs ts)
 
 -- | The pupose of the @'Data.Store.Internal.Type.RawKey'@ type family is
--- to derive a type of a "raw key" that is easier to pattern match against
+-- to derive a type of a \"raw key\" that is easier to pattern match against
 -- than @'Data.Store.Internal.Key'@.
 --
 -- Example:
@@ -154,16 +158,16 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 --
 -- The possible relations are as follows:
 --
--- * One-one: Every value has exactly one <something>. One <something>
+-- * One-one: Every value has exactly one \<something\>. One \<something\>
 -- corresponds to at most one value.
 --
--- * One-many: Every value has exactly one <something>. One <something> can
+-- * One-many: Every value has exactly one \<something\>. One \<something\> can
 -- correspond to many values.
 --
--- * Many-one: Every value can have multiple <something>. One <something>
+-- * Many-one: Every value can have multiple \<something\>. One \<something\>
 -- corresponds to at most one value.
 --
--- * Many-many: Every value can have multiple <something>. One <something>
+-- * Many-many: Every value can have multiple \<something\>. One \<something\>
 -- can correspond to many values.
 --
 -- The @ts@ (type specification) defines the type of the key's dimensions
@@ -203,7 +207,7 @@ data Store krs irs ts v = Store
     { storeV :: Data.IntMap.IntMap (IKey krs ts, Key krs ts, v)
     , storeI :: Index irs ts
     , storeNID :: Int
-    }
+    } deriving (Typeable)
 
 instance (Show (Key krs ts), Show v) => Show (Store krs irs ts v) where
     show (Store vs _ _) = "[" <> go <> "]"
@@ -214,6 +218,10 @@ instance (Show (Key krs ts), Show v) => Show (Store krs irs ts v) where
 data GenericKey dim rs ts where
     K1 :: dim r t -> GenericKey dim r t
     KN :: dim r t -> GenericKey dim rt tt -> GenericKey dim (r :. rt) (t :. tt)
+
+instance Typeable2 (GenericKey dim) where
+    typeOf2 (K1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "K1") []
+    typeOf2 (KN _ _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "KN") []
 
 type  Key = GenericKey  KeyDimension
 type IKey = GenericKey IKeyDimension
@@ -242,6 +250,10 @@ data Index rs ts where
     I1 :: Ord t => IndexDimension r t -> Index r t
     IN :: Ord t => IndexDimension r t -> Index rt tt -> Index (r :. rt) (t :. tt)
 
+instance Typeable2 Index where
+    typeOf2 (I1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "I1") []
+    typeOf2 (IN _ _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "IN") []
+
 instance Show t => Show (Index O t) where
     show (I1 d) = show d
 
@@ -257,6 +269,8 @@ data KeyDimension r t where
     KeyDimensionO :: Ord t =>  t  -> KeyDimension O t
     KeyDimensionA :: Auto t => KeyDimension O t
 
+deriving instance Typeable2 KeyDimension
+
 instance Show t => Show (KeyDimension r t) where
     show (KeyDimensionM ts) = show ts
     show (KeyDimensionO t)  = show t
@@ -265,6 +279,8 @@ instance Show t => Show (KeyDimension r t) where
 data IKeyDimension r t where
     IKeyDimensionM :: Ord t => [t] -> IKeyDimension M t
     IKeyDimensionO :: Ord t => t  -> IKeyDimension O t
+
+deriving instance Typeable2 IKeyDimension
 
 instance Show t => Show (IKeyDimension r t) where
     show (IKeyDimensionM ts) = show ts
