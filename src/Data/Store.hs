@@ -71,6 +71,7 @@ module Data.Store
   I.Store
 , I.Key
 , I.KeyDimension
+, I.RawKey
 , I.M
 , I.O
 , (I.:.)(..)
@@ -116,6 +117,7 @@ module Data.Store
 , lookup
 
   -- ** Selection
+, IsSelection
 , Selection
 , (.<)
 , (.<=)
@@ -210,6 +212,10 @@ moduleName = "Data.Store"
 -- dimension is "automatic", which means that the assigned ID will be @succ
 -- max@ where @max@ is the value of the maximum ID in the store when
 -- inserting.
+--
+-- See also:
+--
+-- * 'Data.Store.Storable.Storable'
 
 dimA :: I.Auto t => I.KeyDimension I.O t
 dimA = I.KeyDimensionA
@@ -337,7 +343,7 @@ updateWithKey :: IsSelection sel
               -> sel krs irs ts
               -> I.Store krs irs ts v
               -> Maybe (I.Store krs irs ts v)
-updateWithKey tr = updateWithKeys (\_ -> tr)
+updateWithKey tr = updateWithKeys (const tr)
 {-# INLINE updateWithKey #-}
 
 -- | The expression (@'Data.Store.updateWithRawKey' tr sel s@) is equivalent

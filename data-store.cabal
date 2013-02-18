@@ -22,6 +22,7 @@ library
   exposed-modules:
       Data.Store
     , Data.Store.Selection
+    , Data.Store.Storable
   
   other-modules:
       Data.Store.Internal.Type
