@@ -25,14 +25,14 @@ import qualified Data.Store as S
 -- >     type StoreIRS Content = O         :. O      :. M      :. M      :. M
 -- >     type StoreTS  Content = ContentID :. String :. String :. String :. Double
 -- >
--- >     key (Content cn cb cts sr) = 
+-- >     key (Content cn cb cts cr) = 
 -- >         S.dimA .: S.dimO cn .: S.dimO cb .: S.dimM cts .:. S.dimO cr
 class Storable v where
     type StoreKRS t :: *
     type StoreIRS t :: *
     type StoreTS  t :: *
     
-    key :: v -> S.Key krs ts
+    key :: v -> S.Key (StoreKRS v) (StoreTS v)
 
 -- | See @'Data.Store.insert'@.
 insert :: Storable v
