@@ -6,7 +6,7 @@ module Data.Store.Storable
 
 , insert
 , update
-, updateWithRawKey
+, updateWithKey
 , fromList
 ) where
 
@@ -60,13 +60,13 @@ update tr = S.update (maybe Nothing (\v -> Just (v, Just $! key v)) . tr)
 {-# INLINE update #-}
 
 -- | See @'Data.Store.updateWithRawKey'@.
-updateWithRawKey :: (Storable v, S.IsSelection sel)
+updateWithKey :: (Storable v, S.IsSelection sel)
                  => (S.RawKey (StoreKRS v) (StoreTS v) -> v -> Maybe v)
                  -> sel (StoreKRS v) (StoreIRS v) (StoreTS v)
                  -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
                  -> Maybe (S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
-updateWithRawKey tr = S.updateWithRawKey (\rk vv -> maybe Nothing (\v -> Just (v, Just $! key v)) $ tr rk vv)
-{-# INLINE updateWithRawKey #-}
+updateWithKey tr = S.updateWithKey (\rk vv -> maybe Nothing (\v -> Just (v, Just $! key v)) $ tr rk vv)
+{-# INLINE updateWithKey #-}
 
 -- | See @'Data.Store.fromList'@.
 fromList :: (I.Empty (I.Index (StoreIRS v) (StoreTS v)), Storable v)

@@ -28,11 +28,19 @@ keyInternalToRaw (I.KN (I.IKeyDimensionO x) s) = x I.:. keyInternalToRaw s
 keyInternalToRaw (I.KN (I.IKeyDimensionM x) s) = x I.:. keyInternalToRaw s
 {-# INLINE keyInternalToRaw #-}
 
+keyFromInternal :: I.IKey krs ts -> I.Key krs ts
+keyFromInternal (I.K1 (I.IKeyDimensionO x)) = I.K1 (I.KeyDimensionO x)
+keyFromInternal (I.K1 (I.IKeyDimensionM x)) = I.K1 (I.KeyDimensionM x)
+keyFromInternal (I.KN (I.IKeyDimensionO x) s) = I.KN (I.KeyDimensionO x) (keyFromInternal s)
+keyFromInternal (I.KN (I.IKeyDimensionM x) s) = I.KN (I.KeyDimensionM x) (keyFromInternal s)
+{-# INLINE keyFromInternal #-}
+
+
 indexInsertID :: I.IKey krs ts
               -> Int
               -> I.Index irs ts
               -> Maybe (I.Index irs ts)
-indexInsertID ik i ix = zipDimensions (zipInsert i) ik ix 
+indexInsertID ik i = zipDimensions (zipInsert i) ik 
 {-# INLINE indexInsertID #-}
 
 zipInsert :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> Maybe (I.IndexDimension ir t)

@@ -88,8 +88,6 @@ module Data.Store
 , update
 , updateValues
 , updateWithKey
-, updateWithRawKey
-, updateWithKeys
 , delete
 
   -- * Traversing
@@ -98,13 +96,9 @@ module Data.Store
   -- * Folding
 , foldr
 , foldrWithKey
-, foldrWithRawKey
-, foldrWithKeys
 
 , foldl
 , foldlWithKey
-, foldlWithRawKey
-, foldlWithKeys
 
   -- * List
 , toList
@@ -283,7 +277,7 @@ insert k v (I.Store vals index nid) =
     (\res -> (I.keyInternalToRaw internal, mk res)) <$> I.indexInsertID internal nid index
     where
       mk ix = I.Store
-        { I.storeV = Data.IntMap.insert nid (internal, k, v) vals
+        { I.storeV = Data.IntMap.insert nid (internal, v) vals
         , I.storeI = ix
         , I.storeNID = nid + 1
         }
@@ -320,7 +314,7 @@ insert k v (I.Store vals index nid) =
 -- @old@ was transformed using the function @tr@.
 map :: (v1 -> v2) -> I.Store krs irs ts v1 -> I.Store krs irs ts v2
 map tr store@(I.Store vs _ _) = store
-    { I.storeV = Data.IntMap.map (\(ik, k, v) -> (ik, k, tr v)) vs
+    { I.storeV = Data.IntMap.map (\(ik, v) -> (ik, tr v)) vs
     }
 {-# INLINE map #-}
 
@@ -334,42 +328,20 @@ size (I.Store vs _ _) = Data.IntMap.size vs
 
 -- UPDATING
 
--- | The expression (@'Data.Store.updateWithKey' tr sel s@) is equivalent
--- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
--- (@tr' = (\_ k v -> tr k v) = const tr@).
-updateWithKey :: IsSelection sel
-              => (I.Key krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
-              -> sel krs irs ts
-              -> I.Store krs irs ts v
-              -> Maybe (I.Store krs irs ts v)
-updateWithKey tr = updateWithKeys (const tr)
-{-# INLINE updateWithKey #-}
-
--- | The expression (@'Data.Store.updateWithRawKey' tr sel s@) is equivalent
--- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
--- (@tr' = (\rk _ v -> tr rk v)@).
-updateWithRawKey :: IsSelection sel
-                 => (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
-                 -> sel krs irs ts
-                 -> I.Store krs irs ts v
-                 -> Maybe (I.Store krs irs ts v)
-updateWithRawKey tr = updateWithKeys (\rk _ -> tr rk)
-{-# INLINE updateWithRawKey #-}
-
 -- | The expression (@'Data.Store.update' tr sel s@) is equivalent
--- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
--- (@tr' = (\_ _ v -> tr v) = const . const tr@).
+-- to (@'Data.Store.Selection.updateWithKey' tr' sel s@) where
+-- (@tr' = (\_ v -> tr v) = const tr@).
 update :: IsSelection sel
        => (v -> Maybe (v, Maybe (I.Key krs ts)))
        -> sel krs irs ts
        -> I.Store krs irs ts v
        -> Maybe (I.Store krs irs ts v)
-update tr = updateWithKeys (\_ _ -> tr)
+update tr = updateWithKey (const tr)
 {-# INLINE update #-}
 
 -- | The expression (@'Data.Store.updateValues' tr sel s@) is equivalent
--- to (@'Data.Store.Selection.updateWithKeys' tr' sel s@) where
--- (@tr' = (\_ _ -> maybe Nothing (\v -> Just (v, Nothing)) . tr)@).
+-- to (@'Data.Store.Selection.update' tr' sel s@) where
+-- (@tr' = (maybe Nothing (\v -> Just (v, Nothing)) . tr)@).
 updateValues :: IsSelection sel
              => (v -> Maybe v)
              -> sel krs irs ts
@@ -382,33 +354,13 @@ updateValues tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing
 
 -- | The expression (@'Data.Store.foldrWithKeys' f z s@) folds the store
 -- using the given right-associative operator.
-foldrWithKeys :: (I.RawKey krs ts -> I.Key krs ts -> v -> b -> b)
-              -> b
-              -> I.Store krs irs ts v
-              -> b
-foldrWithKeys accum start (I.Store vs _ _) =
-    Data.IntMap.foldr (\(ik, k, v) b -> accum (I.keyInternalToRaw ik) k v b) start vs
-{-# INLINE foldrWithKeys #-}
-
--- | The expression (@'Data.Store.foldrWithKey' f z s@) folds the store
--- using the given right-associative operator.
-foldrWithKey :: (I.Key krs ts -> v -> b -> b)
+foldrWithKey :: (I.RawKey krs ts -> v -> b -> b)
              -> b
              -> I.Store krs irs ts v
              -> b
 foldrWithKey accum start (I.Store vs _ _) =
-    Data.IntMap.foldr (\(_, k, v) b -> accum k v b) start vs
+    Data.IntMap.foldr (\(ik, v) b -> accum (I.keyInternalToRaw ik) v b) start vs
 {-# INLINE foldrWithKey #-}
-
--- | The expression (@'Data.Store.foldrWithRawKey' f z s@) folds the store
--- using the given right-associative operator.
-foldrWithRawKey :: (I.RawKey krs ts -> v -> b -> b)
-                -> b
-                -> I.Store krs irs ts v
-                -> b
-foldrWithRawKey accum start (I.Store vs _ _) =
-    Data.IntMap.foldr (\(ik, _, v) b -> accum (I.keyInternalToRaw ik) v b) start vs
-{-# INLINE foldrWithRawKey #-}
 
 -- | The expression (@'Data.Store.foldr' f z s@) folds the store
 -- using the given right-associative binary operator.
@@ -417,38 +369,18 @@ foldr :: (v -> b -> b)
       -> I.Store krs irs ts v
       -> b
 foldr accum start (I.Store vs _ _) =
-    Data.IntMap.foldr (\(_, _, v) b -> accum v b) start vs
+    Data.IntMap.foldr (\(_, v) b -> accum v b) start vs
 {-# INLINE foldr #-}
 
 -- | The expression (@'Data.Store.foldlWithKeys' f z s@) folds the store
 -- using the given left-associative operator.
-foldlWithKeys :: (b -> I.RawKey krs ts -> I.Key krs ts -> v -> b)
+foldlWithKey :: (b -> I.RawKey krs ts -> v -> b)
               -> b
               -> I.Store krs irs ts v
               -> b
-foldlWithKeys accum start (I.Store vs _ _) =
-    Data.IntMap.foldl (\b (ik, k, v) -> accum b (I.keyInternalToRaw ik) k v) start vs
-{-# INLINE foldlWithKeys #-}
-
--- | The expression (@'Data.Store.foldlWithKey' f z s@) folds the store
--- using the given left-associative operator.
-foldlWithKey :: (b -> I.Key krs ts -> v -> b)
-             -> b
-             -> I.Store krs irs ts v
-             -> b
 foldlWithKey accum start (I.Store vs _ _) =
-    Data.IntMap.foldl (\b (_, k, v) -> accum b k v) start vs
+    Data.IntMap.foldl (\b (ik, v) -> accum b (I.keyInternalToRaw ik) v) start vs
 {-# INLINE foldlWithKey #-}
-
--- | The expression (@'Data.Store.foldlWithRawKey' f z s@) folds the store
--- using the given left-associative operator.
-foldlWithRawKey :: (b -> I.RawKey krs ts -> v -> b)
-                -> b
-                -> I.Store krs irs ts v
-                -> b
-foldlWithRawKey accum start (I.Store vs _ _) =
-    Data.IntMap.foldl (\b (ik, _, v) -> accum b (I.keyInternalToRaw ik) v) start vs
-{-# INLINE foldlWithRawKey #-}
 
 -- | The expression (@'Data.Store.foldl' f z s@) folds the store
 -- using the given left-associative binary operator.
@@ -457,27 +389,27 @@ foldl :: (b -> v -> b)
       -> I.Store krs irs ts v
       -> b
 foldl accum start (I.Store vs _ _) =
-    Data.IntMap.foldl (\b (_, _, v) -> accum b v) start vs
+    Data.IntMap.foldl (\b (_, v) -> accum b v) start vs
 {-# INLINE foldl #-}
 
 -- LISTS
 
 -- | The expression (@'Data.Store.toList' store@) is a list of triples of
 -- raw key, key and a value that are stored in @store@.
-toList :: I.Store krs irs ts v -> [(I.RawKey krs ts, I.Key krs ts, v)]
-toList (I.Store vs _ _) = Data.List.map (\(ik, k, v) -> (I.keyInternalToRaw ik, k, v)) $ Data.IntMap.elems vs
+toList :: I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
+toList (I.Store vs _ _) = Data.List.map (\(ik, v) -> (I.keyInternalToRaw ik, v)) $ Data.IntMap.elems vs
 {-# INLINE toList #-}
 
 -- | The expression (@'Data.Store.values' store@) is a list of values that
 -- are stored in @store@.
 values :: I.Store krs irs ts v -> [v]
-values (I.Store vs _ _) = Data.List.map (\(_, _, v) -> v) $ Data.IntMap.elems vs
+values (I.Store vs _ _) = Data.List.map snd $ Data.IntMap.elems vs
 {-# INLINE values #-}
 
 -- | The expression (@'Data.Store.values' store@) is a list of pairs of raw
 -- key and key that are stored in @store@.
-keys :: I.Store krs irs ts v -> [(I.RawKey krs ts, I.Key krs ts)]
-keys (I.Store vs _ _) = Data.List.map (\(ik, k, _) -> (I.keyInternalToRaw ik, k)) $ Data.IntMap.elems vs
+keys :: I.Store krs irs ts v -> [I.RawKey krs ts]
+keys (I.Store vs _ _) = Data.List.map (I.keyInternalToRaw . fst) $ Data.IntMap.elems vs
 {-# INLINE keys #-}
 
 -- | The expression (@'Data.Store.fromList' kvs@) is either a) (@Just

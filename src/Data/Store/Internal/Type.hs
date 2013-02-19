@@ -11,10 +11,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Store.Internal.Type
 where
 
+--------------------------------------------------------------------------------
+import           Control.Applicative ((<$>), (<*>))
 --------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
 import           Data.Data (Typeable, Typeable2)
@@ -24,6 +27,9 @@ import qualified Data.IntMap
 import qualified Data.IntSet
 import qualified Data.List
 import qualified Data.Foldable as F
+
+import qualified Data.SafeCopy  as Ser
+import qualified Data.Serialize as Ser (Serialize, get, put)
 --------------------------------------------------------------------------------
 
 moduleName :: String
@@ -204,20 +210,54 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 -- * 'Data.Store.Internal.Type.Key'
 --
 data Store krs irs ts v = Store
-    { storeV :: Data.IntMap.IntMap (IKey krs ts, Key krs ts, v)
+    { storeV :: Data.IntMap.IntMap (IKey krs ts, v)
     , storeI :: Index irs ts
     , storeNID :: Int
     } deriving (Typeable)
 
-instance (Show (Key krs ts), Show v) => Show (Store krs irs ts v) where
+instance (Ser.Serialize (IKey krs ts), Ser.Serialize (Index irs ts), Ser.Serialize v) => Ser.Serialize (Store krs irs ts v) where
+    get = Store <$> Ser.get <*> Ser.get <*> Ser.get
+    put (Store vs ix nid) = Ser.put vs >> Ser.put ix >> Ser.put nid
+
+instance (Ser.SafeCopy (IKey krs ts), Ser.SafeCopy (Index irs ts), Ser.SafeCopy v) => Ser.SafeCopy (Store krs irs ts v) where
+    getCopy = Ser.contain $ Store <$> Ser.safeGet <*> Ser.safeGet <*> Ser.safeGet
+    putCopy (Store vs ix nid) = Ser.contain $ Ser.safePut vs >> Ser.safePut ix >> Ser.safePut nid
+
+instance (Show (IKey krs ts), Show v) => Show (Store krs irs ts v) where
     show (Store vs _ _) = "[" <> go <> "]"
       where
-        go = Data.List.intercalate "," $ map (\(_, k, v) -> "((" <> show k <> "), " <> show v <> ")")
+        go = Data.List.intercalate "," $ map (\(ik, v) -> "((" <> show ik <> "), " <> show v <> ")")
                                        $ F.toList vs
 
 data GenericKey dim rs ts where
     K1 :: dim r t -> GenericKey dim r t
     KN :: dim r t -> GenericKey dim rt tt -> GenericKey dim (r :. rt) (t :. tt)
+
+instance Ser.Serialize (dim O t) => Ser.Serialize (GenericKey dim O t) where
+    get = K1 <$> Ser.get
+    put (K1 d) = Ser.put d
+
+instance Ser.Serialize (dim M t) => Ser.Serialize (GenericKey dim M t) where
+    get = K1 <$> Ser.get
+    put (K1 d) = Ser.put d
+
+instance (Ser.Serialize (GenericKey dim rt tt), Ser.Serialize (dim r t)) => Ser.Serialize (GenericKey dim (r :. rt) (t :. tt)) where
+    get = KN <$> Ser.get <*> Ser.get
+    put (KN d dt) = Ser.put d >> Ser.put dt
+    put (K1 _) = error $ moduleName <> ".GenricKey.put: The impossible happened."
+
+instance Ser.SafeCopy (dim O t) => Ser.SafeCopy (GenericKey dim O t) where
+    getCopy = Ser.contain $ K1 <$> Ser.safeGet
+    putCopy (K1 d) = Ser.contain $ Ser.safePut d
+
+instance Ser.SafeCopy (dim M t) => Ser.SafeCopy (GenericKey dim M t) where
+    getCopy = Ser.contain $ K1 <$> Ser.safeGet
+    putCopy (K1 d) = Ser.contain $ Ser.safePut d
+
+instance (Ser.SafeCopy (GenericKey dim rt tt), Ser.SafeCopy (dim r t)) => Ser.SafeCopy (GenericKey dim (r :. rt) (t :. tt)) where
+    getCopy = Ser.contain $ KN <$> Ser.safeGet <*> Ser.safeGet
+    putCopy (KN d dt) = Ser.contain $ Ser.safePut d >> Ser.safePut dt
+    putCopy (K1 _) = error $ moduleName <> ".GenricKey.putCopy: The impossible happened."
 
 instance Typeable2 (GenericKey dim) where
     typeOf2 (K1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "K1") []
@@ -250,6 +290,42 @@ data Index rs ts where
     I1 :: Ord t => IndexDimension r t -> Index r t
     IN :: Ord t => IndexDimension r t -> Index rt tt -> Index (r :. rt) (t :. tt)
 
+instance (Ord t, Ser.Serialize t) => Ser.Serialize (Index O t) where
+    get = I1 <$> Ser.get
+    put (I1 ixd) = Ser.put ixd
+
+instance (Ord t, Ser.Serialize t) => Ser.Serialize (Index M t) where
+    get = I1 <$> Ser.get
+    put (I1 ixd) = Ser.put ixd
+
+instance (Ord t, Ser.Serialize t, Ser.Serialize (Index rt tt)) => Ser.Serialize (Index (O :. rt) (t :. tt)) where
+    get = IN <$> Ser.get <*> Ser.get
+    put (IN ixd ixt) = Ser.put ixd >> Ser.put ixt
+    put (I1 _) = error $ moduleName <> ".Index.put: The impossible happened (#1)."
+
+instance (Ord t, Ser.Serialize t, Ser.Serialize (Index rt tt)) => Ser.Serialize (Index (M :. rt) (t :. tt)) where
+    get = IN <$> Ser.get <*> Ser.get
+    put (IN ixd ixt) = Ser.put ixd >> Ser.put ixt
+    put (I1 _) = error $ moduleName <> ".Index.put: The impossible happened (#2)."
+
+instance (Ord t, Ser.SafeCopy t) => Ser.SafeCopy (Index O t) where
+    getCopy = Ser.contain $ I1 <$> Ser.safeGet
+    putCopy (I1 ixd) = Ser.contain $ Ser.safePut ixd
+
+instance (Ord t, Ser.SafeCopy t) => Ser.SafeCopy (Index M t) where
+    getCopy = Ser.contain $ I1 <$> Ser.safeGet
+    putCopy (I1 ixd) = Ser.contain $ Ser.safePut ixd
+
+instance (Ord t, Ser.SafeCopy t, Ser.SafeCopy (Index rt tt)) => Ser.SafeCopy (Index (O :. rt) (t :. tt)) where
+    getCopy = Ser.contain $ IN <$> Ser.safeGet <*> Ser.safeGet
+    putCopy (IN ixd ixt) = Ser.contain $ Ser.safePut ixd >> Ser.safePut ixt
+    putCopy (I1 _) = error $ moduleName <> ".Index.putCopy: The impossible happened (#1)."
+
+instance (Ord t, Ser.SafeCopy t, Ser.SafeCopy (Index rt tt)) => Ser.SafeCopy (Index (M :. rt) (t :. tt)) where
+    getCopy = Ser.contain $ IN <$> Ser.safeGet <*> Ser.safeGet
+    putCopy (IN ixd ixt) = Ser.contain $ Ser.safePut ixd >> Ser.safePut ixt
+    putCopy (I1 _) = error $ moduleName <> ".Index.putCopy: The impossible happened (#2)."
+
 instance Typeable2 Index where
     typeOf2 (I1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "I1") []
     typeOf2 (IN _ _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "IN") []
@@ -265,9 +341,9 @@ instance (Show t, Show (Index rt tt)) => Show (Index (r :. rt) (t :. tt)) where
     show (I1 _) = error $ moduleName <> ".Index.show: The impossible happened."
 
 data KeyDimension r t where
-    KeyDimensionM :: Ord t => [t] -> KeyDimension M t
-    KeyDimensionO :: Ord t =>  t  -> KeyDimension O t
     KeyDimensionA :: Auto t => KeyDimension O t
+    KeyDimensionO :: Ord t =>  t  -> KeyDimension O t
+    KeyDimensionM :: Ord t => [t] -> KeyDimension M t
 
 deriving instance Typeable2 KeyDimension
 
@@ -282,6 +358,22 @@ data IKeyDimension r t where
 
 deriving instance Typeable2 IKeyDimension
 
+instance (Ord t, Ser.Serialize t) => Ser.Serialize (IKeyDimension O t) where
+    get = IKeyDimensionO <$> Ser.get
+    put (IKeyDimensionO x) = Ser.put x
+
+instance (Ord t, Ser.Serialize t) => Ser.Serialize (IKeyDimension M t) where
+    get = IKeyDimensionM <$> Ser.get
+    put (IKeyDimensionM x) = Ser.put x
+
+instance (Ord t, Ser.SafeCopy t) => Ser.SafeCopy (IKeyDimension O t) where
+    getCopy = Ser.contain $ IKeyDimensionO <$> Ser.safeGet
+    putCopy (IKeyDimensionO x)  = Ser.contain $ Ser.safePut x
+
+instance (Ord t, Ser.SafeCopy t) => Ser.SafeCopy (IKeyDimension M t) where
+    getCopy = Ser.contain $ IKeyDimensionM <$> Ser.safeGet
+    putCopy (IKeyDimensionM x)  = Ser.contain $ Ser.safePut x
+
 instance Show t => Show (IKeyDimension r t) where
     show (IKeyDimensionM ts) = show ts
     show (IKeyDimensionO t)  = show t
@@ -294,6 +386,22 @@ data IndexDimension r t where
     IndexDimensionO :: Ord t
                     => Data.Map.Map t Int
                     -> IndexDimension O t
+
+instance (Ord t, Ser.Serialize t) => Ser.Serialize (IndexDimension O t) where
+    get = IndexDimensionO <$> Ser.get
+    put (IndexDimensionO x) = Ser.put x
+
+instance (Ord t, Ser.Serialize t) => Ser.Serialize (IndexDimension M t) where
+    get = IndexDimensionM <$> Ser.get
+    put (IndexDimensionM x) = Ser.put x
+
+instance (Ord t, Ser.SafeCopy t) => Ser.SafeCopy (IndexDimension O t) where
+    getCopy = Ser.contain $ IndexDimensionO <$> Ser.safeGet
+    putCopy (IndexDimensionO x)  = Ser.contain $ Ser.safePut x
+
+instance (Ord t, Ser.SafeCopy t) => Ser.SafeCopy (IndexDimension M t) where
+    getCopy = Ser.contain $ IndexDimensionM <$> Ser.safeGet
+    putCopy (IndexDimensionM x)  = Ser.contain $ Ser.safePut x
 
 instance Show t => Show (IndexDimension r t) where
     show (IndexDimensionM m) = show $ map (\(k, vs) -> (k, Data.IntSet.toList vs)) $ Data.Map.toList m
