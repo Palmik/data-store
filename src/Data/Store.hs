@@ -111,7 +111,10 @@ module Data.Store
 , lookup
 
   -- ** Selection
+  --
+  -- $selection
 , Selection
+, not'
 , (.<)
 , (.<=)
 , (.>)
@@ -185,8 +188,36 @@ moduleName = "Data.Store"
 
 -- INTERFACE
 
+-- $selection
+-- Functions from this category are used to create selections.
+--
+-- Example:
+--
+-- > -- Select any content with rating between 3 and 4.
+-- > let sel1 = sContentRating .> 3
+-- >
+-- > -- Select any content that is tagged with "haskell" or "category-theory"
+-- > -- and is not tagged with "fluff".
+-- > let sel2 = (sContentTag .== "haskell" .|| sContentTag .== "category-theory") .&& not' (sContentTag .== "fluff")
+-- >
+-- > -- Selection that is intersection of sel1 and sel2.
+-- > let sel3 = sel1 .&& sel2
+--
+-- These selections can be then used in functions like lookup, update,
+-- delete, etc.
+--  
+-- >>> lookup sel3 store
+-- > -- key-value pairs that match the selection
+--
+-- >>> delete (not' sel3) store
+-- > -- store with the key-value pairs that do not match the selection
+--
+-- >>> updateValues (\v -> Just v { contentRating = 5 }) sel3 store
+-- > -- store with the selected key-value pairs updated 
+
+
 -- $constructing-key
--- These functions are used to create a key for your store. Function for
+-- Functions from this category are used to create a key for your store. Function for
 -- creating a key for our @Content@ data type could look like this:
 --
 -- > makeContentKey :: ContentID -> String -> String -> [String] -> Double -> ContentStoreKey
@@ -210,18 +241,26 @@ moduleName = "Data.Store"
 --
 -- * 'Data.Store.Storable.Storable'
 
+-- | Function for creating an auto-increment dimension. Can be used instead
+-- of (@dimO x@) if the type is an instance of the
+-- @'Data.Store.Internal.Auto'@ type-class.
 dimA :: I.Auto t => I.KeyDimension I.O t
 dimA = I.KeyDimensionA
 {-# INLINE dimA #-}
 
+-- | Function for creating dimensions with the relation
+-- \"one-<anything>\".
 dimO :: Ord t => t -> I.KeyDimension I.O t
 dimO = I.KeyDimensionO
 {-# INLINE dimO #-}
 
+-- | Function for creating dimensions with the relation
+-- \"many-<anything>\".
 dimM :: Ord t => [t] -> I.KeyDimension I.M t
 dimM = I.KeyDimensionM
 {-# INLINE dimM #-}
 
+-- | Function for connecting one dimension and rest of the key.
 (.:) :: dim r t
      -> I.GenericKey dim rs1 ts1 
      -> I.GenericKey dim (r I.:. rs1) (t I.:. ts1)
@@ -229,6 +268,8 @@ dimM = I.KeyDimensionM
 {-# INLINE (.:) #-}
 infixr 3 .:
 
+-- | Function for connecting one dimensions with another (most often the
+-- last dimension of the key).
 (.:.) :: dim r1 t1
       -> dim r2 t2
       -> I.GenericKey dim (r1 I.:. r2) (t1 I.:. t2)
@@ -264,10 +305,13 @@ singleton k v = snd . fromJust $ insert k v empty
 --
 -- Examples:
 --
--- > TODO
+-- >>> let content = Content "name" "body" ["t1", "t2"] 0.5
+-- >>> insert (contentKey content) content store
+-- > Just (1 :. "name" :. "body" :. ["t1", "t2"] :. 0.5, <updated_store>)
 --
 -- See also:
 --
+-- * 'Data.Store.Internal.Type.Key'
 -- * 'Data.Store.Internal.Type.RawKey'
 insert :: I.Key krs ts
        -> v

@@ -188,7 +188,7 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 --
 -- * @Content@ has one body, many contents can have the same content.
 --
--- * @Content@ has many tags, many contents can have the same tag.
+-- * @Content@ has many tags, many contents can have tte same tag.
 --
 -- * @Content@ has one rating, many contents can have the same rating.
 --

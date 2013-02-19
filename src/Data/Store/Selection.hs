@@ -14,6 +14,13 @@ module Data.Store.Selection
 , (.==)
 , (.&&)
 , (.||)
+, not'
+, all'
+, all1D
+, any'
+, any1D
+, everything
+, nothing
 , IsSelection(..)
 , Selection
 ) where
@@ -27,6 +34,7 @@ import qualified Data.IntSet
 import qualified Data.IntSet.Extra
 import qualified Data.IntMap
 import qualified Data.Map
+import qualified Data.List
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type     as I
 import qualified Data.Store.Internal.Function as I
@@ -41,59 +49,113 @@ infix  4  .==, ./=, .<, .<=, .>=, .>
 infixr 3  .&&
 infixr 2  .||
 
+-- | Selection that matches all values. Useful as a base for folding.
+everything :: Selection krs irs ts
+everything = SelectionEverything
+{-# INLINE everything #-}
+
+-- | Selection that does not match any values. Useful as a base for folding.
+nothing :: Selection krs irs ts
+nothing = SelectionNothing
+{-# INLINE nothing #-}
+
+-- | The expression (@not' sel@) is a selection that includes all values
+-- except those that match the selection @sel@. 
+not' :: IsSelection sel => sel krs irs ts -> Selection krs irs ts
+not' = SelectionNot
+{-# INLINE not' #-}
+
+-- | Selection that matches the intersection of all the selections in the
+-- list or everything if the list is empty.
+all' :: [Selection krs irs ts] -> Selection krs irs ts
+all' []  = everything
+all' [s] = s
+all' (s:rest) = Data.List.foldl' (.&&) s rest -- this way we do not have to intersect with "everything"
+{-# INLINE all' #-}
+
+-- | The expression (@'Data.Store.Selection.all1D' d ss@) is equivalent to (@'Data.Store.Selection.all'' $ map ($ d) ss@).
+all1D :: n -> [n -> Selection krs irs ts] -> Selection krs irs ts
+all1D _ [] = everything
+all1D d [h] = h d
+all1D d (h:rest) = Data.List.foldl' (\acc f -> acc .&& f d) (h d) rest -- this way we do not have to intersect with "everything"
+{-# INLINE all1D #-}
+
+-- | Selection that matches the union of all the selections in the
+-- list or nothing if the list is empty.
+any' :: [Selection krs irs ts] -> Selection krs irs ts
+any' = Data.List.foldl' (.||) nothing
+{-# INLINE any' #-}
+
+-- | The expression (@'Data.Store.Selection.any1D' d ss@) is equivalent to (@'Data.Store.Selection.any'' $ map ($ d) ss@).
+any1D :: n -> [n -> Selection krs irs ts] -> Selection krs irs ts
+any1D d = Data.List.foldl' (\acc f -> acc .|| f d) nothing
+{-# INLINE any1D #-}
+
 -- | The expression (@sDim .< c@) is a selection that includes value
 -- @x@ if and only if it is indexed in the @sDim@ dimension with a key @k@
 -- such that @k < c@.
 (.<) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.<)  n = SelectionSingle . SelectionDimension n (Condition True False False)
+(.<)  n = SelectionWrap . SelectionDimension n (Condition True False False)
+{-# INLINE (.<) #-}
 
 -- | The expression (@sDim .<= c@) is a selection that includes value
 -- @x@ if and only if it is indexed in the @sDim@ dimension with a key @k@
 -- such that @k <= c@.
 (.<=) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.<=) n = SelectionSingle . SelectionDimension n (Condition True True False)
+(.<=) n = SelectionWrap . SelectionDimension n (Condition True True False)
+{-# INLINE (.<=) #-}
 
 -- | The expression (@sDim .> c@) is a selection that includes value
 -- @x@ if and only if it is indexed in the @sDim@ dimension with a key @k@
 -- such that @k > c@.
 (.>) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.>)  n = SelectionSingle . SelectionDimension n (Condition False False True)
+(.>)  n = SelectionWrap . SelectionDimension n (Condition False False True)
+{-# INLINE (.>) #-}
 
 -- | The expression (@sDim .>= c@) is a selection that includes value
 -- @x@ if and only if it is indexed in the @sDim@ dimension with a key @k@
 -- such that @k >= c@.
 (.>=) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.>=) n = SelectionSingle . SelectionDimension n (Condition False True True)
+(.>=) n = SelectionWrap . SelectionDimension n (Condition False True True)
+{-# INLINE (.>=) #-}
 
 -- | The expression (@sDim ./= c@) is a selection that includes value
 -- @x@ if and only if it is indexed in the @sDim@ dimension with a key @k@
 -- such that @k /= c@.
 (./=) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(./=) n = SelectionSingle . SelectionDimension n (Condition True False True)
+(./=) n = SelectionWrap . SelectionDimension n (Condition True False True)
+{-# INLINE (./=) #-}
 
 -- | The expression (@sDim .== c@) is a selection that includes value
 -- @x@ if and only if it is indexed in the @sDim@ dimension with a key @k@
 -- such that @k == c@.
 (.==) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.==) n = SelectionSingle . SelectionDimension n (Condition False True False)
+(.==) n = SelectionWrap . SelectionDimension n (Condition False True False)
+{-# INLINE (.==) #-}
 
 -- | The expression (@s1 .&& s2@) is a selection that includes the
 -- intersection of the selections @s1@ and @s2@.
 (.&&) :: IsSelection sel => sel krs irs ts -> sel krs irs ts -> Selection krs irs ts
 (.&&) = SelectionAnd
+{-# INLINE (.&&) #-}
 
 -- | The expression (@s1 .|| s2@) is a selection that includes the
 -- union of the selections @s1@ and @s2@.
 (.||) :: IsSelection sel => sel krs irs ts -> sel krs irs ts -> Selection krs irs ts
 (.||) = SelectionOr
+{-# INLINE (.||) #-}
 
 -- IMPLEMENTATION
 
 instance IsSelection Selection where
-    resolve (SelectionSingle sel) s = resolve sel s
+    resolve SelectionEverything (I.Store vs _ _) = Data.IntMap.keysSet vs
+    resolve SelectionNothing _ = Data.IntSet.empty
+    resolve (SelectionWrap sel) s = resolve sel s
     resolve (SelectionAnd sel1 sel2) s = Data.IntSet.intersection (resolve sel1 s) (resolve sel2 s)
     resolve (SelectionOr sel1 sel2) s = Data.IntSet.union (resolve sel1 s) (resolve sel2 s)
-    
+    resolve (SelectionNot sel) s@(I.Store vs _ _) =
+        Data.IntSet.difference (Data.IntMap.keysSet vs) (resolve sel s)
+
     lookup sel s = genericLookup (resolve sel s) s
     {-# INLINE lookup #-}    
 
@@ -219,9 +281,12 @@ data SelectionDimension n krs irs ts where
                        -> SelectionDimension n krs irs ts
 
 data Selection krs irs ts where
-    SelectionSingle :: IsSelection sel => sel krs irs ts -> Selection krs irs ts
-    SelectionAnd    :: IsSelection sel => sel krs irs ts -> sel krs irs ts -> Selection krs irs ts
-    SelectionOr     :: IsSelection sel => sel krs irs ts -> sel krs irs ts -> Selection krs irs ts
+    SelectionWrap :: IsSelection sel => sel krs irs ts -> Selection krs irs ts
+    SelectionAnd  :: IsSelection sel => sel krs irs ts -> sel krs irs ts -> Selection krs irs ts
+    SelectionOr   :: IsSelection sel => sel krs irs ts -> sel krs irs ts -> Selection krs irs ts
+    SelectionNot  :: IsSelection sel => sel krs irs ts -> Selection krs irs ts
+    SelectionNothing :: Selection krs irs ts
+    SelectionEverything :: Selection krs irs ts
 
 data Condition = Condition Bool Bool Bool
 
