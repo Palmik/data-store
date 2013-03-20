@@ -40,14 +40,14 @@ moduleName = "Data.Store.Internal.Type"
 -- "many".
 --
 -- * When @'Data.Store.Internal.Type.Key'@ dimension is tagged with
--- @'Data.Store.Internal.Type.M'@, it means that a single value can be
--- indexed under multiple \<something\>. Example: @Content@ has
+-- @'Data.Store.Internal.Type.M'@, it means that a single element can be
+-- indexed under multiple key dimension values. Example: @Content@ (element) has
 -- many tags.
 --
 -- * When @'Data.Store.Internal.Type.Index'@ dimension is tagged with
--- @'Data.Store.Internal.Type.M'@, it means that a multiple values can be
--- indexed under a single \<something\>. Example: One rating value can be shared by
--- many @Content@s.
+-- @'Data.Store.Internal.Type.M'@, it means that a multiple elements can be
+-- indexed under a single key dimension values. Example: One rating can be shared by
+-- many @Content@s (elements).
 --
 -- See also:
 --
@@ -63,13 +63,13 @@ data M
 -- "one".
 --
 -- * When @'Data.Store.Internal.Type.Key'@ dimension is tagged with
--- @'Data.Store.Internal.Type.O'@, it means that a single value is indexed
--- under exactly one \<something\>. Example: @Content@ has exactly one title.
+-- @'Data.Store.Internal.Type.O'@, it means that a single element is indexed
+-- under exactly one key dimension value. Example: @Content@ (element) has exactly one title.
 --
 -- * When @'Data.Store.Internal.Type.Index'@ dimension is tagged with
--- @'Data.Store.Internal.Type.O'@, it means that at most one value can be
--- indexed under one \<something\>. Example: One @ContentID@ value corresponds
--- to at most one @Content@.
+-- @'Data.Store.Internal.Type.O'@, it means that at most one element can be
+-- indexed under one key dimension value. Example: One @ContentID@ corresponds
+-- to at most one @Content@ (element).
 --
 -- See also:
 --
@@ -157,27 +157,27 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 --
 -- The @krs@ (key relation specification) and @irs@ (index relation
 -- specification) define the relations between the dimensions of the key
--- and the values. To that end, we use @'Data.Store.Internal.Type.O'@ and
+-- and the elements. To that end, we use @'Data.Store.Internal.Type.O'@ and
 -- @'Data.Store.Internal.Type.M'@ type-level tags and
 -- @'Data.Store.Type.Internal.(:.)'@ data type to create tuple of these
 -- tags (to describe all the dimensions).
 --
 -- The possible relations are as follows:
 --
--- * One-one: Every value has exactly one \<something\>. One \<something\>
--- corresponds to at most one value.
+-- * One-one: Every intem is indexed under exactly one key dimension value. One key dimension value
+-- corresponds to at most one elements.
 --
--- * One-many: Every value has exactly one \<something\>. One \<something\> can
--- correspond to many values.
+-- * One-many: Every element is indexed under exactly one key dimension value. One key dimension value can
+-- correspond to many elements.
 --
--- * Many-one: Every value can have multiple \<something\>. One \<something\>
--- corresponds to at most one value.
+-- * Many-one: Every element can be indexed under multiple (zero or more) key dimension values. One key dimension value
+-- corresponds to at most one elements.
 --
--- * Many-many: Every value can have multiple \<something\>. One \<something\>
--- can correspond to many values.
+-- * Many-many: Every element cab be indexed under multiple (zero or more) key dimension value. One key dimension value
+-- can correspond to many elements.
 --
 -- The @ts@ (type specification) defines the type of the key's dimensions
--- and finally @v@ (value) is the type of the value.
+-- and finally @v@ is the type of the elements stored.
 --
 -- In our example with @Content@, we have five dimensions: ID, name, body,
 -- tags and rating. We would like our store to have these properties:

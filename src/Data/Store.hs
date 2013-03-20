@@ -11,7 +11,7 @@
 -- Copyright : (c) Petr Pilar 2012
 -- License : BSD-style
 --
--- Multi-key multi-value store with type-safe interface.
+-- Dictionary with multidimensional keys and type-safe interface.
 --
 -- These modules are intended to be imported qualified to avoid name
 -- clashes with prelude, e.g.:
@@ -65,6 +65,47 @@
 -- > 
 -- > -- BOILERPLATE
 -- > 
+--
+-- Glossary
+--
+-- * Key (type/value) -- refers either to the type or value of a key of the
+-- store.
+--
+-- * Key dimension -- refers to one dimension of a key (e.g.: article's
+-- author, article's tag). Refers to the dimension as a whole, together
+-- with its properties, etc.
+--
+-- * Key dimension value -- refers to some concrete value from the domain of the
+-- dimension.
+--
+-- * Element (type/value) -- refers either to the type or value of the elements
+-- (in literature, the term \"value\" is usually used, be here it would
+-- clash far too often) of the store.
+--
+-- The implementation is based on "Data.Map", "Data.Set", "Data.IntMap" and
+-- "Data.IntSet".
+--
+-- The following variables and constants are used in Big-O notation:
+--
+-- * /W/ -- the (constant) number of bits of "Int" (32 or 64).
+-- 
+-- * /d/ -- the (constant) number of dimensions of the store.
+-- 
+-- * /k/ -- the (variable) number of key dimensions values of a key (or
+-- maximum of key dimension values over all keys in case of for example
+-- @'Data.Store.update'@).
+--
+-- * /s/ -- the (variable) size of the output of the operation or the
+-- (variable) number of elements affected by the operation. This is
+-- of then the number of key-element pairs that correspond to a selection.
+-- 
+-- * /s(sel)/ -- the (variable) number of key-element pairs that correspond
+-- to a selection /sel/ if /sel/ would otherwise be ambigious.
+--
+-- * /c/ -- the (variable) complexity of selection.
+--
+-- * /c/ -- the (variable) complexity of selection /sel/ if /sel/
+-- would otherwise be ambiguous.
 module Data.Store
 (
   -- * Types
@@ -102,7 +143,7 @@ module Data.Store
 
   -- * List
 , toList
-, values
+, elements
 , keys
 , fromList
 
@@ -114,7 +155,7 @@ module Data.Store
   --
   -- $selection
 , Selection
-, not'
+, not
 , (.<)
 , (.<=)
 , (.>)
@@ -165,7 +206,7 @@ module Data.Store
 ) where
 
 --------------------------------------------------------------------------------
-import           Prelude hiding (lookup, map, foldr, foldl)
+import           Prelude hiding (lookup, map, foldr, foldl, not)
 --------------------------------------------------------------------------------
 import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
@@ -173,6 +214,8 @@ import           Data.Maybe
 import           Data.Monoid ((<>))
 import qualified Data.Map    
 import qualified Data.IntMap
+import qualified Data.IntSet
+import qualified Data.IntSet.Extra
 import qualified Data.List
 import qualified Data.Foldable
 --------------------------------------------------------------------------------
@@ -207,13 +250,13 @@ moduleName = "Data.Store"
 -- delete, etc.
 --  
 -- >>> lookup sel3 store
--- > -- key-value pairs that match the selection
+-- > -- key-element pairs that match the selection
 --
 -- >>> delete (not' sel3) store
--- > -- store with the key-value pairs that do not match the selection
+-- > -- store with the key-element pairs that do not match the selection
 --
 -- >>> updateValues (\v -> Just v { contentRating = 5 }) sel3 store
--- > -- store with the selected key-value pairs updated 
+-- > -- store with the selected key-element pairs updated 
 
 
 -- $constructing-key
@@ -232,7 +275,7 @@ moduleName = "Data.Store"
 -- > contentKey (Content cn cb cts cr) =
 -- >    S.dimA .: S.dimO cn .: S.dimO cb .: S.dimM cts .:. S.dimO cr
 --
--- This function creates a key for given value of type @Content@, the ID
+-- This function creates a key for given element of type @Content@ (element), the ID
 -- dimension is "automatic", which means that the assigned ID will be @succ
 -- max@ where @max@ is the value of the maximum ID in the store when
 -- inserting.
@@ -289,7 +332,7 @@ empty = I.Store
 {-# INLINE empty #-}
 
 -- | The expression (@'Data.Store.singleton' k v@) is store that contains
--- only the @(k, v)@ as a key-value pair.
+-- only the @(k, v)@ as a key-element pair.
 singleton :: I.Empty (I.Index irs ts)
           => I.Key krs ts -> v -> I.Store krs irs ts v
 singleton k v = snd . fromJust $ insert k v empty
@@ -298,9 +341,9 @@ singleton k v = snd . fromJust $ insert k v empty
 -- INSERTING
 
 -- | The expression (@'Data.Store.insert' k v old@) is either
--- @Nothing@ if inserting the @(k, v)@ key-value pair would cause
+-- @Nothing@ if inserting the @(k, v)@ key-element pair would cause
 -- a collision or (@Just rk new@) where @rk@ is the raw key of
--- @k@ and @new@ is store containing the same key-value pairs as @old@ plus
+-- @k@ and @new@ is store containing the same key-element pairs as @old@ plus
 -- @(k, v)@. 
 --
 -- Examples:
@@ -354,7 +397,7 @@ insert k v (I.Store vals index nid) =
 
 -- TRAVERSING
 
--- | The expression @('Data.Store.map' tr old@) is store where every value of
+-- | The expression @('Data.Store.map' tr old@) is store where every element of
 -- @old@ was transformed using the function @tr@.
 map :: (v1 -> v2) -> I.Store krs irs ts v1 -> I.Store krs irs ts v2
 map tr store@(I.Store vs _ _) = store
@@ -364,6 +407,14 @@ map tr store@(I.Store vs _ _) = store
 
 -- QUERYING
 
+-- | The expression (@'Data.Store.Selection.lookup' sel store@) is
+-- list of (raw key)-element pairs that match the selection.
+-- 
+-- Complexity: /O(c + s * min(n, W))/
+lookup :: IsSelection sel => sel krs irs ts -> I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
+lookup sel s = genericLookup (resolve sel s) s
+{-# INLINE lookup #-}
+
 -- | The expression (@'Data.Store.size' store@) is the number of elements
 -- in @store@. 
 size :: I.Store krs irs ts v -> Int
@@ -372,9 +423,32 @@ size (I.Store vs _ _) = Data.IntMap.size vs
 
 -- UPDATING
 
+-- | The expression (@'Data.Store.updateWithKey' tr sel old@)
+-- is (@Just new@) where @new@ is a store containing the same key-element
+-- pairs as @old@ except for any key-element pairs @(k, e)@ that matcH THE
+-- selection @sel@, those are updated as follows:
+--
+-- * If @(tr k e)@ is @Nothing@ the pair is not included in @new@.
+-- * If @(tr k e)@ is (@Just (e', Nothing)@) the pair is replaced by pair @(k, e')@.
+-- * If @(tr k e)@ is (@Just (e', Just k')@) the pair is replaced by pair @(k', e')@.
+--
+-- If any of the updated key-element pairs would cause a collision, the
+-- result is @Nothing@.
+--
+-- Complexity: /O(c + s * (min(n, W) + q * log n))/ 
+updateWithKey :: IsSelection sel
+              => (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+              -> sel krs irs ts
+              -> I.Store krs irs ts v
+              -> Maybe (I.Store krs irs ts v)
+updateWithKey tr sel s = genericUpdateWithKey tr (resolve sel s) s
+{-# INLINE updateWithKey #-}
+
 -- | The expression (@'Data.Store.update' tr sel s@) is equivalent
 -- to (@'Data.Store.Selection.updateWithKey' tr' sel s@) where
 -- (@tr' = (\_ v -> tr v) = const tr@).
+--
+-- Complexity: /O(c + s * (min(n, W) + q * log n))/ 
 update :: IsSelection sel
        => (v -> Maybe (v, Maybe (I.Key krs ts)))
        -> sel krs irs ts
@@ -386,6 +460,8 @@ update tr = updateWithKey (const tr)
 -- | The expression (@'Data.Store.updateValues' tr sel s@) is equivalent
 -- to (@'Data.Store.Selection.update' tr' sel s@) where
 -- (@tr' = (maybe Nothing (\v -> Just (v, Nothing)) . tr)@).
+--
+-- Complexity: /O(c + s * min(n, W)/ 
 updateValues :: IsSelection sel
              => (v -> Maybe v)
              -> sel krs irs ts
@@ -393,6 +469,18 @@ updateValues :: IsSelection sel
              -> I.Store krs irs ts v
 updateValues tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
 {-# INLINE updateValues #-}             
+
+-- | The expression (@'Data.Store.Selection.delete' sel old@) is
+-- equivalent to
+-- (@'Data.Store.fromJust' $ 'Data.Store.Selection.update' (const Nothing) sel old@).
+--
+-- Complexity: /O(c + s * (min(n, W) + q * log n)/ 
+delete :: IsSelection sel
+       => sel krs irs ts
+       -> I.Store krs irs ts v
+       -> I.Store krs irs ts v
+delete sel s = fromJust $! updateWithKey (\_ _ -> Nothing) sel s
+{-# INLINE delete #-}
 
 -- FOLDING
 
@@ -438,27 +526,27 @@ foldl accum start (I.Store vs _ _) =
 
 -- LISTS
 
--- | The expression (@'Data.Store.toList' store@) is a list of triples of
--- raw key, key and a value that are stored in @store@.
+-- | The expression (@'Data.Store.toList' store@) is a list of key-element pairs that are stored in @store@.
 toList :: I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
 toList (I.Store vs _ _) = Data.List.map (\(ik, v) -> (I.keyInternalToRaw ik, v)) $ Data.IntMap.elems vs
 {-# INLINE toList #-}
 
--- | The expression (@'Data.Store.values' store@) is a list of values that
+-- | The expression (@'Data.Store.elements' store@) is a list of elements that
 -- are stored in @store@.
-values :: I.Store krs irs ts v -> [v]
-values (I.Store vs _ _) = Data.List.map snd $ Data.IntMap.elems vs
-{-# INLINE values #-}
+elements :: I.Store krs irs ts v -> [v]
+elements (I.Store vs _ _) = Data.List.map snd $ Data.IntMap.elems vs
+{-# INLINE elements #-}
 
--- | The expression (@'Data.Store.values' store@) is a list of pairs of raw
--- key and key that are stored in @store@.
+-- | The expression (@'Data.Store.keys' store@) is a list of pairs raw
+-- keys that are stored in @store@.
 keys :: I.Store krs irs ts v -> [I.RawKey krs ts]
 keys (I.Store vs _ _) = Data.List.map (I.keyInternalToRaw . fst) $ Data.IntMap.elems vs
 {-# INLINE keys #-}
 
--- | The expression (@'Data.Store.fromList' kvs@) is either a) (@Just
--- store@) where @store@ is a store containing exactly the given key-value
--- pairs or; b) @Nothing@ if inserting any of the key-value pairs would
+-- | The expression (@'Data.Store.fromList' kvs@) is either
+-- a) (@Just store@) where @store@ is a store containing exactly the given
+-- key-element pairs or;
+-- b) @Nothing@ if inserting any of the key-element pairs would
 -- cause a collision.
 fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store krs irs ts v)
 fromList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) empty 
@@ -479,6 +567,58 @@ showIndex (I.Store _ i _) = show i
 printIndex :: Show (I.Index irs ts) => I.Store krs irs ts v -> IO ()
 printIndex = putStrLn . showIndex
 {-# INLINE printIndex #-}
+
+-- INTERNAL
+
+genericLookup :: Data.IntSet.IntSet -> I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
+genericLookup ids (I.Store vs _ _) =
+    Data.IntSet.foldr (\i acc -> case Data.IntMap.lookup i vs of
+                                   Just (ik, v) -> (I.keyInternalToRaw ik, v) : acc
+                                   _ -> acc
+                      ) [] ids
+{-# INLINE genericLookup #-}
+
+genericUpdateWithKey :: (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+                      -> Data.IntSet.IntSet
+                      -> I.Store krs irs ts v
+                      -> Maybe (I.Store krs irs ts v)
+genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
+    where
+      accum i store@(I.Store vs ix nid) =
+          case Data.IntMap.lookup i vs of
+            Just (ik, v) ->
+                case tr (I.keyInternalToRaw ik) v of
+                  -- Update the element & key.
+                  Just (nv, Just nk) -> (\nix -> I.Store
+                    { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                    , I.storeI = nix
+                    , I.storeNID = nid
+                    }) <$> I.indexInsertID (mkik nk ik) i (I.indexDeleteID ik i ix)
+
+                  -- Update the element.
+                  Just (nv, Nothing) -> Just I.Store
+                    { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                    , I.storeI = ix
+                    , I.storeNID = nid
+                    }
+
+                  -- Delete.
+                  Nothing -> Just I.Store
+                    { I.storeV = Data.IntMap.delete i vs
+                    , I.storeI = I.indexDeleteID ik i ix
+                    , I.storeNID = nid
+                    }
+            _ -> Just store
+      {-# INLINEABLE accum #-}
+
+      mkik :: I.Key krs ts -> I.IKey krs ts -> I.IKey krs ts
+      mkik (I.K1 (I.KeyDimensionO d))   (I.K1 _)   = I.K1 (I.IKeyDimensionO d)
+      mkik (I.K1 (I.KeyDimensionM d))   (I.K1 _)   = I.K1 (I.IKeyDimensionM d)
+      mkik (I.KN (I.KeyDimensionO d) s) (I.KN _ is) = I.KN (I.IKeyDimensionO d) $ mkik s is
+      mkik (I.KN (I.KeyDimensionM d) s) (I.KN _ is) = I.KN (I.IKeyDimensionM d) $ mkik s is
+      mkik _ _ = error $ moduleName <> ".genericUpdate.mkik: The impossible happened."
+      {-# INLINEABLE mkik #-}
+{-# INLINE genericUpdateWithKey #-}
 
 -- TEST
 
