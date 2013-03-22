@@ -35,6 +35,12 @@ keyFromInternal (I.KN (I.IKeyDimensionO x) s) = I.KN (I.KeyDimensionO x) (keyFro
 keyFromInternal (I.KN (I.IKeyDimensionM x) s) = I.KN (I.KeyDimensionM x) (keyFromInternal s)
 {-# INLINE keyFromInternal #-}
 
+indexInsertID' :: I.IKey krs ts
+               -> Int
+               -> I.Index irs ts
+               -> (I.Index irs ts, [Int])
+indexInsertID' = undefined
+{-# INLINE indexInsertID' #-}
 
 indexInsertID :: I.IKey krs ts
               -> Int

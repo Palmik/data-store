@@ -127,7 +127,7 @@ module Data.Store
 
   -- * Updating
 , update
-, updateValues
+, updateElements
 , updateWithKey
 , delete
 
@@ -255,7 +255,7 @@ moduleName = "Data.Store"
 -- >>> delete (not' sel3) store
 -- > -- store with the key-element pairs that do not match the selection
 --
--- >>> updateValues (\v -> Just v { contentRating = 5 }) sel3 store
+-- >>> updateElements (\v -> Just v { contentRating = 5 }) sel3 store
 -- > -- store with the selected key-element pairs updated 
 
 
@@ -457,18 +457,18 @@ update :: IsSelection sel
 update tr = updateWithKey (const tr)
 {-# INLINE update #-}
 
--- | The expression (@'Data.Store.updateValues' tr sel s@) is equivalent
+-- | The expression (@'Data.Store.updateElements' tr sel s@) is equivalent
 -- to (@'Data.Store.Selection.update' tr' sel s@) where
 -- (@tr' = (maybe Nothing (\v -> Just (v, Nothing)) . tr)@).
 --
 -- Complexity: /O(c + s * min(n, W)/ 
-updateValues :: IsSelection sel
+updateElements :: IsSelection sel
              => (v -> Maybe v)
              -> sel krs irs ts
              -> I.Store krs irs ts v
              -> I.Store krs irs ts v
-updateValues tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
-{-# INLINE updateValues #-}             
+updateElements tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
+{-# INLINE updateElements #-}             
 
 -- | The expression (@'Data.Store.Selection.delete' sel old@) is
 -- equivalent to
