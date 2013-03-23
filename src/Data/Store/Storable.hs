@@ -59,12 +59,12 @@ update :: (Storable v, S.IsSelection sel)
 update tr = S.update (maybe Nothing (\v -> Just (v, Just $! key v)) . tr)
 {-# INLINE update #-}
 
--- | See @'Data.Store.updateWithRawKey'@.
+-- | See @'Data.Store.updateWithKey'@.
 updateWithKey :: (Storable v, S.IsSelection sel)
-                 => (S.RawKey (StoreKRS v) (StoreTS v) -> v -> Maybe v)
-                 -> sel (StoreKRS v) (StoreIRS v) (StoreTS v)
-                 -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
-                 -> Maybe (S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
+              => (S.RawKey (StoreKRS v) (StoreTS v) -> v -> Maybe v)
+              -> sel (StoreKRS v) (StoreIRS v) (StoreTS v)
+              -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
+              -> Maybe (S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
 updateWithKey tr = S.updateWithKey (\rk vv -> maybe Nothing (\v -> Just (v, Just $! key v)) $ tr rk vv)
 {-# INLINE updateWithKey #-}
 

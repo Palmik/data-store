@@ -484,7 +484,7 @@ delete sel s = fromJust $! updateWithKey (\_ _ -> Nothing) sel s
 
 -- FOLDING
 
--- | The expression (@'Data.Store.foldrWithKeys' f z s@) folds the store
+-- | The expression (@'Data.Store.foldrWithKey' f z s@) folds the store
 -- using the given right-associative operator.
 foldrWithKey :: (I.RawKey krs ts -> v -> b -> b)
              -> b
@@ -504,7 +504,7 @@ foldr accum start (I.Store vs _ _) =
     Data.IntMap.foldr (\(_, v) b -> accum v b) start vs
 {-# INLINE foldr #-}
 
--- | The expression (@'Data.Store.foldlWithKeys' f z s@) folds the store
+-- | The expression (@'Data.Store.foldlWithKey' f z s@) folds the store
 -- using the given left-associative operator.
 foldlWithKey :: (b -> I.RawKey krs ts -> v -> b)
               -> b
@@ -588,12 +588,21 @@ genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
           case Data.IntMap.lookup i vs of
             Just (ik, v) ->
                 case tr (I.keyInternalToRaw ik) v of
-                  -- Update the element & key.
-                  Just (nv, Just nk) -> (\nix -> I.Store
-                    { I.storeV = Data.IntMap.insert i (ik, nv) vs
-                    , I.storeI = nix
-                    , I.storeNID = nid
-                    }) <$> I.indexInsertID (mkik nk ik) i (I.indexDeleteID ik i ix)
+                  -- User wants to update the element & key.
+                  Just (nv, Just nk) -> let nik = mkik nk ik in 
+                    if nik /= ik
+                       -- The keys are different: update the element & key.
+                       then (\nix -> I.Store
+                         { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                         , I.storeI = nix
+                         , I.storeNID = nid
+                         }) <$> I.indexInsertID (mkik nk ik) i (I.indexDeleteID ik i ix)
+                       -- The keys are identical: update the element:
+                       else Just I.Store
+                         { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                         , I.storeI = ix
+                         , I.storeNID = nid
+                         }
 
                   -- Update the element.
                   Just (nv, Nothing) -> Just I.Store
@@ -612,8 +621,11 @@ genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
       {-# INLINEABLE accum #-}
 
       mkik :: I.Key krs ts -> I.IKey krs ts -> I.IKey krs ts
+      mkik (I.K1 I.KeyDimensionA) ik@(I.K1 _) = ik
       mkik (I.K1 (I.KeyDimensionO d))   (I.K1 _)   = I.K1 (I.IKeyDimensionO d)
       mkik (I.K1 (I.KeyDimensionM d))   (I.K1 _)   = I.K1 (I.IKeyDimensionM d)
+      
+      mkik (I.KN I.KeyDimensionA s) (I.KN ik is) = I.KN ik $ mkik s is
       mkik (I.KN (I.KeyDimensionO d) s) (I.KN _ is) = I.KN (I.IKeyDimensionO d) $ mkik s is
       mkik (I.KN (I.KeyDimensionM d) s) (I.KN _ is) = I.KN (I.IKeyDimensionM d) $ mkik s is
       mkik _ _ = error $ moduleName <> ".genericUpdate.mkik: The impossible happened."

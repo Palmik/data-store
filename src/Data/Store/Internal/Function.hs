@@ -38,8 +38,8 @@ keyFromInternal (I.KN (I.IKeyDimensionM x) s) = I.KN (I.KeyDimensionM x) (keyFro
 indexInsertID' :: I.IKey krs ts
                -> Int
                -> I.Index irs ts
-               -> (I.Index irs ts, [Int])
-indexInsertID' = undefined
+               -> (Data.IntSet.IntSet, I.Index irs ts)
+indexInsertID' ik i = zipDimensions (zipInsert' i) ik 
 {-# INLINE indexInsertID' #-}
 
 indexInsertID :: I.IKey krs ts
@@ -48,6 +48,28 @@ indexInsertID :: I.IKey krs ts
               -> Maybe (I.Index irs ts)
 indexInsertID ik i = zipDimensions (zipInsert i) ik 
 {-# INLINE indexInsertID #-}
+
+zipInsert' :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> (Data.IntSet.IntSet, I.IndexDimension ir t)
+zipInsert' val key index =
+    case (index, key) of
+      (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO <$> goO k val m
+      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO <$> F.foldr
+          (\k (c, am) -> let (c', m') = goO k val am in (Data.IntSet.union c c', m')
+          ) (Data.IntSet.empty, m) ks
+      (I.IndexDimensionM m, I.IKeyDimensionO k)  -> (Data.IntSet.empty, I.IndexDimensionM $ goM k val m)
+      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> (Data.IntSet.empty, I.IndexDimensionM $ F.foldr (\k acc -> goM k val acc) m ks)
+    where
+      goO :: Ord k => k -> Int -> Data.Map.Map k Int -> (Data.IntSet.IntSet, Data.Map.Map k Int)
+      goO k a m =
+          case Data.Map.insertLookupWithKey (\_ _ _ -> a) k a m of
+              (Nothing, res) -> (Data.IntSet.empty, res) 
+              (Just  i, res) -> (Data.IntSet.singleton i, res)
+      {-# INLINE goO #-}
+
+      goM :: Ord k => k -> Int -> Data.Map.Map k Data.IntSet.IntSet -> Data.Map.Map k Data.IntSet.IntSet
+      goM k v = Data.Map.insertWith (\_ s -> Data.IntSet.insert v s) k (Data.IntSet.singleton v)
+      {-# INLINE goM #-}
+{-# INLINEABLE zipInsert' #-}
 
 zipInsert :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> Maybe (I.IndexDimension ir t)
 zipInsert val key index =
@@ -95,10 +117,10 @@ zipDelete val key index = Just $
       {-# INLINE goM #-}
 {-# INLINEABLE zipDelete #-}
 
-zipDimensions :: (forall ir kr t . Ord t => I.IKeyDimension kr t -> I.IndexDimension ir t -> Maybe (I.IndexDimension ir t))
+zipDimensions :: Applicative f => (forall ir kr t . Ord t => I.IKeyDimension kr t -> I.IndexDimension ir t -> f (I.IndexDimension ir t))
               -> I.IKey  krs ts
               -> I.Index irs ts
-              -> Maybe (I.Index irs ts)
+              -> f (I.Index irs ts)
 zipDimensions combine (I.K1 kd) (I.I1 ixd) = I.I1 <$> combine kd ixd
 zipDimensions combine (I.KN kd kt) (I.IN ixd it) = I.IN <$> combine kd ixd <*> zipDimensions combine kt it
 zipDimensions _ _ _ = error $ moduleName <> ".zipDimensions: The impossible happened."

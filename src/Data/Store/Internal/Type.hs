@@ -233,6 +233,32 @@ data GenericKey dim rs ts where
     K1 :: dim r t -> GenericKey dim r t
     KN :: dim r t -> GenericKey dim rt tt -> GenericKey dim (r :. rt) (t :. tt)
 
+instance Eq (GenericKey IKeyDimension rs ts) where
+    (K1 x) == (K1 y) = x == y
+    (KN x xt) == (KN y yt) = x == y && xt == yt
+    _ == _ = False    
+
+    (K1 x) /= (K1 y) = x /= y
+    (KN x xt) /= (KN y yt) = x /= y || xt /= yt
+    _ /= _ = True
+
+{-
+instance Eq (dim O t) => Eq (GenericKey dim O t) where
+    (K1 x) == (K1 y) = x == y
+    (K1 x) /= (K1 y) = x /= y
+
+instance Eq (dim M t) => Eq (GenericKey dim M t) where
+    (K1 x) == (K1 y) = x == y
+    (K1 x) /= (K1 y) = x /= y
+
+instance (Eq (dim r t), Eq (GenericKey dim rt tt)) => Eq (GenericKey dim (r :. rt) (t :. tt)) where
+    (KN x xt) == (KN y yt) = x == y && xt == yt
+    _ == _ = False
+
+    (KN x xt) /= (KN y yt) = x /= y || xt /= yt
+    _ /= _ = True
+-}
+
 instance Ser.Serialize (dim O t) => Ser.Serialize (GenericKey dim O t) where
     get = K1 <$> Ser.get
     put (K1 d) = Ser.put d
@@ -355,6 +381,15 @@ instance Show t => Show (KeyDimension r t) where
 data IKeyDimension r t where
     IKeyDimensionM :: Ord t => [t] -> IKeyDimension M t
     IKeyDimensionO :: Ord t => t  -> IKeyDimension O t
+
+instance Eq (IKeyDimension r t) where
+    (IKeyDimensionM x) == (IKeyDimensionM y) = x == y
+    (IKeyDimensionO x) == (IKeyDimensionO y) = x == y
+    _ == _ = False
+
+    (IKeyDimensionM x) /= (IKeyDimensionM y) = x /= y
+    (IKeyDimensionO x) /= (IKeyDimensionO y) = x /= y
+    _ /= _ = True    
 
 deriving instance Typeable2 IKeyDimension
 
