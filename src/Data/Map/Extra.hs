@@ -2,7 +2,9 @@ module Data.Map.Extra
 ( insertUnique
 ) where
 
-import qualified Data.Map
+--------------------------------------------------------------------------------
+import qualified Data.Map.Strict as Data.Map
+--------------------------------------------------------------------------------
 
 -- | The expression (@insertUnique k v old@)
 -- returns (@Just (Data.Map.insert k v old)@) if the map @old@ did not contain

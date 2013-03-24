@@ -22,8 +22,8 @@ import           Control.Applicative ((<$>), (<*>))
 import           Data.Monoid ((<>))
 import           Data.Data (Typeable, Typeable2)
 import qualified Data.Data
-import qualified Data.Map    
-import qualified Data.IntMap
+import qualified Data.Map.Strict as Data.Map    
+import qualified Data.IntMap.Strict as Data.IntMap
 import qualified Data.IntSet
 import qualified Data.List
 import qualified Data.Foldable as F
@@ -212,7 +212,7 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 data Store krs irs ts v = Store
     { storeV :: Data.IntMap.IntMap (IKey krs ts, v)
     , storeI :: Index irs ts
-    , storeNID :: Int
+    , storeNID :: {-# UNPACK #-} !Int
     } deriving (Typeable)
 
 instance (Ser.Serialize (IKey krs ts), Ser.Serialize (Index irs ts), Ser.Serialize v) => Ser.Serialize (Store krs irs ts v) where
@@ -459,8 +459,17 @@ instance GetDimension n (Index rt tt) => GetDimension (S n) (Index (r :. rt) (t 
     getDimension (S n) (IN _ ixt) = getDimension n ixt
     getDimension _ (I1 _) = error $ moduleName <> ".Index.getDimension: The impossible happened."
 
+data TT
+data FF
+
+type family   EmptyProxyIsSpecial t :: *
+type instance EmptyProxyIsSpecial Int = TT
+
 class Empty a where
     empty :: a
+
+class EmptyProxy flag a where
+    emptyProxy :: flag -> a
 
 instance Ord t => Empty (Index O t) where
     empty = I1 (IndexDimensionO Data.Map.empty)
