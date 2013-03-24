@@ -5,15 +5,15 @@ module Data.Store.Storable
 ( Storable(..)
 
 , insert
-, update
+, insert'
 , updateWithKey
+, updateWithKey'
+, update
+, update'
 , fromList
+, fromList'
 ) where
 
---------------------------------------------------------------------------------
-import           Control.Applicative ((<$>))
---------------------------------------------------------------------------------
-import qualified Data.Foldable
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type as I 
 import qualified Data.Store as S 
@@ -50,6 +50,14 @@ insert :: Storable v
 insert v = S.insert (key v) v
 {-# INLINE insert #-}
 
+-- | See @'Data.Store.insert''@.
+insert' :: Storable v
+        => v
+        -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
+        -> (S.RawKey (StoreKRS v) (StoreTS v), S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
+insert' v = S.insert' (key v) v
+{-# INLINE insert' #-}
+
 -- | See @'Data.Store.update'@.
 update :: (Storable v, S.IsSelection sel)
        => (v -> Maybe v)
@@ -58,6 +66,15 @@ update :: (Storable v, S.IsSelection sel)
        -> Maybe (S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
 update tr = S.update (maybe Nothing (\v -> Just (v, Just $! key v)) . tr)
 {-# INLINE update #-}
+
+-- | See @'Data.Store.update''@.
+update' :: (Storable v, S.IsSelection sel)
+        => (v -> Maybe v)
+        -> sel (StoreKRS v) (StoreIRS v) (StoreTS v)
+        -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
+        -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
+update' tr = S.update' (maybe Nothing (\v -> Just (v, Just $! key v)) . tr)
+{-# INLINE update' #-}
 
 -- | See @'Data.Store.updateWithKey'@.
 updateWithKey :: (Storable v, S.IsSelection sel)
@@ -68,10 +85,26 @@ updateWithKey :: (Storable v, S.IsSelection sel)
 updateWithKey tr = S.updateWithKey (\rk vv -> maybe Nothing (\v -> Just (v, Just $! key v)) $ tr rk vv)
 {-# INLINE updateWithKey #-}
 
+-- | See @'Data.Store.updateWithKey''@.
+updateWithKey' :: (Storable v, S.IsSelection sel)
+               => (S.RawKey (StoreKRS v) (StoreTS v) -> v -> Maybe v)
+               -> sel (StoreKRS v) (StoreIRS v) (StoreTS v)
+               -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
+               -> S.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
+updateWithKey' tr = S.updateWithKey' (\rk vv -> maybe Nothing (\v -> Just (v, Just $! key v)) $ tr rk vv)
+{-# INLINE updateWithKey' #-}
+
 -- | See @'Data.Store.fromList'@.
 fromList :: (I.Empty (I.Index (StoreIRS v) (StoreTS v)), Storable v)
          => [v]
          -> Maybe (I.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v)
-fromList = Data.Foldable.foldlM (\s v -> snd <$> S.insert (key v) v s) S.empty
+fromList = S.fromList . map (\v -> (key v, v))
 {-# INLINE fromList #-}
+
+-- | See @'Data.Store.fromList''@.
+fromList' :: (I.Empty (I.Index (StoreIRS v) (StoreTS v)), Storable v)
+          => [v]
+          -> I.Store (StoreKRS v) (StoreIRS v) (StoreTS v) v
+fromList' = S.fromList' . map (\v -> (key v, v))
+{-# INLINE fromList' #-}
 

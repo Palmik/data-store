@@ -124,11 +124,14 @@ module Data.Store
 
   -- * Inserting
 , insert
+, insert'
 
   -- * Updating
-, update
-, updateElements
 , updateWithKey
+, updateWithKey'
+, update
+, update'
+, updateElements
 , delete
 
   -- * Traversing
@@ -146,6 +149,7 @@ module Data.Store
 , elements
 , keys
 , fromList
+, fromList'
 
   -- * Querying
 , size
@@ -212,7 +216,6 @@ import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
 import           Data.Maybe
 import           Data.Monoid ((<>))
-import qualified Data.Map    
 import qualified Data.IntMap
 import qualified Data.IntSet
 import qualified Data.IntSet.Extra
@@ -340,11 +343,11 @@ singleton k v = snd . fromJust $ insert k v empty
 
 -- INSERTING
 
--- | The expression (@'Data.Store.insert' k v old@) is either
--- @Nothing@ if inserting the @(k, v)@ key-element pair would cause
--- a collision or (@Just rk new@) where @rk@ is the raw key of
+-- | The expression (@'Data.Store.insert' k e old@) is either
+-- @Nothing@ if inserting the @(k, e)@ key-element pair would cause
+-- a collision or (@Just (rk, new)@), where @rk@ is the raw key of
 -- @k@ and @new@ is store containing the same key-element pairs as @old@ plus
--- @(k, v)@. 
+-- @(k, e)@. 
 --
 -- Examples:
 --
@@ -354,6 +357,7 @@ singleton k v = snd . fromJust $ insert k v empty
 --
 -- See also:
 --
+-- * 'Data.Store.insert''
 -- * 'Data.Store.Internal.Type.Key'
 -- * 'Data.Store.Internal.Type.RawKey'
 insert :: I.Key krs ts
@@ -370,30 +374,32 @@ insert k v (I.Store vals index nid) =
         }
       {-# INLINE mk #-}
       
-      internal = toInternal index k
+      internal = I.keyToInternal index k
       {-# INLINE internal #-}
 
-      toInternal :: I.Index irs ts -> I.Key krs ts -> I.IKey krs ts
-      toInternal (I.I1 ix) (I.K1 I.KeyDimensionA) = I.K1 (I.IKeyDimensionO $! nextKey ix) 
-      toInternal (I.I1 _) (I.K1 (I.KeyDimensionO x)) = I.K1 (I.IKeyDimensionO x) 
-      toInternal (I.I1 _) (I.K1 (I.KeyDimensionM x)) = I.K1 (I.IKeyDimensionM x) 
-      toInternal (I.IN ix is) (I.KN I.KeyDimensionA s) = I.KN (I.IKeyDimensionO $! nextKey ix) $ toInternal is s
-      toInternal (I.IN _ is) (I.KN (I.KeyDimensionO x) s) = I.KN (I.IKeyDimensionO x) $ toInternal is s
-      toInternal (I.IN _ is) (I.KN (I.KeyDimensionM x) s) = I.KN (I.IKeyDimensionM x) $ toInternal is s 
-      toInternal _ _ = error $ moduleName <> ".insert.toInternal: Impossible happened."
-      {-# INLINE toInternal #-}
 
-      nextKey :: I.Auto t => I.IndexDimension r t -> t
-      nextKey i =
-        case i of
-            (I.IndexDimensionM m) -> nextKey' m
-            (I.IndexDimensionO m) -> nextKey' m
-        where
-          nextKey' m = if Data.Map.null m
-                          then minBound
-                          else succ . fst $! Data.Map.findMax m
-          {-# INLINE nextKey' #-}
-      {-# INLINE nextKey #-}
+-- | The expression (@'Data.Store.insert'' k v old@) is @(rk, new)@,
+-- where @rk@ is the raw key of @k@ and @new@ is a store that contains
+-- the same key-element pairs as @old@ plus @(k, e)@.
+-- Any key-value pairs from @old@ colliding with @(k, e)@ are not included in @new@.
+--
+-- See also:
+--
+-- * 'Data.Store.insert'
+-- * 'Data.Store.Internal.Type.Key'
+-- * 'Data.Store.Internal.Type.RawKey'
+insert' :: I.Key krs ts
+        -> e
+        -> I.Store krs irs ts e
+        -> (I.RawKey krs ts, I.Store krs irs ts e)
+insert' k e old@(I.Store _ index nid) = (I.keyInternalToRaw internal,
+    I.insertWithEID' nid internal e (old
+        { I.storeNID = nid + 1 
+        }))
+    where
+      internal = I.keyToInternal index k
+      {-# INLINEABLE internal #-}
+{-# INLINE insert' #-}
 
 -- TRAVERSING
 
@@ -425,7 +431,7 @@ size (I.Store vs _ _) = Data.IntMap.size vs
 
 -- | The expression (@'Data.Store.updateWithKey' tr sel old@)
 -- is (@Just new@) where @new@ is a store containing the same key-element
--- pairs as @old@ except for any key-element pairs @(k, e)@ that matcH THE
+-- pairs as @old@ except for any key-element pairs @(k, e)@ that match the
 -- selection @sel@, those are updated as follows:
 --
 -- * If @(tr k e)@ is @Nothing@ the pair is not included in @new@.
@@ -435,7 +441,11 @@ size (I.Store vs _ _) = Data.IntMap.size vs
 -- If any of the updated key-element pairs would cause a collision, the
 -- result is @Nothing@.
 --
--- Complexity: /O(c + s * (min(n, W) + q * log n))/ 
+-- Complexity: /O(c + s * (min(n, W) + q * log n))/
+--
+-- See also:
+--
+--   * 'Data.Store.updateWithKey''
 updateWithKey :: IsSelection sel
               => (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
               -> sel krs irs ts
@@ -443,6 +453,31 @@ updateWithKey :: IsSelection sel
               -> Maybe (I.Store krs irs ts v)
 updateWithKey tr sel s = genericUpdateWithKey tr (resolve sel s) s
 {-# INLINE updateWithKey #-}
+
+-- | The expression (@'Data.Store.updateWithKey'' tr sel old@)
+-- is @new@ where @new@ is a store containing the same key-element
+-- pairs as @old@ except for any key-element pairs @(k, e)@ that match the
+-- selection @sel@, those are updated as follows:
+--
+-- * If @(tr k e)@ is @Nothing@ the pair is not included in @new@.
+-- * If @(tr k e)@ is (@Just (e', Nothing)@) the pair is replaced by pair @(k, e')@.
+-- * If @(tr k e)@ is (@Just (e', Just k')@) the pair is replaced by pair @(k', e')@.
+--
+-- Any pairs of the original store @old@ that would collide with @(k, e)@ are
+-- not included in @new@.
+--
+-- Complexity: /O(c + d * s * (min(n, W) + q * log n))/
+--
+-- See also:
+--
+--   * 'Data.Store.updateWithKey'
+updateWithKey' :: IsSelection sel
+               => (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+               -> sel krs irs ts
+               -> I.Store krs irs ts v
+               -> I.Store krs irs ts v
+updateWithKey' tr sel s = genericUpdateWithKey' tr (resolve sel s) s
+{-# INLINE updateWithKey' #-}
 
 -- | The expression (@'Data.Store.update' tr sel s@) is equivalent
 -- to (@'Data.Store.Selection.updateWithKey' tr' sel s@) where
@@ -457,11 +492,24 @@ update :: IsSelection sel
 update tr = updateWithKey (const tr)
 {-# INLINE update #-}
 
+-- | The expression (@'Data.Store.update'' tr sel s@) is equivalent
+-- to (@'Data.Store.Selection.updateWithKey'' tr' sel s@) where
+-- (@tr' = (\_ v -> tr v) = const tr@).
+--
+-- Complexity: /O(c + d * s * (min(n, W) + q * log n))/ 
+update' :: IsSelection sel
+        => (v -> Maybe (v, Maybe (I.Key krs ts)))
+        -> sel krs irs ts
+        -> I.Store krs irs ts v
+        -> I.Store krs irs ts v
+update' tr = updateWithKey' (const tr)
+{-# INLINE update' #-}
+
 -- | The expression (@'Data.Store.updateElements' tr sel s@) is equivalent
 -- to (@'Data.Store.Selection.update' tr' sel s@) where
 -- (@tr' = (maybe Nothing (\v -> Just (v, Nothing)) . tr)@).
 --
--- Complexity: /O(c + s * min(n, W)/ 
+-- Complexity: /O(c + s * min(n, W))/ 
 updateElements :: IsSelection sel
              => (v -> Maybe v)
              -> sel krs irs ts
@@ -507,7 +555,7 @@ foldr accum start (I.Store vs _ _) =
 -- | The expression (@'Data.Store.foldlWithKey' f z s@) folds the store
 -- using the given left-associative operator.
 foldlWithKey :: (b -> I.RawKey krs ts -> v -> b)
-              -> b
+              -> b 
               -> I.Store krs irs ts v
               -> b
 foldlWithKey accum start (I.Store vs _ _) =
@@ -552,6 +600,12 @@ fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store kr
 fromList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) empty 
 {-# INLINE fromList #-}
 
+-- | The expression (@'Data.Store.fromList'' kvs@) is @store@
+-- containing the given key-element pairs (collidiong pairs are not included).
+fromList' :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store krs irs ts v
+fromList' = Data.Foldable.foldl (\s (k, v) -> snd $ insert' k v s) empty 
+{-# INLINE fromList' #-}
+
 -- INSTANCES
 
 instance Functor (I.Store krs irs ts) where
@@ -579,9 +633,9 @@ genericLookup ids (I.Store vs _ _) =
 {-# INLINE genericLookup #-}
 
 genericUpdateWithKey :: (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
-                      -> Data.IntSet.IntSet
-                      -> I.Store krs irs ts v
-                      -> Maybe (I.Store krs irs ts v)
+                     -> Data.IntSet.IntSet
+                     -> I.Store krs irs ts v
+                     -> Maybe (I.Store krs irs ts v)
 genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
     where
       accum i store@(I.Store vs ix nid) =
@@ -596,8 +650,8 @@ genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
                          { I.storeV = Data.IntMap.insert i (ik, nv) vs
                          , I.storeI = nix
                          , I.storeNID = nid
-                         }) <$> I.indexInsertID (mkik nk ik) i (I.indexDeleteID ik i ix)
-                       -- The keys are identical: update the element:
+                         }) <$> I.indexInsertID nik i (I.indexDeleteID ik i ix)
+                       -- The keys are identical: update the element.
                        else Just I.Store
                          { I.storeV = Data.IntMap.insert i (ik, nv) vs
                          , I.storeI = ix
@@ -619,18 +673,56 @@ genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
                     }
             _ -> Just store
       {-# INLINEABLE accum #-}
-
-      mkik :: I.Key krs ts -> I.IKey krs ts -> I.IKey krs ts
-      mkik (I.K1 I.KeyDimensionA) ik@(I.K1 _) = ik
-      mkik (I.K1 (I.KeyDimensionO d))   (I.K1 _)   = I.K1 (I.IKeyDimensionO d)
-      mkik (I.K1 (I.KeyDimensionM d))   (I.K1 _)   = I.K1 (I.IKeyDimensionM d)
-      
-      mkik (I.KN I.KeyDimensionA s) (I.KN ik is) = I.KN ik $ mkik s is
-      mkik (I.KN (I.KeyDimensionO d) s) (I.KN _ is) = I.KN (I.IKeyDimensionO d) $ mkik s is
-      mkik (I.KN (I.KeyDimensionM d) s) (I.KN _ is) = I.KN (I.IKeyDimensionM d) $ mkik s is
-      mkik _ _ = error $ moduleName <> ".genericUpdate.mkik: The impossible happened."
-      {-# INLINEABLE mkik #-}
 {-# INLINE genericUpdateWithKey #-}
+
+genericUpdateWithKey' :: (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+                      -> Data.IntSet.IntSet
+                      -> I.Store krs irs ts v
+                      -> I.Store krs irs ts v
+genericUpdateWithKey' tr ids old = Data.IntSet.foldr accum old ids
+    where
+      accum i store@(I.Store vs ix nid) =
+          case Data.IntMap.lookup i vs of
+            Just (ik, v) ->
+                case tr (I.keyInternalToRaw ik) v of
+                  -- User wants to update the element & key.
+                  Just (nv, Just nk) -> let nik = mkik nk ik in 
+                    if nik /= ik
+                       -- The keys are different: update the element & key.
+                       then I.insertWithEID' i nik nv (store { I.storeI = I.indexDeleteID ik i ix })
+                       -- The keys are identical: update the element.
+                       else I.Store
+                         { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                         , I.storeI = ix
+                         , I.storeNID = nid
+                         }
+
+                  -- Update the element.
+                  Just (nv, Nothing) -> I.Store
+                    { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                    , I.storeI = ix
+                    , I.storeNID = nid
+                    }
+
+                  -- Delete.
+                  Nothing -> I.Store
+                    { I.storeV = Data.IntMap.delete i vs
+                    , I.storeI = I.indexDeleteID ik i ix
+                    , I.storeNID = nid
+                    }
+            _ -> store
+      {-# INLINEABLE accum #-}
+{-# INLINE genericUpdateWithKey' #-}
+
+mkik :: I.Key krs ts -> I.IKey krs ts -> I.IKey krs ts
+mkik (I.K1 I.KeyDimensionA) ik@(I.K1 _) = ik
+mkik (I.K1 (I.KeyDimensionO d))   (I.K1 _)   = I.K1 (I.IKeyDimensionO d)
+mkik (I.K1 (I.KeyDimensionM d))   (I.K1 _)   = I.K1 (I.IKeyDimensionM d)
+mkik (I.KN I.KeyDimensionA s) (I.KN ik is) = I.KN ik $ mkik s is
+mkik (I.KN (I.KeyDimensionO d) s) (I.KN _ is) = I.KN (I.IKeyDimensionO d) $ mkik s is
+mkik (I.KN (I.KeyDimensionM d) s) (I.KN _ is) = I.KN (I.IKeyDimensionM d) $ mkik s is
+mkik _ _ = error $ moduleName <> ".genericUpdate.mkik: The impossible happened."
+{-# INLINEABLE mkik #-}
 
 -- TEST
 

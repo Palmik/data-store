@@ -13,6 +13,7 @@ import           Data.Maybe
 import qualified Data.Foldable as F 
 import qualified Data.Map
 import qualified Data.Map.Extra
+import qualified Data.IntMap
 import qualified Data.IntSet
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type as I
@@ -34,6 +35,53 @@ keyFromInternal (I.K1 (I.IKeyDimensionM x)) = I.K1 (I.KeyDimensionM x)
 keyFromInternal (I.KN (I.IKeyDimensionO x) s) = I.KN (I.KeyDimensionO x) (keyFromInternal s)
 keyFromInternal (I.KN (I.IKeyDimensionM x) s) = I.KN (I.KeyDimensionM x) (keyFromInternal s)
 {-# INLINE keyFromInternal #-}
+
+-- Inserts the given key-element pair under the given element identifier.
+-- Does not increase @storeNID@.
+insertWithEID' :: Int
+               -> I.IKey krs ts
+               -> e
+               -> I.Store krs irs ts e
+               -> I.Store krs irs ts e
+insertWithEID' eid internal e old@(I.Store vals index _) = old
+    { I.storeV = Data.IntMap.insert eid (internal, e) nvals
+    , I.storeI = nindex
+    }
+    where
+      (nvals, nindex) = Data.IntSet.foldr go (vals, ix) collisions
+      -- {-# INLINEABLE (nindex, nvals) #-}
+      
+      (collisions, ix) = indexInsertID' internal eid index
+      -- {-# INLINEABLE (collisions, ix) #-}
+          
+      go c (v', i') =
+        case Data.IntMap.updateLookupWithKey (\_ _ -> Nothing) c v' of
+          (Just (ik, _), v'') -> (v'', indexDeleteID ik c i')
+          _ -> error $ moduleName <> ".insert.go: The impossible happened."
+      {-# INLINEABLE go #-}
+{-# INLINE insertWithEID' #-}
+
+keyToInternal :: I.Index irs ts -> I.Key krs ts -> I.IKey krs ts
+keyToInternal (I.I1 ix) (I.K1 I.KeyDimensionA) = I.K1 (I.IKeyDimensionO $! nextKey ix) 
+keyToInternal (I.I1 _) (I.K1 (I.KeyDimensionO x)) = I.K1 (I.IKeyDimensionO x) 
+keyToInternal (I.I1 _) (I.K1 (I.KeyDimensionM x)) = I.K1 (I.IKeyDimensionM x) 
+keyToInternal (I.IN ix is) (I.KN I.KeyDimensionA s) = I.KN (I.IKeyDimensionO $! nextKey ix) $ keyToInternal is s
+keyToInternal (I.IN _ is) (I.KN (I.KeyDimensionO x) s) = I.KN (I.IKeyDimensionO x) $ keyToInternal is s
+keyToInternal (I.IN _ is) (I.KN (I.KeyDimensionM x) s) = I.KN (I.IKeyDimensionM x) $ keyToInternal is s 
+keyToInternal _ _ = error $ moduleName <> ".insert.keyToInternal: Impossible happened."
+{-# INLINE keyToInternal #-}
+      
+nextKey :: I.Auto t => I.IndexDimension r t -> t
+nextKey i =
+  case i of
+    (I.IndexDimensionM m) -> nextKey' m
+    (I.IndexDimensionO m) -> nextKey' m
+  where
+    nextKey' m = if Data.Map.null m
+                   then minBound
+                   else succ . fst $! Data.Map.findMax m
+    {-# INLINE nextKey' #-}
+{-# INLINE nextKey #-}
 
 indexInsertID' :: I.IKey krs ts
                -> Int
