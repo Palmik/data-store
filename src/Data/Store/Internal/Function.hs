@@ -12,9 +12,9 @@ import           Data.Monoid ((<>))
 import           Data.Maybe
 import qualified Data.List
 import qualified Data.Foldable as F 
-import qualified Data.Map.Strict as Data.Map
+import qualified Data.Map
 import qualified Data.Map.Extra
-import qualified Data.IntMap.Strict as Data.IntMap
+import qualified Data.IntMap
 import qualified Data.IntSet
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type as I

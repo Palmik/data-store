@@ -2,12 +2,14 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module TS.B01
 where
 
 --------------------------------------------------------------------------------
 import Control.Applicative
+import Control.DeepSeq (NFData(..))
 --------------------------------------------------------------------------------
 import Data.Maybe
 import qualified Data.IntSet
@@ -49,6 +51,9 @@ instance T.Tabular C01 where
   ixTab (C01IX x _ _) D1 = x
   ixTab (C01IX _ x _) D2 = x
   ixTab (C01IX _ _ x) D3 = x
+
+instance NFData (T.Tab C01 (T.AnIndex C01)) where
+    rnf (C01IX x1 x2 x3) = rnf x1 `seq` rnf x2 `seq` rnf x3
 
 type TS = T.Table C01
 

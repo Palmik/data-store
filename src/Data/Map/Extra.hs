@@ -3,7 +3,7 @@ module Data.Map.Extra
 ) where
 
 --------------------------------------------------------------------------------
-import qualified Data.Map.Strict as Data.Map
+import qualified Data.Map
 --------------------------------------------------------------------------------
 
 -- | The expression (@insertUnique k v old@)

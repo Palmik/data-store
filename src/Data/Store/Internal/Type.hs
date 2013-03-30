@@ -22,8 +22,8 @@ import           Control.Applicative ((<$>), (<*>))
 import           Data.Monoid ((<>))
 import           Data.Data (Typeable, Typeable2)
 import qualified Data.Data
-import qualified Data.Map.Strict as Data.Map    
-import qualified Data.IntMap.Strict as Data.IntMap
+import qualified Data.Map
+import qualified Data.IntMap
 import qualified Data.IntSet
 import qualified Data.List
 import qualified Data.Foldable as F
