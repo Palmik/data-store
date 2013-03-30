@@ -326,18 +326,18 @@ infixr 3 .:.
 -- CREATING
 
 -- | The expression @'Data.Store.empty'@ is empty store.
-empty :: I.Empty (I.Index irs ts) => I.Store krs irs ts v
+empty :: I.Empty (I.Index irs ts) => I.Store tag krs irs ts v
 empty = I.Store
     { I.storeV = Data.IntMap.empty
     , I.storeI = I.empty
-    , I.storeNID = minBound
+    , I.storeNID = 0
     }
 {-# INLINE empty #-}
 
 -- | The expression (@'Data.Store.singleton' k v@) is store that contains
 -- only the @(k, v)@ as a key-element pair.
 singleton :: I.Empty (I.Index irs ts)
-          => I.Key krs ts -> v -> I.Store krs irs ts v
+          => I.Key krs ts -> v -> I.Store tag krs irs ts v
 singleton k v = snd . fromJust $ insert k v empty
 {-# INLINE singleton #-}
 
@@ -362,8 +362,8 @@ singleton k v = snd . fromJust $ insert k v empty
 -- * 'Data.Store.Internal.Type.RawKey'
 insert :: I.Key krs ts
        -> v
-       -> I.Store krs irs ts v
-       -> Maybe (I.RawKey krs ts, I.Store krs irs ts v)
+       -> I.Store tag krs irs ts v
+       -> Maybe (I.RawKey krs ts, I.Store tag krs irs ts v)
 insert k v (I.Store vals index nid) =
     (\res -> (I.keyInternalToRaw internal, mk res)) <$> I.indexInsertID internal nid index
     where
@@ -390,8 +390,8 @@ insert k v (I.Store vals index nid) =
 -- * 'Data.Store.Internal.Type.RawKey'
 insert' :: I.Key krs ts
         -> e
-        -> I.Store krs irs ts e
-        -> (I.RawKey krs ts, I.Store krs irs ts e)
+        -> I.Store tag krs irs ts e
+        -> (I.RawKey krs ts, I.Store tag krs irs ts e)
 insert' k e old@(I.Store _ index nid) = (I.keyInternalToRaw internal,
     I.insertWithEID' nid internal e (old
         { I.storeNID = nid + 1 
@@ -405,7 +405,7 @@ insert' k e old@(I.Store _ index nid) = (I.keyInternalToRaw internal,
 
 -- | The expression @('Data.Store.map' tr old@) is store where every element of
 -- @old@ was transformed using the function @tr@.
-map :: (v1 -> v2) -> I.Store krs irs ts v1 -> I.Store krs irs ts v2
+map :: (v1 -> v2) -> I.Store tag krs irs ts v1 -> I.Store tag krs irs ts v2
 map tr store@(I.Store vs _ _) = store
     { I.storeV = Data.IntMap.map (\(ik, v) -> (ik, tr v)) vs
     }
@@ -417,13 +417,13 @@ map tr store@(I.Store vs _ _) = store
 -- list of (raw key)-element pairs that match the selection.
 -- 
 -- Complexity: /O(c + s * min(n, W))/
-lookup :: IsSelection sel => sel krs irs ts -> I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
+lookup :: IsSelection sel => sel tag krs irs ts -> I.Store tag krs irs ts v -> [(I.RawKey krs ts, v)]
 lookup sel s = genericLookup (resolve sel s) s
 {-# INLINE lookup #-}
 
 -- | The expression (@'Data.Store.size' store@) is the number of elements
 -- in @store@. 
-size :: I.Store krs irs ts v -> Int
+size :: I.Store tag krs irs ts v -> Int
 size (I.Store vs _ _) = Data.IntMap.size vs
 {-# INLINE size #-}
 
@@ -448,9 +448,9 @@ size (I.Store vs _ _) = Data.IntMap.size vs
 --   * 'Data.Store.updateWithKey''
 updateWithKey :: IsSelection sel
               => (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
-              -> sel krs irs ts
-              -> I.Store krs irs ts v
-              -> Maybe (I.Store krs irs ts v)
+              -> sel tag krs irs ts
+              -> I.Store tag krs irs ts v
+              -> Maybe (I.Store tag krs irs ts v)
 updateWithKey tr sel s = genericUpdateWithKey tr (resolve sel s) s
 {-# INLINE updateWithKey #-}
 
@@ -463,8 +463,8 @@ updateWithKey tr sel s = genericUpdateWithKey tr (resolve sel s) s
 -- * If @(tr k e)@ is (@Just (e', Nothing)@) the pair is replaced by pair @(k, e')@.
 -- * If @(tr k e)@ is (@Just (e', Just k')@) the pair is replaced by pair @(k', e')@.
 --
--- Any pairs of the original store @old@ that would collide with @(k, e)@ are
--- not included in @new@.
+-- Any pairs of the original store @old@ that would, after the update, cause collisons
+-- are not included in @new@. 
 --
 -- Complexity: /O(c + d * s * (min(n, W) + q * log n))/
 --
@@ -473,9 +473,9 @@ updateWithKey tr sel s = genericUpdateWithKey tr (resolve sel s) s
 --   * 'Data.Store.updateWithKey'
 updateWithKey' :: IsSelection sel
                => (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
-               -> sel krs irs ts
-               -> I.Store krs irs ts v
-               -> I.Store krs irs ts v
+               -> sel tag krs irs ts
+               -> I.Store tag krs irs ts v
+               -> I.Store tag krs irs ts v
 updateWithKey' tr sel s = genericUpdateWithKey' tr (resolve sel s) s
 {-# INLINE updateWithKey' #-}
 
@@ -486,9 +486,9 @@ updateWithKey' tr sel s = genericUpdateWithKey' tr (resolve sel s) s
 -- Complexity: /O(c + s * (min(n, W) + q * log n))/ 
 update :: IsSelection sel
        => (v -> Maybe (v, Maybe (I.Key krs ts)))
-       -> sel krs irs ts
-       -> I.Store krs irs ts v
-       -> Maybe (I.Store krs irs ts v)
+       -> sel tag krs irs ts
+       -> I.Store tag krs irs ts v
+       -> Maybe (I.Store tag krs irs ts v)
 update tr = updateWithKey (const tr)
 {-# INLINE update #-}
 
@@ -499,9 +499,9 @@ update tr = updateWithKey (const tr)
 -- Complexity: /O(c + d * s * (min(n, W) + q * log n))/ 
 update' :: IsSelection sel
         => (v -> Maybe (v, Maybe (I.Key krs ts)))
-        -> sel krs irs ts
-        -> I.Store krs irs ts v
-        -> I.Store krs irs ts v
+        -> sel tag krs irs ts
+        -> I.Store tag krs irs ts v
+        -> I.Store tag krs irs ts v
 update' tr = updateWithKey' (const tr)
 {-# INLINE update' #-}
 
@@ -512,9 +512,9 @@ update' tr = updateWithKey' (const tr)
 -- Complexity: /O(c + s * min(n, W))/ 
 updateElements :: IsSelection sel
              => (v -> Maybe v)
-             -> sel krs irs ts
-             -> I.Store krs irs ts v
-             -> I.Store krs irs ts v
+             -> sel tag krs irs ts
+             -> I.Store tag krs irs ts v
+             -> I.Store tag krs irs ts v
 updateElements tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
 {-# INLINE updateElements #-}             
 
@@ -524,9 +524,9 @@ updateElements tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothi
 --
 -- Complexity: /O(c + s * (min(n, W) + q * log n)/ 
 delete :: IsSelection sel
-       => sel krs irs ts
-       -> I.Store krs irs ts v
-       -> I.Store krs irs ts v
+       => sel tag krs irs ts
+       -> I.Store tag krs irs ts v
+       -> I.Store tag krs irs ts v
 delete sel s = fromJust $! updateWithKey (\_ _ -> Nothing) sel s
 {-# INLINE delete #-}
 
@@ -536,7 +536,7 @@ delete sel s = fromJust $! updateWithKey (\_ _ -> Nothing) sel s
 -- using the given right-associative operator.
 foldrWithKey :: (I.RawKey krs ts -> v -> b -> b)
              -> b
-             -> I.Store krs irs ts v
+             -> I.Store tag krs irs ts v
              -> b
 foldrWithKey accum start (I.Store vs _ _) =
     Data.IntMap.foldr (\(ik, v) b -> accum (I.keyInternalToRaw ik) v b) start vs
@@ -546,7 +546,7 @@ foldrWithKey accum start (I.Store vs _ _) =
 -- using the given right-associative binary operator.
 foldr :: (v -> b -> b)
       -> b
-      -> I.Store krs irs ts v
+      -> I.Store tag krs irs ts v
       -> b
 foldr accum start (I.Store vs _ _) =
     Data.IntMap.foldr (\(_, v) b -> accum v b) start vs
@@ -556,7 +556,7 @@ foldr accum start (I.Store vs _ _) =
 -- using the given left-associative operator.
 foldlWithKey :: (b -> I.RawKey krs ts -> v -> b)
               -> b 
-              -> I.Store krs irs ts v
+              -> I.Store tag krs irs ts v
               -> b
 foldlWithKey accum start (I.Store vs _ _) =
     Data.IntMap.foldl (\b (ik, v) -> accum b (I.keyInternalToRaw ik) v) start vs
@@ -566,7 +566,7 @@ foldlWithKey accum start (I.Store vs _ _) =
 -- using the given left-associative binary operator.
 foldl :: (b -> v -> b)
       -> b
-      -> I.Store krs irs ts v
+      -> I.Store tag krs irs ts v
       -> b
 foldl accum start (I.Store vs _ _) =
     Data.IntMap.foldl (\b (_, v) -> accum b v) start vs
@@ -575,19 +575,19 @@ foldl accum start (I.Store vs _ _) =
 -- LISTS
 
 -- | The expression (@'Data.Store.toList' store@) is a list of key-element pairs that are stored in @store@.
-toList :: I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
+toList :: I.Store tag krs irs ts v -> [(I.RawKey krs ts, v)]
 toList (I.Store vs _ _) = Data.List.map (\(ik, v) -> (I.keyInternalToRaw ik, v)) $ Data.IntMap.elems vs
 {-# INLINE toList #-}
 
 -- | The expression (@'Data.Store.elements' store@) is a list of elements that
 -- are stored in @store@.
-elements :: I.Store krs irs ts v -> [v]
+elements :: I.Store tag krs irs ts v -> [v]
 elements (I.Store vs _ _) = Data.List.map snd $ Data.IntMap.elems vs
 {-# INLINE elements #-}
 
 -- | The expression (@'Data.Store.keys' store@) is a list of pairs raw
 -- keys that are stored in @store@.
-keys :: I.Store krs irs ts v -> [I.RawKey krs ts]
+keys :: I.Store tag krs irs ts v -> [I.RawKey krs ts]
 keys (I.Store vs _ _) = Data.List.map (I.keyInternalToRaw . fst) $ Data.IntMap.elems vs
 {-# INLINE keys #-}
 
@@ -596,35 +596,35 @@ keys (I.Store vs _ _) = Data.List.map (I.keyInternalToRaw . fst) $ Data.IntMap.e
 -- key-element pairs or;
 -- b) @Nothing@ if inserting any of the key-element pairs would
 -- cause a collision.
-fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store krs irs ts v)
+fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store tag krs irs ts v)
 fromList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) empty 
 {-# INLINE fromList #-}
 
 -- | The expression (@'Data.Store.fromList'' kvs@) is @store@
 -- containing the given key-element pairs (collidiong pairs are not included).
-fromList' :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store krs irs ts v
+fromList' :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
 fromList' = Data.Foldable.foldl (\s (k, v) -> snd $ insert' k v s) empty 
 {-# INLINE fromList' #-}
 
 -- INSTANCES
 
-instance Functor (I.Store krs irs ts) where
+instance Functor (I.Store tag krs irs ts) where
     fmap = map
     {-# INLINE fmap #-}
 
 -- UTILITY
 
-showIndex :: Show (I.Index irs ts) => I.Store krs irs ts v -> String
+showIndex :: Show (I.Index irs ts) => I.Store tag krs irs ts v -> String
 showIndex (I.Store _ i _) = show i
 {-# INLINE showIndex #-}
 
-printIndex :: Show (I.Index irs ts) => I.Store krs irs ts v -> IO ()
+printIndex :: Show (I.Index irs ts) => I.Store tag krs irs ts v -> IO ()
 printIndex = putStrLn . showIndex
 {-# INLINE printIndex #-}
 
 -- INTERNAL
 
-genericLookup :: Data.IntSet.IntSet -> I.Store krs irs ts v -> [(I.RawKey krs ts, v)]
+genericLookup :: Data.IntSet.IntSet -> I.Store tag krs irs ts v -> [(I.RawKey krs ts, v)]
 genericLookup ids (I.Store vs _ _) =
     Data.IntSet.foldr (\i acc -> case Data.IntMap.lookup i vs of
                                    Just (ik, v) -> (I.keyInternalToRaw ik, v) : acc
@@ -634,11 +634,11 @@ genericLookup ids (I.Store vs _ _) =
 
 genericUpdateWithKey :: (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
                      -> Data.IntSet.IntSet
-                     -> I.Store krs irs ts v
-                     -> Maybe (I.Store krs irs ts v)
-genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
+                     -> I.Store tag krs irs ts v
+                     -> Maybe (I.Store tag krs irs ts v)
+genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldlM' accum old ids
     where
-      accum i store@(I.Store vs ix nid) =
+      accum store@(I.Store vs ix nid) i =
           case Data.IntMap.lookup i vs of
             Just (ik, v) ->
                 case tr (I.keyInternalToRaw ik) v of
@@ -677,11 +677,11 @@ genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldrM accum old ids
 
 genericUpdateWithKey' :: (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
                       -> Data.IntSet.IntSet
-                      -> I.Store krs irs ts v
-                      -> I.Store krs irs ts v
-genericUpdateWithKey' tr ids old = Data.IntSet.foldr accum old ids
+                      -> I.Store tag krs irs ts v
+                      -> I.Store tag krs irs ts v
+genericUpdateWithKey' tr ids old = Data.IntSet.foldl' accum old ids
     where
-      accum i store@(I.Store vs ix nid) =
+      accum store@(I.Store vs ix nid) i =
           case Data.IntMap.lookup i vs of
             Just (ik, v) ->
                 case tr (I.keyInternalToRaw ik) v of
@@ -723,45 +723,4 @@ mkik (I.KN (I.KeyDimensionO d) s) (I.KN _ is) = I.KN (I.IKeyDimensionO d) $ mkik
 mkik (I.KN (I.KeyDimensionM d) s) (I.KN _ is) = I.KN (I.IKeyDimensionM d) $ mkik s is
 mkik _ _ = error $ moduleName <> ".genericUpdate.mkik: The impossible happened."
 {-# INLINEABLE mkik #-}
-
--- TEST
-
-{-
-type Account = Int
-type MyKRS = I.O    I.:. I.M
-type MyIRS = I.M    I.:. I.M
-type MyTS  = Double I.:. String
-type MyStore = I.Store MyKRS MyIRS MyTS Account 
-
-type MyStoreKey = I.Key MyKRS MyTS
-
-type AccountBalance = I.N0
-type AccountName = I.N1
-
-makeMyStoreKey :: Double -> [String] -> MyStoreKey
-makeMyStoreKey d1 d2 = I.KN (I.KeyDimensionO d1) $ I.K1 (I.KeyDimensionM d2)
-
-sAccountBalance :: AccountBalance
-sAccountBalance = I.Z
-
-sAccountName :: AccountName
-sAccountName = I.S I.Z
-
-myStore0 :: MyStore
-myStore0 = empty
-
-myStore1 :: MyStore
-myStore1 = snd . fromJust $ insert (makeMyStoreKey 1.5 ["aa", "bb", "cc"]) 0 myStore0 
-
-myStore2 :: MyStore
-myStore2 = snd . fromJust $ insert (makeMyStoreKey 3.5 ["aaa", "bbb", "ccc"]) 1 myStore1 
-
--- print myStore0
--- printIndex myStore0
--- print myStore1
--- printIndex myStore1
--- print myStore2
--- printIndex myStore2
-
-#-}
 

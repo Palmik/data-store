@@ -10,6 +10,7 @@ import           Control.Applicative
 --------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
 import           Data.Maybe
+import qualified Data.List
 import qualified Data.Foldable as F 
 import qualified Data.Map.Strict as Data.Map
 import qualified Data.Map.Extra
@@ -41,20 +42,20 @@ keyFromInternal (I.KN (I.IKeyDimensionM x) s) = I.KN (I.KeyDimensionM x) (keyFro
 insertWithEID' :: Int
                -> I.IKey krs ts
                -> e
-               -> I.Store krs irs ts e
-               -> I.Store krs irs ts e
+               -> I.Store tag krs irs ts e
+               -> I.Store tag krs irs ts e
 insertWithEID' eid internal e old@(I.Store vals index _) = old
     { I.storeV = Data.IntMap.insert eid (internal, e) nvals
     , I.storeI = nindex
     }
     where
-      (nvals, nindex) = Data.IntSet.foldr go (vals, ix) collisions
-      -- {-# INLINEABLE (nindex, nvals) #-}
+      (nvals, nindex) = Data.IntSet.foldl' go (vals, ix) collisions
+      -- {-#Â INLINEABLE (nindex, nvals) #-}
       
       (collisions, ix) = indexInsertID' internal eid index
       -- {-# INLINEABLE (collisions, ix) #-}
           
-      go c (v', i') =
+      go (v', i') c =
         case Data.IntMap.updateLookupWithKey (\_ _ -> Nothing) c v' of
           (Just (ik, _), v'') -> (v'', indexDeleteID ik c i')
           _ -> error $ moduleName <> ".insert.go: The impossible happened."
@@ -101,11 +102,11 @@ zipInsert' :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> (
 zipInsert' val key index =
     case (index, key) of
       (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO <$> goO k val m
-      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO <$> F.foldr
-          (\k (c, am) -> let (c', m') = goO k val am in (Data.IntSet.union c c', m')
+      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO <$> Data.List.foldl'
+          (\(c, am) k -> let (c', m') = goO k val am in (Data.IntSet.union c c', m')
           ) (Data.IntSet.empty, m) ks
       (I.IndexDimensionM m, I.IKeyDimensionO k)  -> (Data.IntSet.empty, I.IndexDimensionM $ goM k val m)
-      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> (Data.IntSet.empty, I.IndexDimensionM $ F.foldr (\k acc -> goM k val acc) m ks)
+      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> (Data.IntSet.empty, I.IndexDimensionM $ Data.List.foldl' (\acc k -> goM k val acc) m ks)
     where
       goO :: Ord k => k -> Int -> Data.Map.Map k Int -> (Data.IntSet.IntSet, Data.Map.Map k Int)
       goO k a m =
@@ -123,9 +124,9 @@ zipInsert :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> Ma
 zipInsert val key index =
     case (index, key) of
       (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO <$> goO k val m
-      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO <$> F.foldrM (\k acc -> goO k val acc) m ks
+      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO <$> F.foldlM (\acc k -> goO k val acc) m ks
       (I.IndexDimensionM m, I.IKeyDimensionO k)  -> Just . I.IndexDimensionM $ goM k val m
-      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> Just . I.IndexDimensionM $ F.foldr (\k acc -> goM k val acc) m ks
+      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> Just . I.IndexDimensionM $ Data.List.foldl' (\acc k -> goM k val acc) m ks
     where
       goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Maybe (Data.Map.Map k Int)
       goO = Data.Map.Extra.insertUnique
@@ -147,9 +148,9 @@ zipDelete :: Ord t => Int -> I.IKeyDimension kr t -> I.IndexDimension ir t -> Ma
 zipDelete val key index = Just $
     case (index, key) of
       (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO $ goO k val m
-      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $ F.foldr (\k acc -> goO k val acc) m ks
+      (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $ F.foldl' (\acc k -> goO k val acc) m ks
       (I.IndexDimensionM m, I.IKeyDimensionO k)  -> I.IndexDimensionM $ goM k val m
-      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ F.foldr (\k acc -> goM k val acc) m ks
+      (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ F.foldl' (\acc k -> goM k val acc) m ks
     where
       goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Data.Map.Map k Int
       goO k v = Data.Map.update (\i -> if i == v then Nothing else Just i) k

@@ -26,27 +26,29 @@ type ContentID = Int
 -- Content has many tags, many contents can have the same tag.
 -- Content has one rating, many contents can have the same rating.
 
+data ContentStoreTag = ContentStoreTag
+
 type ContentStoreTS  = ContentID :. String :. String :. String :. Double
 type ContentStoreKRS = O         :. O      :. O      :. M      :. O
 type ContentStoreIRS = O         :. O      :. M      :. M      :. M
-type ContentStore = S.Store ContentStoreKRS ContentStoreIRS ContentStoreTS Content
+type ContentStore = S.Store ContentStoreTag ContentStoreKRS ContentStoreIRS ContentStoreTS Content
 type ContentStoreKey = S.Key ContentStoreKRS ContentStoreTS
-type ContentStoreSelection = S.Selection ContentStoreKRS ContentStoreIRS ContentStoreTS
+type ContentStoreSelection = S.Selection ContentStoreTag ContentStoreKRS ContentStoreIRS ContentStoreTS
 
-sContentID :: S.N0
-sContentID = S.n0
+sContentID :: (ContentStoreTag, S.N0)
+sContentID = (ContentStoreTag, S.n0)
 
-sContentName :: S.N1
-sContentName = S.n1
+sContentName :: (ContentStoreTag, S.N1)
+sContentName = (ContentStoreTag, S.n1)
 
-sContentBody :: S.N2
-sContentBody = S.n2
+sContentBody :: (ContentStoreTag, S.N2)
+sContentBody = (ContentStoreTag, S.n2)
 
-sContentTag :: S.N3
-sContentTag = S.n3
+sContentTag :: (ContentStoreTag, S.N3)
+sContentTag = (ContentStoreTag, S.n3)
 
-sContentRating :: S.N4
-sContentRating = S.n4
+sContentRating :: (ContentStoreTag, S.N4)
+sContentRating = (ContentStoreTag, S.n4)
 
 contentKey :: Content -> ContentStoreKey
 contentKey (Content cn cb ct cr) =

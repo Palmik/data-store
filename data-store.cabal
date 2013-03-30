@@ -39,7 +39,7 @@ library
     , safecopy   >= 0.8
     , cereal     >= 0.3.5
 
-  ghc-options: -Wall 
+  ghc-options: -O2 -Wall 
 
 test-suite data-store-tests
   type:           exitcode-stdio-1.0
@@ -63,7 +63,7 @@ test-suite data-store-tests
 
 benchmark data-store-benchmark-01
   type:           exitcode-stdio-1.0
-  hs-source-dirs: benchmarks, src
+  hs-source-dirs: benchmarks/src, src
   main-is:        01.hs
 
   other-modules:

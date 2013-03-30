@@ -28,24 +28,26 @@ data Value = Value
 
 type ValueID = Int
 
+data ValueStoreTag = ValueStoreTag
+
 type VStoreTS  = ValueID :. Int :. Int :. Int
 type VStoreKRS = O       :. O   :. M   :. M 
 type VStoreIRS = O       :. M   :. O   :. M 
-type VStore = S.Store VStoreKRS VStoreIRS VStoreTS Value
+type VStore = S.Store ValueStoreTag VStoreKRS VStoreIRS VStoreTS Value
 type VStoreKey = S.Key VStoreKRS VStoreTS
-type VStoreSelection = S.Selection VStoreKRS VStoreIRS VStoreTS
+type VStoreSelection = S.Selection ValueStoreTag VStoreKRS VStoreIRS VStoreTS
 
-sOO :: S.N0
-sOO = S.n0
+sOO :: (ValueStoreTag, S.N0)
+sOO = (ValueStoreTag, S.n0)
 
-sOM :: S.N1
-sOM = S.n1
+sOM :: (ValueStoreTag, S.N1)
+sOM = (ValueStoreTag, S.n1)
 
-sMO :: S.N2
-sMO = S.n2
+sMO :: (ValueStoreTag, S.N2)
+sMO = (ValueStoreTag, S.n2)
 
-sMM :: S.N3
-sMM = S.n3
+sMM :: (ValueStoreTag, S.N3)
+sMM = (ValueStoreTag, S.n3)
 
 makeKey :: Int -> Int -> [Int] -> [Int] -> VStoreKey
 makeKey oo om mo mm = 

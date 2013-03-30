@@ -46,20 +46,20 @@ infixr 2  .||
 
 -- | The expression (@not' sel@) is a selection that includes all values
 -- except those that match the selection @sel@. 
-not :: IsSelection sel => sel krs irs ts -> Selection krs irs ts
+not :: IsSelection sel => sel tag krs irs ts -> Selection tag krs irs ts
 not = SelectionNot
 {-# INLINE not #-}
 
 -- | Selection that matches the intersection of all the selections in the
 -- list or everything if the list is empty.
-all :: [Selection krs irs ts] -> Selection krs irs ts
+all :: [Selection tag krs irs ts] -> Selection tag krs irs ts
 all []  = error $ moduleName <> ".all: empty list."
 all [s] = s
 all (s:rest) = Data.List.foldl' (.&&) s rest -- this way we do not have to intersect with "everything"
 {-# INLINE all #-}
 
 -- | The expression (@'Data.Store.Selection.all1D' d ss@) is equivalent to (@'Data.Store.Selection.all'' $ map ($ d) ss@).
-all1D :: n -> [n -> Selection krs irs ts] -> Selection krs irs ts
+all1D :: (tag, n) -> [(tag, n) -> Selection tag krs irs ts] -> Selection tag krs irs ts
 all1D _ [] = error $ moduleName <> ".all1D: empty list."
 all1D d [h] = h d
 all1D d (h:rest) = Data.List.foldl' (\acc f -> acc .&& f d) (h d) rest -- this way we do not have to intersect with "everything"
@@ -67,13 +67,13 @@ all1D d (h:rest) = Data.List.foldl' (\acc f -> acc .&& f d) (h d) rest -- this w
 
 -- | Selection that matches the union of all the selections in the
 -- list or nothing if the list is empty.
-any :: [Selection krs irs ts] -> Selection krs irs ts
+any :: [Selection tag krs irs ts] -> Selection tag krs irs ts
 any [] = error $ moduleName <> ".any: empty list."
 any (x:xs) = Data.List.foldl' (.||) x xs
 {-# INLINE any #-}
 
 -- | The expression (@'Data.Store.Selection.any1D' d ss@) is equivalent to (@'Data.Store.Selection.any'' $ map ($ d) ss@).
-any1D :: n -> [n -> Selection krs irs ts] -> Selection krs irs ts
+any1D :: (tag, n) -> [(tag, n) -> Selection tag krs irs ts] -> Selection tag krs irs ts
 any1D _ [] = error $ moduleName <> ".any1D: empty list."
 any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 {-# INLINE any1D #-}
@@ -83,8 +83,8 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 -- such that @k < c@.
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(log n + k)/
-(.<) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.<)  n = SelectionType . SelectionDimension n (Condition True False False)
+(.<) :: I.GetDimension n (I.Index irs ts) => (tag, n) -> I.DimensionType n irs ts -> Selection tag krs irs ts
+(.<) (_, n) = SelectionType . SelectionDimension n (Condition True False False)
 {-# INLINE (.<) #-}
 
 -- | The expression (@sDim .<= c@) is a selection that includes value
@@ -92,8 +92,8 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 -- such that @k <= c@.
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(log n + k)/
-(.<=) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.<=) n = SelectionType . SelectionDimension n (Condition True True False)
+(.<=) :: I.GetDimension n (I.Index irs ts) => (tag, n) -> I.DimensionType n irs ts -> Selection tag krs irs ts
+(.<=) (_, n) = SelectionType . SelectionDimension n (Condition True True False)
 {-# INLINE (.<=) #-}
 
 -- | The expression (@sDim .> c@) is a selection that includes value
@@ -101,8 +101,8 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 -- such that @k > c@.
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(log n + k)/
-(.>) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.>)  n = SelectionType . SelectionDimension n (Condition False False True)
+(.>) :: I.GetDimension n (I.Index irs ts) => (tag, n) -> I.DimensionType n irs ts -> Selection tag krs irs ts
+(.>) (_, n) = SelectionType . SelectionDimension n (Condition False False True)
 {-# INLINE (.>) #-}
 
 -- | The expression (@sDim .>= c@) is a selection that includes value
@@ -110,8 +110,8 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 -- such that @k >= c@.
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(log n + k)/
-(.>=) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(.>=) n = SelectionType . SelectionDimension n (Condition False True True)
+(.>=) :: I.GetDimension n (I.Index irs ts) => (tag, n) -> I.DimensionType n irs ts -> Selection tag krs irs ts
+(.>=) (_, n) = SelectionType . SelectionDimension n (Condition False True True)
 {-# INLINE (.>=) #-}
 
 -- | The expression (@sDim ./= c@) is a selection that includes value
@@ -119,8 +119,8 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 -- such that @k /= c@.
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(n)/
-(./=) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> Selection krs irs ts
-(./=) n = SelectionType . SelectionDimension n (Condition True False True)
+(./=) :: I.GetDimension n (I.Index irs ts) => (tag, n) -> I.DimensionType n irs ts -> Selection tag krs irs ts
+(./=) (_, n) = SelectionType . SelectionDimension n (Condition True False True)
 {-# INLINE (./=) #-}
 
 -- | The expression (@sDim .== c@) is a selection that includes value
@@ -128,8 +128,8 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 -- such that @k == c@.
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(log n)/
-(.==) :: I.GetDimension n (I.Index irs ts) => n -> I.DimensionType n irs ts -> SelectionDimension n krs irs ts
-(.==) n = SelectionDimension n (Condition False True False)
+(.==) :: I.GetDimension n (I.Index irs ts) => (tag, n) -> I.DimensionType n irs ts -> Selection tag krs irs ts
+(.==) (_, n) = SelectionType . SelectionDimension n (Condition False True False)
 {-# INLINE (.==) #-}
 
 -- | The expression (@s1 .&& s2@) is a selection that includes the
@@ -137,7 +137,7 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(c(s1) + c(s2) + s(s1) + s(s2)/
 (.&&) :: (IsSelection s1, IsSelection s2)
-      => s1 krs irs ts -> s2 krs irs ts -> Selection krs irs ts
+      => s1 tag krs irs ts -> s2 tag krs irs ts -> Selection tag krs irs ts
 (.&&) = SelectionA
 {-# INLINE (.&&) #-}
 
@@ -146,7 +146,7 @@ any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs
 --
 -- Complexity of @'Data.Store.Selection.resolve'@: /O(c(s1) + c(s2) + s(s1) + s(s2)/
 (.||) :: (IsSelection s1, IsSelection s2)
-      => s1 krs irs ts -> s2 krs irs ts -> Selection krs irs ts
+      => s1 tag krs irs ts -> s2 tag krs irs ts -> Selection tag krs irs ts
 (.||) = SelectionO
 {-# INLINE (.||) #-}
 
@@ -164,8 +164,8 @@ instance IsSelection (SelectionDimension n) where
     resolve = resolveSD
     {-# INLINE resolve #-}
 
-resolveSD :: forall n krs irs ts v . SelectionDimension n krs irs ts 
-          -> I.Store krs irs ts v
+resolveSD :: forall tag n krs irs ts v . SelectionDimension n tag krs irs ts 
+          -> I.Store tag krs irs ts v
           -> Data.IntSet.IntSet
 resolveSD (SelectionDimension _ (Condition False False False) _) _ = Data.IntSet.empty
 resolveSD (SelectionDimension _ (Condition True True True) _) (I.Store vs _ _) = Data.IntSet.fromList $ Data.IntMap.keys vs
@@ -203,26 +203,26 @@ resolveSD (SelectionDimension n (Condition lt eq gt) v) (I.Store _ ix _) =
 
 -- | TYPE
 
-data SelectionDimension n krs irs ts where
+data SelectionDimension n tag krs irs ts where
     SelectionDimension :: I.GetDimension n (I.Index irs ts)
                        => n
                        -> Condition
                        -> I.DimensionType n irs ts
-                       -> SelectionDimension n krs irs ts
+                       -> SelectionDimension n tag krs irs ts
 
-data Selection krs irs ts where
-    SelectionType :: IsSelection sel => sel krs irs ts -> Selection krs irs ts    
+data Selection tag krs irs ts where
+    SelectionType :: IsSelection sel => sel tag krs irs ts -> Selection tag krs irs ts    
 
     SelectionA :: (IsSelection s1, IsSelection s2)
-               => s1 krs irs ts -> s2 krs irs ts -> Selection krs irs ts
+               => s1 tag krs irs ts -> s2 tag krs irs ts -> Selection tag krs irs ts
 
     SelectionO :: (IsSelection s1, IsSelection s2)
-               => s1 krs irs ts -> s2 krs irs ts -> Selection krs irs ts
+               => s1 tag krs irs ts -> s2 tag krs irs ts -> Selection tag krs irs ts
 
-    SelectionNot :: IsSelection sel => sel krs irs ts -> Selection krs irs ts
+    SelectionNot :: IsSelection sel => sel tag krs irs ts -> Selection tag krs irs ts
 
 data Condition = Condition !Bool !Bool !Bool
 
 class IsSelection sel where
-    resolve :: sel krs irs ts -> I.Store krs irs ts v -> Data.IntSet.IntSet
+    resolve :: sel tag krs irs ts -> I.Store tag krs irs ts v -> Data.IntSet.IntSet
    

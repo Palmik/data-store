@@ -61,26 +61,28 @@ instance Storable Content where
          S.dimO cr .:.
          S.dimO cs
 
-type ContentStore = S.Store (StoreKRS Content) (StoreIRS Content) (StoreTS Content) Content
-type ContentStoreSelection = S.Selection (StoreKRS Content) (StoreIRS Content) (StoreTS Content)
+data ContentStoreTag = ContentStoreTag
 
-sContentID :: S.N0
-sContentID = S.n0
+type ContentStore = S.Store ContentStoreTag (StoreKRS Content) (StoreIRS Content) (StoreTS Content) Content
+type ContentStoreSelection = S.Selection ContentStoreTag (StoreKRS Content) (StoreIRS Content) (StoreTS Content)
 
-sContentName :: S.N1
-sContentName = S.n1
+sContentID :: (ContentStoreTag, S.N0)
+sContentID = (ContentStoreTag, S.n0)
 
-sContentWordCount :: S.N2
-sContentWordCount = S.n2
+sContentName :: (ContentStoreTag, S.N1)
+sContentName = (ContentStoreTag, S.n1)
 
-sContentTag :: S.N3
-sContentTag = S.n3
+sContentBody :: (ContentStoreTag, S.N2)
+sContentBody = (ContentStoreTag, S.n2)
 
-sContentRating :: S.N4
-sContentRating = S.n4
+sContentTag :: (ContentStoreTag, S.N3)
+sContentTag = (ContentStoreTag, S.n3)
 
-sContentStatus :: S.N5
-sContentStatus = S.n5
+sContentRating :: (ContentStoreTag, S.N4)
+sContentRating = (ContentStoreTag, S.n4)
+
+sContentStatus :: (ContentStoreTag, S.N5)
+sContentStatus = (ContentStoreTag, S.n5)
 
 data SiteData = SiteData
     { siteContents :: ContentStore
@@ -159,14 +161,14 @@ run db = do
         mcid <- Data.Acid.update db (CreateContent c)
         case mcid of
           Just cid -> putStrLn $ "Content created; ID " ++ show cid
-          Nothing  -> putStrLn $ "ERROR! Content not created (likely because of collision)."
+          Nothing  -> putStrLn "ERROR! Content not created (likely because of collision)."
         run db
 
       handleCommand (CUpdate cid c) = do
         succ <- Data.Acid.update db (UpdateContent cid c)
         if succ
            then putStrLn $ "Content updated; ID " ++ show cid
-           else putStrLn $ "ERROR! Content not updated (likely because of collision)."
+           else putStrLn "ERROR! Content not updated (likely because of collision)."
         run db      
 
       handleCommand (CLookupByID cid) = do

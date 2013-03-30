@@ -209,21 +209,21 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 --
 -- * 'Data.Store.Internal.Type.Key'
 --
-data Store krs irs ts v = Store
+data Store tag krs irs ts v = Store
     { storeV :: Data.IntMap.IntMap (IKey krs ts, v)
     , storeI :: Index irs ts
     , storeNID :: {-# UNPACK #-} !Int
     } deriving (Typeable)
 
-instance (Ser.Serialize (IKey krs ts), Ser.Serialize (Index irs ts), Ser.Serialize v) => Ser.Serialize (Store krs irs ts v) where
+instance (Ser.Serialize (IKey krs ts), Ser.Serialize (Index irs ts), Ser.Serialize v) => Ser.Serialize (Store tag krs irs ts v) where
     get = Store <$> Ser.get <*> Ser.get <*> Ser.get
     put (Store vs ix nid) = Ser.put vs >> Ser.put ix >> Ser.put nid
 
-instance (Ser.SafeCopy (IKey krs ts), Ser.SafeCopy (Index irs ts), Ser.SafeCopy v) => Ser.SafeCopy (Store krs irs ts v) where
+instance (Ser.SafeCopy (IKey krs ts), Ser.SafeCopy (Index irs ts), Ser.SafeCopy v) => Ser.SafeCopy (Store tag krs irs ts v) where
     getCopy = Ser.contain $ Store <$> Ser.safeGet <*> Ser.safeGet <*> Ser.safeGet
     putCopy (Store vs ix nid) = Ser.contain $ Ser.safePut vs >> Ser.safePut ix >> Ser.safePut nid
 
-instance (Show (IKey krs ts), Show v) => Show (Store krs irs ts v) where
+instance (Show (IKey krs ts), Show v) => Show (Store tag krs irs ts v) where
     show (Store vs _ _) = "[" <> go <> "]"
       where
         go = Data.List.intercalate "," $ map (\(ik, v) -> "((" <> show ik <> "), " <> show v <> ")")
