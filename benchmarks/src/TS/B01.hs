@@ -1,8 +1,8 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-} 
 
 module TS.B01
 where
@@ -11,7 +11,6 @@ where
 import Control.Applicative
 import Control.DeepSeq (NFData(..))
 --------------------------------------------------------------------------------
-import Data.Maybe
 import qualified Data.IntSet
 --------------------------------------------------------------------------------
 import Common (C01(..))

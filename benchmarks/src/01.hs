@@ -39,9 +39,9 @@ benchmarks :: [C.Benchmark]
 benchmarks =
   [ C.bgroup "insert (Int) 01"
     [ C.bgroup "5000"
-      [ C.bench "DS" $ C.whnf (insertDS01 elems01x5000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.whnf (insertDS01NC elems01x5000) DS.B01.empty
-      , C.bench "TS" $ C.whnf (insertTS01 elems01x5000) TS.B01.empty
+      [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) DS.B01.empty
+      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x5000) DS.B01.empty
+      , C.bench "TS" $ C.nf (insertTS01 elems01x5000) TS.B01.empty
       ]
     {-
     , C.bgroup "10000"
@@ -56,9 +56,9 @@ benchmarks =
       ]
     -}
     , C.bgroup "50000"
-      [ C.bench "DS" $ C.whnf (insertDS01 elems01x50000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.whnf (insertDS01NC elems01x50000) DS.B01.empty
-      , C.bench "TS" $ C.whnf (insertTS01 elems01x50000) TS.B01.empty
+      [ C.bench "DS" $ C.nf (insertDS01 elems01x50000) DS.B01.empty
+      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x50000) DS.B01.empty
+      , C.bench "TS" $ C.nf (insertTS01 elems01x50000) TS.B01.empty
       ]
     {-
     , C.bgroup "100000"
