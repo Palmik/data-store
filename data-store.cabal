@@ -89,6 +89,7 @@ benchmark data-store-benchmark-01
     , mtl        >= 2.1
 
     , tables     >= 0.3
+    , lens       >= 3.8
     , bytestring 
     , criterion  >= 0.6.2
     , deepseq    >= 1.3.0

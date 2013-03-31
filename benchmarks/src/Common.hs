@@ -96,3 +96,6 @@ instance (NFData t, NFData (DS.IKey rt tt)) => NFData (DS.IKey (r DS.:. rt) (t D
     rnf (DS.KN kd kt) = rnf kd `seq` rnf kt
     rnf (DS.K1 _) = error "Impossible! (IKey NFData)"
 
+instance (NFData a, NFData b) => NFData (a DS.:. b) where
+    rnf (a DS.:. b) = rnf a `seq` rnf b
+

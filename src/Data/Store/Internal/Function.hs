@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE CPP #-}
 
 module Data.Store.Internal.Function
 where
@@ -12,9 +13,14 @@ import           Data.Monoid ((<>))
 import           Data.Maybe
 import qualified Data.List
 import qualified Data.Foldable as F 
-import qualified Data.Map
-import qualified Data.Map.Extra
+#ifdef MIN_VERSION_containers(0,5,0)
+import qualified Data.IntMap.Strict as Data.IntMap
+import qualified Data.Map           as Data.Map
+#else
 import qualified Data.IntMap
+import qualified Data.Map
+#endif
+import qualified Data.Map.Extra
 import qualified Data.IntSet
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type as I

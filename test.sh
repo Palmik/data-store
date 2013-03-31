@@ -1,3 +1,4 @@
-cabal configure --enable-tests --flags="testing"
-cabal build
-cabal test
+cabal-dev configure --enable-tests --flags="testing"
+cabal-dev build
+cabal-dev test | tee test.out
+

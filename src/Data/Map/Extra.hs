@@ -1,9 +1,15 @@
+{-# LANGUAGE CPP #-}
+
 module Data.Map.Extra
 ( insertUnique
 ) where
 
 --------------------------------------------------------------------------------
+#ifdef MIN_VERSION_containers(0,5,0)
+import qualified Data.Map.Strict as Data.Map
+#else
 import qualified Data.Map
+#endif
 --------------------------------------------------------------------------------
 
 -- | The expression (@insertUnique k v old@)
@@ -15,5 +21,4 @@ insertUnique k a m =
         (Nothing, res) -> Just res
         (Just _,  _) -> Nothing
 {-# INLINE insertUnique #-}
-
 

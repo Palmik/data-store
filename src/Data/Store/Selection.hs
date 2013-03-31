@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE CPP #-}
 
 module Data.Store.Selection
 ( (.<)
@@ -28,9 +29,14 @@ import           Prelude hiding (not, all, any)
 --------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
 import qualified Data.IntSet
+import qualified Data.List
+#ifdef MIN_VERSION_containers(0,5,0)
+import qualified Data.IntMap.Strict as Data.IntMap
+import qualified Data.Map.Strict    as Data.Map
+#else
 import qualified Data.IntMap
 import qualified Data.Map
-import qualified Data.List
+#endif
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type     as I
 --------------------------------------------------------------------------------

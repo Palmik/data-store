@@ -20,6 +20,7 @@ type DSIRS = O   :. M   :. M
 
 type DS    = S.Store DSTag DSKRS DSIRS DSTS C01
 type DSKey = S.Key DSKRS DSTS
+type DSRawKey = S.RawKey DSKRS DSTS
 type DSSel = S.Selection DSTag DSKRS DSIRS DSTS
 
 key :: C01 -> DSKey
@@ -39,6 +40,21 @@ insert e s = snd $! S.insert' (key e) e s
 
 insertNC :: C01 -> DS -> DS
 insertNC e s = snd $! fromJust $! S.insert (key e) e s
+
+lookupOOEQ :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
+lookupOOEQ x = S.lookup (sD1 .== x)
+
+lookupOOGE :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
+lookupOOGE x = S.lookup (sD1 .>= x)
+
+lookupOMEQ :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
+lookupOMEQ x = S.lookup (sD2 .== x)
+
+lookupOMGE :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
+lookupOMGE x = S.lookup (sD2 .>= x)
+
+lookupMMEQ :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
+lookupMMEQ x = S.lookup (sD3 .== x)
 
 empty :: DS
 empty = S.empty

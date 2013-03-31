@@ -3,7 +3,9 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE CPP                 #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} 
+
 --------------------------------------------------------------------------------
 -- |
 --
@@ -216,7 +218,11 @@ import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
 import           Data.Maybe
 import           Data.Monoid ((<>))
+#ifdef MIN_VERSION_containers(0,5,0)
+import qualified Data.IntMap.Strict as Data.IntMap
+#else
 import qualified Data.IntMap
+#endif
 import qualified Data.IntSet
 import qualified Data.IntSet.Extra
 import qualified Data.List

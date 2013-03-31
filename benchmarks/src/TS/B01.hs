@@ -10,6 +10,7 @@ where
 --------------------------------------------------------------------------------
 import Control.Applicative
 import Control.DeepSeq (NFData(..))
+import Control.Lens
 --------------------------------------------------------------------------------
 import qualified Data.IntSet
 --------------------------------------------------------------------------------
@@ -58,6 +59,21 @@ type TS = T.Table C01
 
 insert :: C01 -> TS -> TS
 insert = T.insert
+
+lookupOOEQ :: Int -> TS -> TS
+lookupOOEQ x o = o ^. T.with D1 (==) x 
+
+lookupOOGE :: Int -> TS -> TS
+lookupOOGE x o = o ^. T.with D1 (>=) x
+
+lookupOMEQ :: Int -> TS -> TS
+lookupOMEQ x o = o ^. T.with D2 (==) x
+
+lookupOMGE :: Int -> TS -> TS
+lookupOMGE x o = o ^. T.with D2 (>=) x
+
+lookupMMEQ :: Int -> TS -> TS
+lookupMMEQ x o = o ^. T.withAny D3 [x]
 
 empty :: TS
 empty = T.empty
