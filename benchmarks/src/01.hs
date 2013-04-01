@@ -159,13 +159,13 @@ lookupTS01xMMEQ size o = map (`TS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. siz
 
 ---
 
-insertToDS01 :: [C01] -> DS.B01.DS -> [DS.B01.DS]
+insertToDS01 :: DS.B01.DS -> [C01] -> [DS.B01.DS]
 insertToDS01 s0 = map (`DS.B01.insert` s0)
 
-insertToDS01NC :: [C01] -> DS.B01.DS -> [DS.B01.DS]
+insertToDS01NC :: DS.B01.DS -> [C01] -> [DS.B01.DS]
 insertToDS01NC s0 = map (`DS.B01.insertNC` s0)
 
-insertToTS01 :: [C01] -> TS.B01.TS -> [TS.B01.TS]
+insertToTS01 :: TS.B01.TS -> [C01] -> [TS.B01.TS]
 insertToTS01 s0 = map (`TS.B01.insert` s0)
 
 
@@ -216,7 +216,7 @@ elems01x100000 = generate01 0 100000
 elems01x150000 :: [C01]
 elems01x150000 = generate01 0 150000
 
-generate01 :: Int -> [C01]
+generate01 :: Int -> Int -> [C01]
 generate01 o n = map (\x -> C01 x (x `div` s) [x .. x + s]) [o .. (n + o) - 1]
   where
     s = 5
