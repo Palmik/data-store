@@ -23,7 +23,7 @@ import           Control.Applicative ((<$>), (<*>))
 import           Data.Monoid ((<>))
 import           Data.Data (Typeable, Typeable2)
 import qualified Data.Data
-#ifdef MIN_VERSION_containers(0,5,0)
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.Map.Strict    as Data.Map
 import qualified Data.IntMap.Strict as Data.IntMap
 #else
@@ -220,6 +220,9 @@ data Store tag krs irs ts v = Store
     , storeI :: Index irs ts
     , storeNID :: {-# UNPACK #-} !Int
     } deriving (Typeable)
+
+instance (Show h, Show t) => Show (h :. t) where
+    show (h :. t) = show h <> " :. " <> show t
 
 instance (Ser.Serialize (IKey krs ts), Ser.Serialize (Index irs ts), Ser.Serialize v) => Ser.Serialize (Store tag krs irs ts v) where
     get = Store <$> Ser.get <*> Ser.get <*> Ser.get

@@ -30,7 +30,7 @@ import           Prelude hiding (not, all, any)
 import           Data.Monoid ((<>))
 import qualified Data.IntSet
 import qualified Data.List
-#ifdef MIN_VERSION_containers(0,5,0)
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
 import qualified Data.Map.Strict    as Data.Map
 #else

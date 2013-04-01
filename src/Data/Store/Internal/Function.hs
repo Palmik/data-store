@@ -13,7 +13,7 @@ import           Data.Monoid ((<>))
 import           Data.Maybe
 import qualified Data.List
 import qualified Data.Foldable as F 
-#ifdef MIN_VERSION_containers(0,5,0)
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
 import qualified Data.Map           as Data.Map
 #else

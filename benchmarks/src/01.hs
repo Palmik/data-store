@@ -32,7 +32,10 @@ main = C.defaultMainWith C.defaultConfig force benchmarks
         , rnf elems01x50000
         , rnf elems01x100000
         , rnf elems01x150000
-        
+
+        , rnf elems01x5000x5000
+        , rnf elems01x10000x5000
+
         , rnf ds01x5000 
         , rnf ds01x10000
 
@@ -43,6 +46,7 @@ main = C.defaultMainWith C.defaultConfig force benchmarks
 
 benchmarks :: [C.Benchmark]
 benchmarks =
+  -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
   [ C.bgroup "insert (Int) 01"
     [ C.bgroup "5000"
       [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) DS.B01.empty
@@ -54,40 +58,127 @@ benchmarks =
       , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x10000) DS.B01.empty
       , C.bench "TS" $ C.nf (insertTS01 elems01x10000) TS.B01.empty
       ]
-    {-
-    , C.bgroup "15000"
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x15000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x15000) DS.B01.empty
-      , C.bench "TS" $ C.nf (insertTS01 elems01x15000) TS.B01.empty
-      ]
-    , C.bgroup "50000"
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x50000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x50000) DS.B01.empty
-      , C.bench "TS" $ C.nf (insertTS01 elems01x50000) TS.B01.empty
-      ]
-    , C.bgroup "100000"
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x100000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x100000) DS.B01.empty
-      , C.bench "TS" $ C.nf (insertTS01 elems01x100000) TS.B01.empty
-      ]
-    , C.bgroup "150000"
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x150000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x150000) DS.B01.empty
-      , C.bench "TS" $ C.nf (insertTS01 elems01x150000) TS.B01.empty
-      ]
-    -}
     ]
-  , C.bgroup "lookup (Int) 01"
+  
+  -- Insert 5000 elements into store of N elements (the inserts are not
+  -- accumulative). No collisions.
+  , C.bgroup "insert to (Int) 01"
     [ C.bgroup "5000"
-      [ C.bench "DS" $ C.nf (lookupDS01 5000) ds01x5000
-      , C.bench "TS" $ C.nf (lookupTS01 5000) ts01x5000
+      [ C.bench "DS" $ C.nf (insertToDS01 ds01x5000) elems01x5000x5000
+      , C.bench "DS (NC)" $ C.nf (insertToDS01NC ds01x5000) elems01x5000x5000
+      , C.bench "TS" $ C.nf (insertToTS01 ts01x5000) elems01x5000x5000
       ]
     , C.bgroup "10000"
-      [ C.bench "DS" $ C.nf (lookupDS01 10000) ds01x10000
-      , C.bench "TS" $ C.nf (lookupTS01 10000) ts01x10000
+      [ C.bench "DS" $ C.nf (insertToDS01 ds01x10000) elems01x10000x5000
+      , C.bench "DS (NC)" $ C.nf (insertToDS01NC ds01x10000) elems01x10000x5000
+      , C.bench "TS" $ C.nf (insertToTS01 ts01x10000) elems01x10000x5000
+      ]
+    ]
+
+  -- Insert N elements into store of the same N elements (the inserts are
+  -- accumulative, thus we basically "overwrite" the shole store).
+  -- Collisions (obviously).
+  , C.bgroup "insert-collisions (Int) 01"
+    [ C.bgroup "5000"
+      [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) ds01x5000
+      , C.bench "TS" $ C.nf (insertTS01 elems01x5000) ts01x5000
+      ]
+    , C.bgroup "10000"
+      [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) ds01x10000
+      , C.bench "TS" $ C.nf (insertTS01 elems01x10000) ts01x10000
+      ]
+    ]
+
+  -- Lookup in store of N elements.
+  , C.bgroup "lookup (Int) 01"
+    [ C.bgroup "5000"
+      [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 5000) ds01x5000
+      , C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 5000) ds01x5000
+      , C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 5000) ds01x5000
+      , C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 5000) ds01x5000
+      , C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 5000) ds01x5000
+      
+      , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 5000) ts01x5000
+      , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 5000) ts01x5000
+      , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 5000) ts01x5000
+      , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 5000) ts01x5000
+      , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 5000) ts01x5000
+      ]
+    , C.bgroup "10000"
+      [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 10000) ds01x10000
+      , C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 10000) ds01x10000
+      , C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 10000) ds01x10000
+      , C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 10000) ds01x10000
+      , C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 10000) ds01x10000
+      
+      , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 10000) ts01x10000
+      , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 10000) ts01x10000
+      , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 10000) ts01x10000
+      , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 10000) ts01x10000
+      , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 10000) ts01x10000
       ]
     ]
   ]
+
+---
+
+lookupDS01xOOEQ :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
+lookupDS01xOOEQ size o = map (`DS.B01.lookupOOEQ` o) [ 0, (size `div` 1000) .. size ]
+
+lookupDS01xOOGE :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
+lookupDS01xOOGE size o = map (`DS.B01.lookupOOGE` o) [ 0, (size `div` 10) .. size ]
+
+lookupDS01xOMEQ :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
+lookupDS01xOMEQ size o = map (`DS.B01.lookupOMEQ` o) [ 0, (s `div` 10) .. s ]
+  where s = size `div` 5
+
+lookupDS01xOMGE :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
+lookupDS01xOMGE size o = map (`DS.B01.lookupOMGE` o) [ 0, (s `div` 10) .. s ]
+  where s = size `div` 5
+
+lookupDS01xMMEQ :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
+lookupDS01xMMEQ size o = map (`DS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. size ]
+
+
+lookupTS01xOOEQ :: Int -> TS.B01.TS -> [TS.B01.TS] 
+lookupTS01xOOEQ size o = map (`TS.B01.lookupOOEQ` o) [ 0, (size `div` 1000) .. size ]
+
+lookupTS01xOOGE :: Int -> TS.B01.TS -> [TS.B01.TS]
+lookupTS01xOOGE size o = map (`TS.B01.lookupOOGE` o) [ 0, (size `div` 10) .. size ]
+
+lookupTS01xOMEQ :: Int -> TS.B01.TS -> [TS.B01.TS]
+lookupTS01xOMEQ size o = map (`TS.B01.lookupOMEQ` o) [ 0, (s `div` 10) .. s ]
+  where s = size `div` 5
+
+lookupTS01xOMGE :: Int -> TS.B01.TS -> [TS.B01.TS]
+lookupTS01xOMGE size o = map (`TS.B01.lookupOMGE` o) [ 0, (s `div` 10) .. s ]
+  where s = size `div` 5
+
+lookupTS01xMMEQ :: Int -> TS.B01.TS -> [TS.B01.TS]
+lookupTS01xMMEQ size o = map (`TS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. size ]
+
+---
+
+insertToDS01 :: [C01] -> DS.B01.DS -> [DS.B01.DS]
+insertToDS01 s0 = map (`DS.B01.insert` s0)
+
+insertToDS01NC :: [C01] -> DS.B01.DS -> [DS.B01.DS]
+insertToDS01NC s0 = map (`DS.B01.insertNC` s0)
+
+insertToTS01 :: [C01] -> TS.B01.TS -> [TS.B01.TS]
+insertToTS01 s0 = map (`TS.B01.insert` s0)
+
+
+insertDS01 :: [C01] -> DS.B01.DS -> DS.B01.DS
+insertDS01 xs s0 = foldl' (flip DS.B01.insert) s0 xs
+
+insertDS01NC :: [C01] -> DS.B01.DS -> DS.B01.DS
+insertDS01NC xs s0 = foldl' (flip DS.B01.insertNC) s0 xs
+
+insertTS01 :: [C01] -> TS.B01.TS -> TS.B01.TS
+insertTS01 xs s0 = foldl' (flip TS.B01.insert) s0 xs
+
+---
 
 ds01x5000 :: DS.B01.DS
 ds01x5000 = insertDS01 elems01x5000 DS.B01.empty
@@ -102,70 +193,31 @@ ts01x10000 :: TS.B01.TS
 ts01x10000 = insertTS01 elems01x10000 TS.B01.empty
 
 elems01x5000 :: [C01]
-elems01x5000 = generate01 5000
+elems01x5000 = generate01 0 5000
+
+elems01x5000x5000 :: [C01]
+elems01x5000x5000 = generate01 5000 5000
+
+elems01x10000x5000 :: [C01]
+elems01x10000x5000 = generate01 10000 5000
 
 elems01x10000 :: [C01]
-elems01x10000 = generate01 10000
+elems01x10000 = generate01 0 10000
 
 elems01x15000 :: [C01]
-elems01x15000 = generate01 15000
+elems01x15000 = generate01 0 15000
 
 elems01x50000 :: [C01]
-elems01x50000 = generate01 50000
+elems01x50000 = generate01 0 50000
 
 elems01x100000 :: [C01]
-elems01x100000 = generate01 100000
+elems01x100000 = generate01 0 100000
 
 elems01x150000 :: [C01]
-elems01x150000 = generate01 150000
-
----
-
-lookupDS01 :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
-lookupDS01 size o =
-  [ DS.B01.lookupOOEQ 0 o
-  , DS.B01.lookupOOGE 0 o
-  , DS.B01.lookupOOGE (size `div` 2) o
-  , DS.B01.lookupOOGE (size `div` 3) o
-
-  , DS.B01.lookupOMEQ 10 o
-  , DS.B01.lookupOMGE ((size `div` 5) `div` 2) o
-  , DS.B01.lookupOMGE ((size `div` 5) `div` 3) o
-  
-  , DS.B01.lookupMMEQ 10 o
-  , DS.B01.lookupMMEQ 100 o
-  ]
-
-lookupTS01 :: Int -> TS.B01.TS -> [TS.B01.TS] 
-lookupTS01 size o =
-  [ TS.B01.lookupOOEQ 0 o
-  , TS.B01.lookupOOGE 0 o
-  , TS.B01.lookupOOGE (size `div` 2) o
-  , TS.B01.lookupOOGE (size `div` 3) o
-
-  , TS.B01.lookupOMEQ 10 o
-  , TS.B01.lookupOMGE ((size `div` 5) `div` 2) o
-  , TS.B01.lookupOMGE ((size `div` 5) `div` 3) o
-  
-  , TS.B01.lookupMMEQ 10 o
-  , TS.B01.lookupMMEQ 100 o
-  ]
-
----
-
-insertDS01 :: [C01] -> DS.B01.DS -> DS.B01.DS
-insertDS01 xs s0 = foldl' (flip DS.B01.insert) s0 xs
-
-insertDS01NC :: [C01] -> DS.B01.DS -> DS.B01.DS
-insertDS01NC xs s0 = foldl' (flip DS.B01.insertNC) s0 xs
-
-insertTS01 :: [C01] -> TS.B01.TS -> TS.B01.TS
-insertTS01 xs s0 = foldl' (flip TS.B01.insert) s0 xs
-
----
+elems01x150000 = generate01 0 150000
 
 generate01 :: Int -> [C01]
-generate01 n = map (\x -> C01 x (x `div` s) [x .. x + s]) [0 .. n - 1]
+generate01 o n = map (\x -> C01 x (x `div` s) [x .. x + s]) [o .. (n + o) - 1]
   where
     s = 5
 

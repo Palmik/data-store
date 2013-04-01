@@ -5,7 +5,7 @@ module Data.Map.Extra
 ) where
 
 --------------------------------------------------------------------------------
-#ifdef MIN_VERSION_containers(0,5,0)
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.Map.Strict as Data.Map
 #else
 import qualified Data.Map

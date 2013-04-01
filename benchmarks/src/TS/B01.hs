@@ -19,6 +19,9 @@ import Common (C01(..))
 import qualified Data.Table as T
 --------------------------------------------------------------------------------
 
+size :: T.Table t -> Int
+size = T.count
+
 instance T.Tabular C01 where
   type PKT C01 = Int
   data Key k C01 b where
