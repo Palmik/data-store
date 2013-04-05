@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP   #-}
 
 module Main
 ( main
@@ -21,31 +22,30 @@ import qualified TS.B01
 import Common
 --------------------------------------------------------------------------------
 
+data RNF where
+    RNF :: NFData a => a -> RNF
+
+instance NFData RNF where
+    rnf (RNF x) = rnf x
+
 main :: IO ()
-main = C.defaultMainWith C.defaultConfig force benchmarks
-    where
-      force :: C.Criterion ()
-      force = liftIO . evaluate $ rnf
-        [ rnf elems01x5000
-        , rnf elems01x10000
-        , rnf elems01x15000
-        , rnf elems01x50000
-        , rnf elems01x100000
-        , rnf elems01x150000
+main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
+  [ RNF elems01x5000
+  , RNF elems01x10000
+  , RNF elems01x15000
+  , RNF elems01x50000
+  , RNF elems01x100000
+  , RNF elems01x150000
 
-        , rnf elems01x5000x5000
-        , rnf elems01x10000x5000
+  , RNF elems01x5000x5000
+  , RNF elems01x10000x5000
 
-        , rnf ds01x5000 
-        , rnf ds01x10000
+  , RNF ds01x5000 
+  , RNF ds01x10000
 
-        , rnf ts01x5000
-        , rnf ts01x10000
-        ]
-
-
-benchmarks :: [C.Benchmark]
-benchmarks =
+  , RNF ts01x5000
+  , RNF ts01x10000
+  ])
   -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
   [ C.bgroup "insert (Int) 01"
     [ C.bgroup "5000"
@@ -60,21 +60,6 @@ benchmarks =
       ]
     ]
   
-  -- Insert 5000 elements into store of N elements (the inserts are not
-  -- accumulative). No collisions.
-  , C.bgroup "insert to (Int) 01"
-    [ C.bgroup "5000"
-      [ C.bench "DS" $ C.nf (insertToDS01 ds01x5000) elems01x5000x5000
-      , C.bench "DS (NC)" $ C.nf (insertToDS01NC ds01x5000) elems01x5000x5000
-      , C.bench "TS" $ C.nf (insertToTS01 ts01x5000) elems01x5000x5000
-      ]
-    , C.bgroup "10000"
-      [ C.bench "DS" $ C.nf (insertToDS01 ds01x10000) elems01x10000x5000
-      , C.bench "DS (NC)" $ C.nf (insertToDS01NC ds01x10000) elems01x10000x5000
-      , C.bench "TS" $ C.nf (insertToTS01 ts01x10000) elems01x10000x5000
-      ]
-    ]
-
   -- Insert N elements into store of the same N elements (the inserts are
   -- accumulative, thus we basically "overwrite" the shole store).
   -- Collisions (obviously).
@@ -104,6 +89,7 @@ benchmarks =
       , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 5000) ts01x5000
       , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 5000) ts01x5000
       ]
+#ifndef BENCH_SHALLOW
     , C.bgroup "10000"
       [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 10000) ds01x10000
       , C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 10000) ds01x10000
@@ -117,6 +103,7 @@ benchmarks =
       , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 10000) ts01x10000
       , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 10000) ts01x10000
       ]
+#endif
     ]
   ]
 
@@ -158,16 +145,6 @@ lookupTS01xMMEQ :: Int -> TS.B01.TS -> [TS.B01.TS]
 lookupTS01xMMEQ size o = map (`TS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. size ]
 
 ---
-
-insertToDS01 :: DS.B01.DS -> [C01] -> [DS.B01.DS]
-insertToDS01 s0 = map (`DS.B01.insert` s0)
-
-insertToDS01NC :: DS.B01.DS -> [C01] -> [DS.B01.DS]
-insertToDS01NC s0 = map (`DS.B01.insertNC` s0)
-
-insertToTS01 :: TS.B01.TS -> [C01] -> [TS.B01.TS]
-insertToTS01 s0 = map (`TS.B01.insert` s0)
-
 
 insertDS01 :: [C01] -> DS.B01.DS -> DS.B01.DS
 insertDS01 xs s0 = foldl' (flip DS.B01.insert) s0 xs
