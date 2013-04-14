@@ -14,6 +14,9 @@ import           Data.Store (M, O, (.:), (.:.), (:.)(..), (.<), (.<=), (.>), (.>
 import           Data.Store.Lens
 --------------------------------------------------------------------------------
 
+size :: DS -> Int
+size = S.size
+
 data DSTag = DSTag
 
 type DSTS  = Int :. Int :. Int

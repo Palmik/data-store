@@ -61,6 +61,7 @@ test-suite data-store-tests
       Test.Data.Store01
 
     , Data.Store    
+    , Data.Store.Lens    
   
   build-depends:
       base       >= 4.5
