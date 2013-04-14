@@ -83,6 +83,12 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       , C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 5000) ds01x5000
       , C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 5000) ds01x5000
       
+      , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 5000) ds01x5000
+      , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 5000) ds01x5000
+      , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 5000) ds01x5000
+      , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 5000) ds01x5000
+      , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 5000) ds01x5000
+      
       , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 5000) ts01x5000
       , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 5000) ts01x5000
       , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 5000) ts01x5000
@@ -96,6 +102,12 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       , C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 10000) ds01x10000
       , C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 10000) ds01x10000
       , C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 10000) ds01x10000
+      
+      , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 10000) ds01x10000
+      , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 10000) ds01x10000
+      , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 10000) ds01x10000
+      , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 10000) ds01x10000
+      , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 10000) ds01x10000
       
       , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 10000) ts01x10000
       , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 10000) ts01x10000
@@ -126,6 +138,26 @@ lookupDS01xOMGE size o = map (`DS.B01.lookupOMGE` o) [ 0, (s `div` 10) .. s ]
 lookupDS01xMMEQ :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
 lookupDS01xMMEQ size o = map (`DS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. size ]
 
+-- lookup DS (Lens)
+
+lookupDS01xOOEQLens :: Int -> DS.B01.DS -> [DS.B01.DS] 
+lookupDS01xOOEQLens size o = map (`DS.B01.lookupOOEQLens` o) [ 0, (size `div` 1000) .. size ]
+
+lookupDS01xOOGELens :: Int -> DS.B01.DS -> [DS.B01.DS]
+lookupDS01xOOGELens size o = map (`DS.B01.lookupOOGELens` o) [ 0, (size `div` 10) .. size ]
+
+lookupDS01xOMEQLens :: Int -> DS.B01.DS -> [DS.B01.DS]
+lookupDS01xOMEQLens size o = map (`DS.B01.lookupOMEQLens` o) [ 0, (s `div` 10) .. s ]
+  where s = size `div` 5
+
+lookupDS01xOMGELens :: Int -> DS.B01.DS -> [DS.B01.DS]
+lookupDS01xOMGELens size o = map (`DS.B01.lookupOMGELens` o) [ 0, (s `div` 10) .. s ]
+  where s = size `div` 5
+
+lookupDS01xMMEQLens :: Int -> DS.B01.DS -> [DS.B01.DS]
+lookupDS01xMMEQLens size o = map (`DS.B01.lookupMMEQLens` o) [ 0, (size `div` 10) .. size ]
+
+-- lookup TS
 
 lookupTS01xOOEQ :: Int -> TS.B01.TS -> [TS.B01.TS] 
 lookupTS01xOOEQ size o = map (`TS.B01.lookupOOEQ` o) [ 0, (size `div` 1000) .. size ]

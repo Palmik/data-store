@@ -7,7 +7,7 @@ module Data.Store.Internal.Function
 where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative
+import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
 import           Data.Maybe
@@ -22,12 +22,123 @@ import qualified Data.Map
 #endif
 import qualified Data.Map.Extra
 import qualified Data.IntSet
+import qualified Data.IntSet.Extra
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type as I
 --------------------------------------------------------------------------------
 
 moduleName :: String
 moduleName = "Data.Store.Internal.Function"
+
+genericSubset :: I.Empty (I.Index irs ts) => Data.IntSet.IntSet -> I.Store tag krs irs ts v -> I.Store tag krs irs ts v
+genericSubset ids old@(I.Store vs _ _) =
+    Data.IntSet.foldl' (\acc i -> case Data.IntMap.lookup i vs of
+                                   Just (ik, e) -> fromJust $! insertInternal ik e acc
+                                   _ -> acc
+                       ) I.empty ids
+{-# INLINE genericSubset #-}
+
+genericLookup :: Data.IntSet.IntSet -> I.Store tag krs irs ts v -> [(I.RawKey krs ts, v)]
+genericLookup ids (I.Store vs _ _) =
+    Data.IntSet.foldl' (\acc i -> case Data.IntMap.lookup i vs of
+                                   Just (ik, v) -> (keyInternalToRaw ik, v) : acc
+                                   _ -> acc
+                       ) [] ids
+{-# INLINE genericLookup #-}
+
+genericUpdateWithKey :: (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+                     -> Data.IntSet.IntSet
+                     -> I.Store tag krs irs ts v
+                     -> Maybe (I.Store tag krs irs ts v)
+genericUpdateWithKey tr ids old = Data.IntSet.Extra.foldlM' accum old ids
+    where
+      accum store@(I.Store vs ix nid) i =
+          case Data.IntMap.lookup i vs of
+            Just (ik, v) ->
+                case tr (keyInternalToRaw ik) v of
+                  -- User wants to update the element & key.
+                  Just (nv, Just nk) -> let nik = mkik nk ik in 
+                    if nik /= ik
+                       -- The keys are different: update the element & key.
+                       then (\nix -> I.Store
+                         { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                         , I.storeI = nix
+                         , I.storeNID = nid
+                         }) <$> indexInsertID nik i (indexDeleteID ik i ix)
+                       -- The keys are identical: update the element.
+                       else Just I.Store
+                         { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                         , I.storeI = ix
+                         , I.storeNID = nid
+                         }
+
+                  -- Update the element.
+                  Just (nv, Nothing) -> Just I.Store
+                    { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                    , I.storeI = ix
+                    , I.storeNID = nid
+                    }
+
+                  -- Delete.
+                  Nothing -> Just I.Store
+                    { I.storeV = Data.IntMap.delete i vs
+                    , I.storeI = indexDeleteID ik i ix
+                    , I.storeNID = nid
+                    }
+            _ -> Just store
+      {-# INLINEABLE accum #-}
+{-# INLINE genericUpdateWithKey #-}
+
+genericUpdateWithKey' :: (I.RawKey krs ts -> v -> Maybe (v, Maybe (I.Key krs ts)))
+                      -> Data.IntSet.IntSet
+                      -> I.Store tag krs irs ts v
+                      -> I.Store tag krs irs ts v
+genericUpdateWithKey' tr ids old = Data.IntSet.foldl' accum old ids
+    where
+      accum store@(I.Store vs ix nid) i =
+          case Data.IntMap.lookup i vs of
+            Just (ik, v) ->
+                case tr (keyInternalToRaw ik) v of
+                  -- User wants to update the element & key.
+                  Just (nv, Just nk) -> let nik = mkik nk ik in 
+                    if nik /= ik
+                       -- The keys are different: update the element & key.
+                       then insertWithEID' i nik nv (store { I.storeI = indexDeleteID ik i ix })
+                       -- The keys are identical: update the element.
+                       else I.Store
+                         { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                         , I.storeI = ix
+                         , I.storeNID = nid
+                         }
+
+                  -- Update the element.
+                  Just (nv, Nothing) -> I.Store
+                    { I.storeV = Data.IntMap.insert i (ik, nv) vs
+                    , I.storeI = ix
+                    , I.storeNID = nid
+                    }
+
+                  -- Delete.
+                  Nothing -> I.Store
+                    { I.storeV = Data.IntMap.delete i vs
+                    , I.storeI = indexDeleteID ik i ix
+                    , I.storeNID = nid
+                    }
+            _ -> store
+      {-# INLINEABLE accum #-}
+{-# INLINE genericUpdateWithKey' #-}
+
+mkik :: I.Key krs ts -> I.IKey krs ts -> I.IKey krs ts
+mkik (I.K1 I.KeyDimensionA) ik@(I.K1 _) = ik
+mkik (I.K1 (I.KeyDimensionO d))   (I.K1 _)   = I.K1 (I.IKeyDimensionO d)
+mkik (I.K1 (I.KeyDimensionM d))   (I.K1 _)   = I.K1 (I.IKeyDimensionM d)
+mkik (I.KN I.KeyDimensionA s) (I.KN ik is) = I.KN ik $ mkik s is
+mkik (I.KN (I.KeyDimensionO d) s) (I.KN _ is) = I.KN (I.IKeyDimensionO d) $ mkik s is
+mkik (I.KN (I.KeyDimensionM d) s) (I.KN _ is) = I.KN (I.IKeyDimensionM d) $ mkik s is
+mkik _ _ = error $ moduleName <> ".genericUpdate.mkik: The impossible happened."
+{-# INLINEABLE mkik #-}
+
+
 
 keyInternalToRaw :: I.IKey krs ts -> I.RawKey krs ts
 keyInternalToRaw (I.K1 (I.IKeyDimensionO x)) = x
@@ -41,7 +152,29 @@ keyFromInternal (I.K1 (I.IKeyDimensionO x)) = I.K1 (I.KeyDimensionO x)
 keyFromInternal (I.K1 (I.IKeyDimensionM x)) = I.K1 (I.KeyDimensionM x)
 keyFromInternal (I.KN (I.IKeyDimensionO x) s) = I.KN (I.KeyDimensionO x) (keyFromInternal s)
 keyFromInternal (I.KN (I.IKeyDimensionM x) s) = I.KN (I.KeyDimensionM x) (keyFromInternal s)
-{-# INLINE keyFromInternal #-}
+
+insertInternal :: I.IKey krs ts
+               -> v
+               -> I.Store tag krs irs ts v
+               -> Maybe (I.Store tag krs irs ts v)
+insertInternal internal v (I.Store vals index nid) = mk <$> indexInsertID internal nid index
+    where
+      mk ix = I.Store
+        { I.storeV = Data.IntMap.insert nid (internal, v) vals
+        , I.storeI = ix
+        , I.storeNID = nid + 1
+        }
+      {-# INLINE mk #-}
+
+insertInternal' :: I.IKey krs ts
+                -> e
+                -> I.Store tag krs irs ts e
+                -> I.Store tag krs irs ts e
+insertInternal' internal e old@(I.Store _ _ nid) = 
+    insertWithEID' nid internal e (old
+        { I.storeNID = nid + 1 
+        })
+{-# INLINE insertInternal' #-}
 
 -- Inserts the given key-element pair under the given element identifier.
 -- Does not increase @storeNID@.

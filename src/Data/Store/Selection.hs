@@ -38,7 +38,7 @@ import qualified Data.IntMap
 import qualified Data.Map
 #endif
 --------------------------------------------------------------------------------
-import qualified Data.Store.Internal.Type     as I
+import qualified Data.Store.Internal.Type as I
 --------------------------------------------------------------------------------
 
 moduleName :: String

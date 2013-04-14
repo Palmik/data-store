@@ -492,6 +492,14 @@ instance (Ord t, Empty (Index rt tt)) => Empty (Index (O :. rt) (t :. tt)) where
 instance (Ord t, Empty (Index rt tt)) => Empty (Index (M :. rt) (t :. tt)) where
     empty = IN (IndexDimensionM Data.Map.empty) empty
 
+instance Empty (Index irs ts) => Empty (Store tag krs irs ts e) where
+    empty = Store
+        { storeV = Data.IntMap.empty
+        , storeI = empty
+        , storeNID = 0
+        }
+    {-# INLINE empty #-}
+
 -- | Data type for creating tuples, it is used to:
 --
 -- * Create type-level tuples of relation tags for relation specification of
