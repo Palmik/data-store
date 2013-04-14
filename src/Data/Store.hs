@@ -227,6 +227,7 @@ import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
 import           Data.Monoid
 import           Data.Maybe
+import           Data.Functor.Identity
 #if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
 #else
@@ -370,7 +371,7 @@ insert :: I.Key krs ts
        -> I.Store tag krs irs ts v
        -> Maybe (I.RawKey krs ts, I.Store tag krs irs ts v)
 insert k v old@(I.Store _ index _) =
-    (\res -> (I.keyInternalToRaw internal, res)) <$> I.insertInternal internal v old
+    (\res -> (I.keyInternalToRaw internal, res)) <$> I.genericInsert I.indexInsertID internal v old
     where
       internal = I.keyToInternal index k
 
@@ -389,7 +390,7 @@ insert' :: I.Key krs ts
         -> I.Store tag krs irs ts e
         -> (I.RawKey krs ts, I.Store tag krs irs ts e)
 insert' k e old@(I.Store _ index _) =
-    (I.keyInternalToRaw internal, I.insertInternal' internal e old)
+    (I.keyInternalToRaw internal, runIdentity $! I.genericInsert I.indexInsertID' internal e old)
     where
       internal = I.keyToInternal index k
 {-# INLINE insert' #-}
@@ -444,7 +445,7 @@ updateWithKey :: IsSelection sel
               -> sel tag krs irs ts
               -> I.Store tag krs irs ts v
               -> Maybe (I.Store tag krs irs ts v)
-updateWithKey tr sel s = I.genericUpdateWithKey tr (resolve sel s) s
+updateWithKey tr sel s = I.genericUpdateWithKey I.indexInsertID tr (resolve sel s) s
 {-# INLINE updateWithKey #-}
 
 -- | The expression (@'Data.Store.updateWithKey'' tr sel old@)
@@ -469,7 +470,7 @@ updateWithKey' :: IsSelection sel
                -> sel tag krs irs ts
                -> I.Store tag krs irs ts v
                -> I.Store tag krs irs ts v
-updateWithKey' tr sel s = I.genericUpdateWithKey' tr (resolve sel s) s
+updateWithKey' tr sel s = runIdentity $! I.genericUpdateWithKey I.indexInsertID' tr (resolve sel s) s
 {-# INLINE updateWithKey' #-}
 
 -- | The expression (@'Data.Store.update' tr sel s@) is equivalent
@@ -504,11 +505,15 @@ update' tr = updateWithKey' (const tr)
 --
 -- Complexity: /O(c + s * min(n, W))/ 
 updateElements :: IsSelection sel
-             => (v -> Maybe v)
-             -> sel tag krs irs ts
-             -> I.Store tag krs irs ts v
-             -> I.Store tag krs irs ts v
-updateElements tr sel s = fromJust $ update (maybe Nothing (\v -> Just (v, Nothing)) . tr) sel s
+               => (v -> Maybe v)
+               -> sel tag krs irs ts
+               -> I.Store tag krs irs ts v
+               -> I.Store tag krs irs ts v
+updateElements tr sel s =
+  runIdentity $! I.genericUpdateWithKey I.indexInsertID'' tr' (resolve sel s) s
+  where
+    tr' _ = maybe Nothing (\v -> Just (v, Nothing)) . tr
+    {-# INLINE tr' #-}
 {-# INLINE updateElements #-}             
 
 -- | The expression (@'Data.Store.Selection.delete' sel old@) is
@@ -520,7 +525,8 @@ delete :: IsSelection sel
        => sel tag krs irs ts
        -> I.Store tag krs irs ts v
        -> I.Store tag krs irs ts v
-delete sel s = fromJust $! updateWithKey (\_ _ -> Nothing) sel s
+delete sel s =
+  runIdentity $! I.genericUpdateWithKey I.indexInsertID'' (\_ _ -> Nothing) (resolve sel s) s
 {-# INLINE delete #-}
 
 -- FOLDING
@@ -609,8 +615,8 @@ instance I.Empty (I.Index irs ts) => Monoid (I.Store tag krs irs ts v) where
     mempty = I.empty
     {-# INLINE mempty #-}
 
-    mappend oldl oldr@(I.Store kes _ _) =
-      Data.IntMap.foldl (\acc (ik, e) -> I.insertInternal' ik e acc) oldl kes
+    mappend oldl (I.Store kes _ _) =
+      Data.IntMap.foldl (\acc (ik, e) -> runIdentity $! I.genericInsert I.indexInsertID' ik e acc) oldl kes
 
 -- UTILITY
 

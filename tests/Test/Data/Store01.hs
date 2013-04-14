@@ -15,57 +15,63 @@ import Test.QuickCheck
 import qualified Data.List as L
 import           Data.Maybe
 import           Data.Proxy
+import qualified Data.Foldable
+import qualified Data.Set
+import qualified Data.IntSet
 --------------------------------------------------------------------------------
 import qualified Data.Store as S
 import           Data.Store (M, O, (.:), (.:.), (:.)(..), (.<), (.<=), (.>), (.>=), (./=), (.==), (.&&), (.||))
 --------------------------------------------------------------------------------
 
-data Value = Value
-    { valueOM :: Int
-    , valueMO :: [Int]
-    , valueMM :: [Int]
-    } deriving (Eq, Show)
+data D = D
+    { dOM :: Int
+    , dMO :: [Int]
+    , dMM :: [Int]
+    } deriving (Eq, Ord, Show)
 
-type ValueID = Int
+type DID = Int
 
-data ValueStoreTag = ValueStoreTag
+data DStoreTag = DStoreTag
 
-type VStoreTS  = ValueID :. Int :. Int :. Int
-type VStoreKRS = O       :. O   :. M   :. M 
-type VStoreIRS = O       :. M   :. O   :. M 
-type VStore = S.Store ValueStoreTag VStoreKRS VStoreIRS VStoreTS Value
-type VStoreKey = S.Key VStoreKRS VStoreTS
-type VStoreSelection = S.Selection ValueStoreTag VStoreKRS VStoreIRS VStoreTS
+type DSTS  = DID :. Int :. Int :. Int
+type DSKRS = O       :. O   :. M   :. M 
+type DSIRS = O       :. M   :. O   :. M 
+type DS = S.Store DStoreTag DSKRS DSIRS DSTS D
+type DSKey = S.Key DSKRS DSTS
+type DSSelection = S.Selection DStoreTag DSKRS DSIRS DSTS
 
-sOO :: (ValueStoreTag, S.N0)
-sOO = (ValueStoreTag, S.n0)
+sOO :: (DStoreTag, S.N0)
+sOO = (DStoreTag, S.n0)
 
-sOM :: (ValueStoreTag, S.N1)
-sOM = (ValueStoreTag, S.n1)
+sOM :: (DStoreTag, S.N1)
+sOM = (DStoreTag, S.n1)
 
-sMO :: (ValueStoreTag, S.N2)
-sMO = (ValueStoreTag, S.n2)
+sMO :: (DStoreTag, S.N2)
+sMO = (DStoreTag, S.n2)
 
-sMM :: (ValueStoreTag, S.N3)
-sMM = (ValueStoreTag, S.n3)
+sMM :: (DStoreTag, S.N3)
+sMM = (DStoreTag, S.n3)
 
-makeKey :: Int -> Int -> [Int] -> [Int] -> VStoreKey
+makeKey :: Int -> Int -> [Int] -> [Int] -> DSKey
 makeKey oo om mo mm = 
     S.dimO oo .: S.dimO om .: S.dimM mo .:. S.dimM mm
 
-vkey :: Value -> VStoreKey
-vkey (Value om mo mm) =  
+vkey :: D -> DSKey
+vkey (D om mo mm) =  
     S.dimA .: S.dimO om .: S.dimM mo .:. S.dimM mm
 
-vkey' :: Int -> Value -> VStoreKey
-vkey' i (Value om mo mm) = 
+
+vkey' :: Int -> D -> DSKey
+vkey' i (D om mo mm) = 
     S.dimO i .: S.dimO om .: S.dimM mo .:. S.dimM mm
 
 tests :: [Test]
 tests =
     [ testProperty "insert1" prop_insert1
     , testProperty "insert2" prop_insert2
-    
+   
+    , testProperty "insert'1" prop_insert'1
+
     , testProperty "lookup1" prop_lookup1
     
     , testProperty "update1" prop_update1
@@ -74,36 +80,74 @@ tests =
     ]
 
 -- | Tests insert (auto-incrementation) #1.
-prop_insert1 (Value om mo mm) =
+prop_insert1 (D om mo mm) =
     case S.insert (vkey v) v emptyS of
       Just (i :. _, store) -> (i == minBound) && (S.size store == 1)
       _ -> False
 
     where
-      emptyS :: VStore
+      emptyS :: DS
       emptyS = S.empty
 
-      v = Value om (L.nub mo) (L.nub mm)
+      v = D om (L.nub mo) (L.nub mm)
 
 -- | Tests insert (auto-incrementation) #2.
 prop_insert2 = ids == map fst inserts
     where
       (i0 :. _, s0) = fromJust $ S.insert (vkey $ mval 0) (mval 0) S.empty
 
-      inserts :: [(Int, VStore)]
+      inserts :: [(Int, DS)]
       inserts =
         foldl (\acc@((_, s') : _) v -> let (i :. _, s) = fromJust $ S.insert (vkey v) v s'
                                        in  (i, s) : acc
-              ) [(i0, s0)] values
+              ) [(i0, s0)] ds
 
       ids :: [Int]
       ids = reverse . take 100 $ iterate succ minBound
 
-      values :: [Value]
-      values = map mval [1..99]
+      ds :: [D]
+      ds = map mval [1..99]
 
-      mval :: Int -> Value
-      mval i = Value i [i] [i]
+      mval :: Int -> D
+      mval i = D i [i] [i]
+
+-- | Tests insert' (deleting collisions)
+prop_insert'1 xs =
+  (Data.Set.fromList (S.elements store1) == Data.Set.fromList (S.elements store2)) &&
+  checkLookup sOO oos &&
+  checkLookup sOM oms &&
+  checkLookup sMO mos &&
+  checkLookup sMM mms
+  where
+    lookupSet :: DSSelection -> DS -> Data.Set.Set D
+    lookupSet sel s = Data.Set.fromList $ map snd $ S.lookup sel s
+
+    checkLookup dim xs =
+      all (\x -> lookupSet (dim .== x) store1 == lookupSet (dim .== x) store2) xs
+
+    kes :: [(DSKey, D)]
+    kes = zipWith (\i x -> (vkey' i x, x)) [0 ..] xs
+
+    oos :: [Int]
+    oos = [ 0 .. 5000 ]
+
+    oms :: [Int]
+    oms = Data.IntSet.toList $
+      foldr (\(D om _ _) acc -> Data.IntSet.insert om acc) Data.IntSet.empty xs
+
+    mos :: [Int]
+    mos = Data.IntSet.toList $
+      foldr (\(D _ mo _) acc -> Data.IntSet.union (Data.IntSet.fromList mo) acc) Data.IntSet.empty xs
+
+    mms :: [Int]
+    mms = Data.IntSet.toList $
+      foldr (\(D _ _ mm) acc -> Data.IntSet.union (Data.IntSet.fromList mm) acc) Data.IntSet.empty xs
+
+    store1 :: DS
+    store1 = S.fromList' kes
+    
+    store2 :: DS
+    store2 = foldl (\acc (k, x) -> snd $ S.insert' k x acc) store1 kes
 
 -- | Tests insert, lookup (EQ, LT, GT, NEQ) #1.
 prop_lookup1 = byOO_EQ  && byOM_EQ  && byMO_EQ  && byMM_EQ  &&
@@ -175,29 +219,29 @@ prop_lookup1 = byOO_EQ  && byOM_EQ  && byMO_EQ  && byMM_EQ  &&
       byMM_NEQ = all (\(k, r) -> length r == (if k == 0 then 99 else 100)) $
         map (\k -> (k, S.lookup (sMM ./= k) store)) mms
       
-      store :: VStore
-      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty values
+      store :: DS
+      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
 
-      values :: [Value]
-      values = map mval [0..99]
+      ds :: [D]
+      ds = map mval [0..99]
 
-      mval :: Int -> Value
-      mval i = Value (i `mod` 2) [i] [0..i]
+      mval :: Int -> D
+      mval i = D (i `mod` 2) [i] [0..i]
 
-      -- Every key in this list corresponds to exactly 1 value.
+      -- Every key in this list corresponds to exactly 1 d.
       oos :: [Int]
       oos = take 100 $ iterate succ minBound
 
-      -- Every key in this list corresponds to exactly 50 values.
+      -- Every key in this list corresponds to exactly 50 ds.
       oms :: [Int]
       oms = [0, 1]
 
-      -- Every key in this list corresponds to exactly 1 value.
+      -- Every key in this list corresponds to exactly 1 d.
       mos :: [Int]
       mos = [0..99]
 
       -- Every key 'k' in this list corresponds to exactly '100 - k'
-      -- values.
+      -- ds.
       mms :: [Int]
       mms = [0..99]
 
@@ -210,14 +254,14 @@ prop_update1 = deleteMM
                    in  (k, res, S.lookup (sMM .== k) res)
             ) mms  
 
-      store :: VStore
-      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty values
+      store :: DS
+      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
 
-      values :: [Value]
-      values = map mval [0..99]
+      ds :: [D]
+      ds = map mval [0..99]
 
-      mval :: Int -> Value
-      mval i = Value (i `mod` 2) [i] [0..i]
+      mval :: Int -> D
+      mval i = D (i `mod` 2) [i] [0..i]
       
       mms :: [Int]
       mms = [0..99]
@@ -234,15 +278,15 @@ prop_update2 = test1
           lookupRes1 = map snd $ S.lookup (sOM .== 1) res
           lookupRes2 = map snd $ S.lookup (sMM .== 1) res
 
-      store :: VStore
-      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty values
+      store :: DS
+      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
 
-      values :: [Value]
-      values = [v1, v2, v3]
+      ds :: [D]
+      ds = [v1, v2, v3]
 
-      v1 = Value 1 [1] [1]
-      v2 = Value 1 [2] [2, 3]
-      v3 = Value 2 [3] [1, 2]
+      v1 = D 1 [1] [1]
+      v2 = D 1 [2] [2, 3]
+      v3 = D 2 [3] [1, 2]
   
 -- | Tests insert, update (changing key)
 prop_update3 = test1
@@ -262,19 +306,19 @@ prop_update3 = test1
           lookupRes4 = map snd $ S.lookup (sMO .== 0) res
           lookupRes5 = map snd $ S.lookup (sMM .== 0) res
 
-      store :: VStore
-      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty values
+      store :: DS
+      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
 
-      values :: [Value]
-      values = [v1, v2, v3]
+      ds :: [D]
+      ds = [v1, v2, v3]
 
-      v1 = Value 1 [1] [1]
-      v2 = Value 1 [2] [2, 3]
-      v3 = Value 2 [3] [1, 2]
+      v1 = D 1 [1] [1]
+      v2 = D 1 [2] [2, 3]
+      v3 = D 2 [3] [1, 2]
 
 --------------------------------------------------------------------------------
 -- | QuickCheck machinery.
 
-instance Arbitrary Value where
-    arbitrary = (\(om, mo, mm) -> Value om mo mm) <$> arbitrary
+instance Arbitrary D where
+    arbitrary = (\(om, mo, mm) -> D om (L.nub mo) (L.nub mm)) <$> arbitrary
 

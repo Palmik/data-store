@@ -51,12 +51,16 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     [ C.bgroup "5000"
       [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) DS.B01.empty
       , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x5000) DS.B01.empty
+#ifndef BENCH_DS
       , C.bench "TS" $ C.nf (insertTS01 elems01x5000) TS.B01.empty
+#endif
       ]
     , C.bgroup "10000"
       [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) DS.B01.empty
       , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x10000) DS.B01.empty
+#ifndef BENCH_DS
       , C.bench "TS" $ C.nf (insertTS01 elems01x10000) TS.B01.empty
+#endif
       ]
     ]
   
@@ -66,11 +70,15 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "insert-collisions (Int) 01"
     [ C.bgroup "5000"
       [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) ds01x5000
+#ifndef BENCH_DS
       , C.bench "TS" $ C.nf (insertTS01 elems01x5000) ts01x5000
+#endif
       ]
     , C.bgroup "10000"
       [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) ds01x10000
+#ifndef BENCH_DS      
       , C.bench "TS" $ C.nf (insertTS01 elems01x10000) ts01x10000
+#endif
       ]
     ]
 
@@ -88,12 +96,14 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 5000) ds01x5000
       , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 5000) ds01x5000
       , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 5000) ds01x5000
-      
+
+#ifndef BENCH_DS
       , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 5000) ts01x5000
       , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 5000) ts01x5000
       , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 5000) ts01x5000
       , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 5000) ts01x5000
       , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 5000) ts01x5000
+#endif
       ]
 #ifndef BENCH_SHALLOW
     , C.bgroup "10000"
@@ -108,12 +118,13 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 10000) ds01x10000
       , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 10000) ds01x10000
       , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 10000) ds01x10000
-      
+#ifndef BENCH_DS 
       , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 10000) ts01x10000
       , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 10000) ts01x10000
       , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 10000) ts01x10000
       , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 10000) ts01x10000
       , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 10000) ts01x10000
+#endif
       ]
 #endif
     ]

@@ -11,7 +11,7 @@ module Data.Store.Lens
 import qualified Control.Lens
 --------------------------------------------------------------------------------
 import           Data.Monoid 
-import           Data.Maybe 
+import           Data.Functor.Identity
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type     as I
 import qualified Data.Store.Internal.Function as I
@@ -26,7 +26,7 @@ class With sel where
 
 instance I.IsSelection sel => With sel where
     with sel tr old =
-      fmap (mappend (fromJust $! I.genericUpdateWithKey (\_ _ -> Nothing) ids old))
+      fmap (mappend (runIdentity $! I.genericUpdateWithKey I.indexInsertID'' (\_ _ -> Nothing) ids old))
            (tr (I.genericSubset ids old))
       where
         ids = I.resolve sel old
