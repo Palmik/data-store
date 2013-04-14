@@ -289,13 +289,3 @@ indexDeleteID ik eid = zipD ik
     {-# INLINE goM #-}
 {-# INLINE indexDeleteID #-}
 
--- | The backbone of most of the functions.
-zipDimensions :: Applicative f => (forall ir kr t . Ord t => I.IKeyDimension kr t -> I.IndexDimension ir t -> f (I.IndexDimension ir t))
-              -> I.IKey  krs ts
-              -> I.Index irs ts
-              -> f (I.Index irs ts)
-zipDimensions combine (I.K1 kd) (I.I1 ixd) = I.I1 <$> combine kd ixd
-zipDimensions combine (I.KN kd kt) (I.IN ixd it) = I.IN <$> combine kd ixd <*> zipDimensions combine kt it
-zipDimensions _ _ _ = error $ moduleName <> ".zipDimensions: The impossible happened."
-{-# INLINEABLE zipDimensions #-}
-
