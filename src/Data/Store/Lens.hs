@@ -8,7 +8,6 @@ module Data.Store.Lens
 ) where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative ((<$>))
 import qualified Control.Lens
 --------------------------------------------------------------------------------
 import           Data.Monoid 
@@ -26,7 +25,9 @@ class With sel where
                                                      (I.Store tag krs irs ts v)
 
 instance I.IsSelection sel => With sel where
-    with sel tr old = mappend (fromJust $! I.genericUpdateWithKey (\_ _ -> Nothing) ids old) <$> tr (I.genericSubset ids old)
+    with sel tr old =
+      fmap (mappend (fromJust $! I.genericUpdateWithKey (\_ _ -> Nothing) ids old))
+           (tr (I.genericSubset ids old))
       where
         ids = I.resolve sel old
 
