@@ -47,17 +47,19 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , RNF ts01x10000
   ])
   -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
-  [ C.bgroup "insert (Int) 01"
-    [ C.bgroup "5000"
+  [ C.bgroup "insert (Int) 01 5000"
+    [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x5000) DS.B01.empty
+      , C.bench "DS (Unsafe)" $ C.nf (insertDS01Unsafe elems01x5000) DS.B01.empty
 #ifndef BENCH_DS
       , C.bench "TS" $ C.nf (insertTS01 elems01x5000) TS.B01.empty
 #endif
       ]
-    , C.bgroup "10000"
+    ]
+  , C.bgroup "insert (Int) 01 10000"
+    [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) DS.B01.empty
-      , C.bench "DS (NC)" $ C.nf (insertDS01NC elems01x10000) DS.B01.empty
+      , C.bench "DS (Unsafe)" $ C.nf (insertDS01Unsafe elems01x10000) DS.B01.empty
 #ifndef BENCH_DS
       , C.bench "TS" $ C.nf (insertTS01 elems01x10000) TS.B01.empty
 #endif
@@ -67,14 +69,16 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   -- Insert N elements into store of the same N elements (the inserts are
   -- accumulative, thus we basically "overwrite" the shole store).
   -- Collisions (obviously).
-  , C.bgroup "insert-collisions (Int) 01"
-    [ C.bgroup "5000"
+  , C.bgroup "insert-collisions (Int) 01 5000"
+    [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) ds01x5000
 #ifndef BENCH_DS
       , C.bench "TS" $ C.nf (insertTS01 elems01x5000) ts01x5000
 #endif
       ]
-    , C.bgroup "10000"
+    ]
+    , C.bgroup "insert-collisions (Int) 01 10000"
+    [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) ds01x10000
 #ifndef BENCH_DS      
       , C.bench "TS" $ C.nf (insertTS01 elems01x10000) ts01x10000
@@ -85,46 +89,79 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   -- Lookup in store of N elements.
   , C.bgroup "lookup (Int) 01"
     [ C.bgroup "5000"
-      [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 5000) ds01x5000
-      , C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 5000) ds01x5000
-      , C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 5000) ds01x5000
-      , C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 5000) ds01x5000
-      , C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 5000) ds01x5000
-      
-      , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 5000) ds01x5000
-      , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 5000) ds01x5000
-      , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 5000) ds01x5000
-      , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 5000) ds01x5000
-      , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 5000) ds01x5000
-
+      [ C.bcompare
+        [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 5000) ds01x5000
+        , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 5000) ds01x5000
 #ifndef BENCH_DS
-      , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 5000) ts01x5000
-      , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 5000) ts01x5000
-      , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 5000) ts01x5000
-      , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 5000) ts01x5000
-      , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 5000) ts01x5000
+        , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 5000) ts01x5000
 #endif
+        ]
+      , C.bcompare
+        [ C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 5000) ds01x5000
+        , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 5000) ds01x5000
+#ifndef BENCH_DS
+        , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 5000) ts01x5000
+#endif
+        ]
+      , C.bcompare
+        [ C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 5000) ds01x5000
+        , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 5000) ds01x5000
+#ifndef BENCH_DS
+        , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 5000) ts01x5000
+#endif
+        ]
+      , C.bcompare
+        [ C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 5000) ds01x5000
+        , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 5000) ds01x5000
+#ifndef BENCH_DS
+        , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 5000) ts01x5000
+#endif
+        ]
+      , C.bcompare
+        [ C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 5000) ds01x5000
+        , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 5000) ds01x5000
+#ifndef BENCH_DS
+        , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 5000) ts01x5000
+#endif
+        ]
       ]
 #ifndef BENCH_SHALLOW
     , C.bgroup "10000"
-      [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 10000) ds01x10000
-      , C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 10000) ds01x10000
-      , C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 10000) ds01x10000
-      , C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 10000) ds01x10000
-      , C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 10000) ds01x10000
-      
-      , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 10000) ds01x10000
-      , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 10000) ds01x10000
-      , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 10000) ds01x10000
-      , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 10000) ds01x10000
-      , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 10000) ds01x10000
-#ifndef BENCH_DS 
-      , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 10000) ts01x10000
-      , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 10000) ts01x10000
-      , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 10000) ts01x10000
-      , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 10000) ts01x10000
-      , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 10000) ts01x10000
+      [ C.bcompare
+        [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 10000) ds01x10000
+        , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 10000) ds01x10000
+#ifndef BENCH_DS
+        , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 10000) ts01x10000
 #endif
+        ]
+      , C.bcompare
+        [ C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 10000) ds01x10000
+        , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 10000) ds01x10000
+#ifndef BENCH_DS
+        , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 10000) ts01x10000
+#endif
+        ]
+      , C.bcompare
+        [ C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 10000) ds01x10000
+        , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 10000) ds01x10000
+#ifndef BENCH_DS
+        , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 10000) ts01x10000
+#endif
+        ]
+      , C.bcompare
+        [ C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 10000) ds01x10000
+        , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 10000) ds01x10000
+#ifndef BENCH_DS
+        , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 10000) ts01x10000
+#endif
+        ]
+      , C.bcompare
+        [ C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 10000) ds01x10000
+        , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 10000) ds01x10000
+#ifndef BENCH_DS
+        , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 10000) ts01x10000
+#endif
+        ]
       ]
 #endif
     ]
@@ -192,8 +229,8 @@ lookupTS01xMMEQ size o = map (`TS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. siz
 insertDS01 :: [C01] -> DS.B01.DS -> DS.B01.DS
 insertDS01 xs s0 = foldl' (flip DS.B01.insert) s0 xs
 
-insertDS01NC :: [C01] -> DS.B01.DS -> DS.B01.DS
-insertDS01NC xs s0 = foldl' (flip DS.B01.insertNC) s0 xs
+insertDS01Unsafe :: [C01] -> DS.B01.DS -> DS.B01.DS
+insertDS01Unsafe xs s0 = foldl' (flip DS.B01.insertUnsafe) s0 xs
 
 insertTS01 :: [C01] -> TS.B01.TS -> TS.B01.TS
 insertTS01 xs s0 = foldl' (flip TS.B01.insert) s0 xs

@@ -30,21 +30,25 @@ type DSSel = S.Selection DSTag DSKRS DSIRS DSTS
 
 key :: C01 -> DSKey
 key (C01 d1 d2 d3) = S.dimO d1 .: S.dimO d2 .:. S.dimM d3
+{-# INLINE key #-}
 
 sD1 :: (DSTag, S.N0)
 sD1 = (DSTag, S.n0)
+{-# INLINE sD1 #-}
 
 sD2 :: (DSTag, S.N1)
 sD2 = (DSTag, S.n1)
+{-# INLINE sD2 #-}
 
 sD3 :: (DSTag, S.N2)
 sD3 = (DSTag, S.n2)
+{-# INLINE sD3 #-}
 
 insert :: C01 -> DS -> DS
 insert e s = snd $! S.insert' (key e) e s
 
-insertNC :: C01 -> DS -> DS
-insertNC e s = snd $! fromJust $! S.insert (key e) e s
+insertUnsafe :: C01 -> DS -> DS
+insertUnsafe e s = snd $! S.unsafeInsert (key e) e s
 
 lookupOOEQ :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
 lookupOOEQ x = S.lookup (sD1 .== x)

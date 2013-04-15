@@ -12,7 +12,6 @@ import           Control.Applicative hiding (empty)
 import           Data.Monoid ((<>))
 import           Data.Functor.Identity 
 import qualified Data.List
-import qualified Data.Foldable as F 
 #if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
 import qualified Data.Map           as Data.Map
@@ -161,7 +160,7 @@ indexInsertID :: I.IKey krs ts
               -> Maybe (I.Store tag krs irs ts e)
 indexInsertID ik eid old@(I.Store _ index _) =
   if Data.List.null $ findCollisions ik index
-    then Just $ runIdentity $ indexInsertID'' ik eid old
+    then Just $! runIdentity $! indexInsertID'' ik eid old
     else Nothing
 {-# INLINE indexInsertID #-}
 
@@ -170,11 +169,11 @@ indexInsertID ik eid old@(I.Store _ index _) =
 --
 -- In case of collisions: deletes them.
 indexInsertID' :: I.IKey krs ts
-                -> Int
-                -> I.Store tag krs irs ts e
-                -> Identity (I.Store tag krs irs ts e)
+               -> Int
+               -> I.Store tag krs irs ts e
+               -> Identity (I.Store tag krs irs ts e)
 indexInsertID' ik eid old@(I.Store _ index _) = 
-  indexInsertID'' ik eid $ Data.IntSet.foldl' go old collisions
+  indexInsertID'' ik eid $! Data.IntSet.foldl' go old collisions
   where
     go s'@(I.Store es' ix' _) i =
       case Data.IntMap.updateLookupWithKey (\_ _ -> Nothing) i es' of
@@ -197,13 +196,14 @@ indexInsertID'' :: I.IKey krs ts
                 -> Int
                 -> I.Store tag krs irs ts e
                 -> Identity (I.Store tag krs irs ts e)
-indexInsertID'' ik eid old@(I.Store _ index _) = Identity $ old { I.storeI = zipD ik index }
+indexInsertID'' ik eid old@(I.Store _ index _) =
+  Identity $! old { I.storeI = zipD ik index }
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
-    zipD (I.K1 kd) (I.I1 ixd) = I.I1 $ combine kd ixd
-    zipD (I.KN kd kt) (I.IN ixd it) = I.IN (combine kd ixd) $ zipD kt it
+    zipD (I.KN kd kt) (I.IN ixd it) = I.IN (combine kd ixd) $! zipD kt it
+    zipD (I.K1 kd) (I.I1 ixd) = I.I1 $! combine kd ixd
     zipD _ _ = error $ moduleName <> ".indexInsertID''.zipD: The impossible happened."
-    {-# INLINEABLE zipD #-}
+    {-# INLINE zipD #-}
 
     combine :: I.IKeyDimension krs ts -> I.IndexDimension irs ts -> I.IndexDimension irs ts
     combine kd ixd = 
@@ -219,7 +219,7 @@ indexInsertID'' ik eid old@(I.Store _ index _) = Identity $ old { I.storeI = zip
 
         (I.IndexDimensionM m, I.IKeyDimensionM ks) ->
           I.IndexDimensionM $!Data.List.foldl' (\acc k -> goM k eid acc) m ks
-    {-# INLINE combine #-}
+    {-# INLINEABLE combine #-}
 
     goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Data.Map.Map k Int
     goO = Data.Map.insert
@@ -234,8 +234,8 @@ findCollisions :: I.IKey krs ts -> I.Index irs ts -> [Int]
 findCollisions ik ix = zipD ik ix [] 
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> [Int] -> [Int]
-    zipD (I.K1 kd) (I.I1 ixd) = combine kd ixd
     zipD (I.KN kd kt) (I.IN ixd it) = combine kd ixd . zipD kt it
+    zipD (I.K1 kd) (I.I1 ixd) = combine kd ixd
     zipD _ _ = error $ moduleName <> ".findCollisions.zipD: The impossible happened."
 
     combine :: I.IKeyDimension krs ts -> I.IndexDimension irs ts -> [Int] -> [Int]
@@ -261,8 +261,8 @@ indexDeleteID :: I.IKey krs ts
 indexDeleteID ik eid = zipD ik
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
-    zipD (I.K1 kd) (I.I1 ixd) = I.I1 $ combine kd ixd
     zipD (I.KN kd kt) (I.IN ixd it) = I.IN (combine kd ixd) $ zipD kt it
+    zipD (I.K1 kd) (I.I1 ixd) = I.I1 $ combine kd ixd
     zipD _ _ = error $ moduleName <> ".indexDeleteID.zipD: The impossible happened."
     {-# INLINEABLE zipD #-}
 
@@ -270,9 +270,9 @@ indexDeleteID ik eid = zipD ik
     combine key index =
       case (index, key) of
         (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO $ goO m k
-        (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $ F.foldl' goO m ks
+        (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $ Data.List.foldl' goO m ks
         (I.IndexDimensionM m, I.IKeyDimensionO k)  -> I.IndexDimensionM $ goM m k
-        (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ F.foldl' goM m ks
+        (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ Data.List.foldl' goM m ks
     {-# INLINEABLE combine #-}
 
     goO :: Ord k => Data.Map.Map k Int -> k -> Data.Map.Map k Int

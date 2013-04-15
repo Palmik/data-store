@@ -239,8 +239,8 @@ instance (Show (IKey krs ts), Show v) => Show (Store tag krs irs ts v) where
                                        $ F.toList vs
 
 data GenericKey dim rs ts where
-    K1 :: dim r t -> GenericKey dim r t
     KN :: dim r t -> GenericKey dim rt tt -> GenericKey dim (r :. rt) (t :. tt)
+    K1 :: dim r t -> GenericKey dim r t
 
 instance Eq (GenericKey IKeyDimension rs ts) where
     (K1 x) == (K1 y) = x == y
@@ -322,8 +322,8 @@ instance (Show t, Show (IKey rt tt)) => Show (IKey (r :. rt) (t :. tt)) where
     show (K1 _) = error $ moduleName <> ".IKey.show: The impossible happened."
 
 data Index rs ts where
-    I1 :: Ord t => IndexDimension r t -> Index r t
     IN :: Ord t => IndexDimension r t -> Index rt tt -> Index (r :. rt) (t :. tt)
+    I1 :: Ord t => IndexDimension r t -> Index r t
 
 instance (Ord t, Ser.Serialize t) => Ser.Serialize (Index O t) where
     get = I1 <$> Ser.get
@@ -376,9 +376,9 @@ instance (Show t, Show (Index rt tt)) => Show (Index (r :. rt) (t :. tt)) where
     show (I1 _) = error $ moduleName <> ".Index.show: The impossible happened."
 
 data KeyDimension r t where
-    KeyDimensionA :: Auto t => KeyDimension O t
     KeyDimensionO :: Ord t =>  t  -> KeyDimension O t
     KeyDimensionM :: Ord t => [t] -> KeyDimension M t
+    KeyDimensionA :: Auto t => KeyDimension O t
 
 deriving instance Typeable2 KeyDimension
 
@@ -388,8 +388,8 @@ instance Show t => Show (KeyDimension r t) where
     show  KeyDimensionA     = show "Auto"
 
 data IKeyDimension r t where
-    IKeyDimensionM :: Ord t => [t] -> IKeyDimension M t
     IKeyDimensionO :: Ord t => t  -> IKeyDimension O t
+    IKeyDimensionM :: Ord t => [t] -> IKeyDimension M t
 
 instance Eq (IKeyDimension r t) where
     (IKeyDimensionM x) == (IKeyDimensionM y) = x == y
@@ -423,13 +423,13 @@ instance Show t => Show (IKeyDimension r t) where
     show (IKeyDimensionO t)  = show t
 
 data IndexDimension r t where
-    IndexDimensionM :: Ord t
-                    => Data.Map.Map t Data.IntSet.IntSet
-                    -> IndexDimension M t
-    
     IndexDimensionO :: Ord t
                     => Data.Map.Map t Int
                     -> IndexDimension O t
+    
+    IndexDimensionM :: Ord t
+                    => Data.Map.Map t Data.IntSet.IntSet
+                    -> IndexDimension M t
 
 instance (Ord t, Ser.Serialize t) => Ser.Serialize (IndexDimension O t) where
     get = IndexDimensionO <$> Ser.get

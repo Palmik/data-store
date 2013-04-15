@@ -135,6 +135,7 @@ module Data.Store
   -- * Inserting
 , insert
 , insert'
+, unsafeInsert
 
   -- * Updating
 , updateWithKey
@@ -160,6 +161,7 @@ module Data.Store
 , keys
 , fromList
 , fromList'
+, unsafeFromList
 
   -- * Querying
 , size
@@ -395,6 +397,29 @@ insert' k e old@(I.Store _ index _) =
       internal = I.keyToInternal index k
 {-# INLINE insert' #-}
 
+-- | UNSAFE! This function can corrupt the store.
+--
+-- The expression (@'Data.Store.unsafeInsert' k v old@) is @(rk, new)@,
+-- where @rk@ is the raw key of @k@ and @new@ is a store that contains
+-- the same key-element pairs as @old@ plus @(k, e)@.
+-- Any key-value pairs from @old@ colliding with @(k, e)@ will cause UNDEFINED BEHAVIOUR.
+--
+-- See also:
+--
+-- * 'Data.Store.insert'
+-- * 'Data.Store.insert''
+-- * 'Data.Store.Internal.Type.Key'
+-- * 'Data.Store.Internal.Type.RawKey'
+unsafeInsert :: I.Key krs ts
+             -> e
+             -> I.Store tag krs irs ts e
+             -> (I.RawKey krs ts, I.Store tag krs irs ts e)
+unsafeInsert k e old@(I.Store _ index _) =
+    (I.keyInternalToRaw internal, runIdentity $! I.genericInsert I.indexInsertID'' internal e old)
+    where
+      internal = I.keyToInternal index k
+{-# INLINE unsafeInsert #-}
+
 -- TRAVERSING
 
 -- | The expression @('Data.Store.map' tr old@) is store where every element of
@@ -595,15 +620,36 @@ keys (I.Store vs _ _) = Data.List.map (I.keyInternalToRaw . fst) $ Data.IntMap.e
 -- key-element pairs or;
 -- b) @Nothing@ if inserting any of the key-element pairs would
 -- cause a collision.
+--
+-- See also:
+--
+-- * 'Data.Store.fromList''
 fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store tag krs irs ts v)
 fromList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) I.empty 
 {-# INLINE fromList #-}
 
 -- | The expression (@'Data.Store.fromList'' kvs@) is @store@
--- containing the given key-element pairs (collidiong pairs are not included).
+-- containing the given key-element pairs (colliding pairs are not included).
+--
+-- See also:
+--
+-- * 'Data.Store.fromList'
 fromList' :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
 fromList' = Data.Foldable.foldl (\s (k, v) -> snd $ insert' k v s) I.empty 
 {-# INLINE fromList' #-}
+
+-- | UNSAFE! This function can corrupt the store.
+-- 
+-- The expression (@'Data.Store.fromList'' kvs@) is @store@
+-- containing the given key-element pairs (colliding pairs cause UNDEFINED BEHAVIOUR).
+--
+-- See also:
+--
+-- * 'Data.Store.fromList'
+-- * 'Data.Store.fromList'
+unsafeFromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
+unsafeFromList = Data.Foldable.foldl (\s (k, v) -> snd $ unsafeInsert k v s) I.empty 
+{-# INLINE unsafeFromList #-}
 
 -- INSTANCES
 
