@@ -217,7 +217,7 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 --
 data Store tag krs irs ts v = Store
     { storeV :: Data.IntMap.IntMap (IKey krs ts, v)
-    , storeI :: !(Index irs ts)
+    , storeI :: Index irs ts
     , storeNID :: {-# UNPACK #-} !Int
     } deriving (Typeable)
 
@@ -322,8 +322,8 @@ instance (Show t, Show (IKey rt tt)) => Show (IKey (r :. rt) (t :. tt)) where
     show (K1 _) = error $ moduleName <> ".IKey.show: The impossible happened."
 
 data Index rs ts where
-    IN :: Ord t => !(IndexDimension r t) -> Index rt tt -> Index (r :. rt) (t :. tt)
-    I1 :: Ord t => !(IndexDimension r t) -> Index r t
+    IN :: Ord t => IndexDimension r t -> Index rt tt -> Index (r :. rt) (t :. tt)
+    I1 :: Ord t => IndexDimension r t -> Index r t
 
 instance (Ord t, Ser.Serialize t) => Ser.Serialize (Index O t) where
     get = I1 <$> Ser.get

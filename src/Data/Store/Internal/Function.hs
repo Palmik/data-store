@@ -13,11 +13,7 @@ import           Data.Monoid ((<>))
 import           Data.Functor.Identity 
 import qualified Data.List
 import qualified Data.IntMap.Strict as Data.IntMap
-import qualified Data.Map           as Data.Map
-{-
-import qualified Data.IntMap
 import qualified Data.Map
--}
 import qualified Data.IntSet
 import qualified Data.IntSet.Extra
 --------------------------------------------------------------------------------
@@ -196,16 +192,18 @@ indexInsertID'' :: I.IKey krs ts
                 -> I.Store tag krs irs ts e
                 -> Identity (I.Store tag krs irs ts e)
 indexInsertID'' ik eid old@(I.Store _ index _) = {-# SCC "indexInsertID''" #-}
-  Identity $! old { I.storeI = zipD ik index }
+  zipped `seq` Identity $! old { I.storeI = zipped }
   where
+    zipped = zipD ik $! index    
+
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
-    zipD (I.KN kd kt) (I.IN ixd it) = I.IN (combine kd ixd) $! zipD kt it
+    zipD (I.KN kd kt) (I.IN ixd it) = combined `seq` I.IN combined $! zipD kt it where combined = combine kd ixd
     zipD (I.K1 kd) (I.I1 ixd) = I.I1 $! combine kd ixd
     zipD _ _ = error $ moduleName <> ".indexInsertID''.zipD: The impossible happened."
     {-# INLINE zipD #-}
 
     combine :: I.IKeyDimension krs ts -> I.IndexDimension irs ts -> I.IndexDimension irs ts
-    combine kd ixd = 
+    combine kd ixd = kd `seq` ixd `seq` 
       case (ixd, kd) of
         (I.IndexDimensionO m, I.IKeyDimensionO k)  ->
           I.IndexDimensionO $! goO k eid m
@@ -260,18 +258,18 @@ indexDeleteID :: I.IKey krs ts
 indexDeleteID ik eid = zipD ik
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
-    zipD (I.KN kd kt) (I.IN ixd it) = I.IN (combine kd ixd) $ zipD kt it
-    zipD (I.K1 kd) (I.I1 ixd) = I.I1 $ combine kd ixd
+    zipD (I.KN kd kt) (I.IN ixd it) = combined `seq` I.IN combined $! zipD kt it where combined = combine kd ixd
+    zipD (I.K1 kd) (I.I1 ixd) = I.I1 $! combine kd ixd
     zipD _ _ = error $ moduleName <> ".indexDeleteID.zipD: The impossible happened."
     {-# INLINEABLE zipD #-}
 
     combine :: Ord t => I.IKeyDimension kr t -> I.IndexDimension ir t -> I.IndexDimension ir t
     combine key index =
       case (index, key) of
-        (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO $ goO m k
-        (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $ Data.List.foldl' goO m ks
-        (I.IndexDimensionM m, I.IKeyDimensionO k)  -> I.IndexDimensionM $ goM m k
-        (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $ Data.List.foldl' goM m ks
+        (I.IndexDimensionO m, I.IKeyDimensionO k)  -> I.IndexDimensionO $! goO m k
+        (I.IndexDimensionO m, I.IKeyDimensionM ks) -> I.IndexDimensionO $! Data.List.foldl' goO m ks
+        (I.IndexDimensionM m, I.IKeyDimensionO k)  -> I.IndexDimensionM $! goM m k
+        (I.IndexDimensionM m, I.IKeyDimensionM ks) -> I.IndexDimensionM $! Data.List.foldl' goM m ks
     {-# INLINEABLE combine #-}
 
     goO :: Ord k => Data.Map.Map k Int -> k -> Data.Map.Map k Int

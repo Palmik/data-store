@@ -11,6 +11,7 @@ import           Control.Exception.Base (evaluate)
 import           Control.Monad.Trans (liftIO)
 --------------------------------------------------------------------------------
 import           Data.List
+import qualified Data.Map.Strict as Data.Map
 --------------------------------------------------------------------------------
 import qualified Criterion.Config as C
 import qualified Criterion.Main   as C
@@ -49,6 +50,9 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   --, RNF ds01x400000
   --, RNF ds01x800000
 
+  , RNF map01x100000
+  , RNF map01x200000
+
   , RNF ts01x5000
   , RNF ts01x10000
   --, RNF ts01x100000
@@ -61,6 +65,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.insert elem01) ds01x100000
 #ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (insertMap elem01) map01x100000
       --, C.bench "TS" $ C.nf (TS.B01.insert elem01) ts01x100000
 #endif
       ]
@@ -69,6 +74,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.insert elem01) ds01x200000
 #ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (insertMap elem01) map01x200000
       --, C.bench "TS" $ C.nf (TS.B01.insert elem01) ts01x200000
 #endif
       ]
@@ -261,6 +267,20 @@ insertDS01Unsafe xs s0 = foldl' (flip DS.B01.insertUnsafe) s0 xs
 
 insertTS01 :: [C01] -> TS.B01.TS -> TS.B01.TS
 insertTS01 xs s0 = foldl' (flip TS.B01.insert) s0 xs
+
+---
+
+insertMap :: C01 -> Data.Map.Map Int C01 -> Data.Map.Map Int C01
+insertMap x@(C01 oo _ _) m = Data.Map.insert oo x m
+
+insertMapMany :: [C01] -> Data.Map.Map Int C01 -> Data.Map.Map Int C01
+insertMapMany xs s0 = foldl' (flip insertMap) s0 xs
+
+map01x100000 :: Data.Map.Map Int C01
+map01x100000 = insertMapMany elems01x100000 Data.Map.empty
+
+map01x200000 :: Data.Map.Map Int C01
+map01x200000 = insertMapMany elems01x200000 Data.Map.empty
 
 ---
 
