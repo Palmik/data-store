@@ -230,11 +230,7 @@ import           Control.Applicative hiding (empty)
 import           Data.Monoid
 import           Data.Maybe
 import           Data.Functor.Identity
-#if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
-#else
-import qualified Data.IntMap
-#endif
 import qualified Data.List
 import qualified Data.Foldable
 --------------------------------------------------------------------------------
