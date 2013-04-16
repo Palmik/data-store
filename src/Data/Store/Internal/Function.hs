@@ -218,7 +218,7 @@ indexInsertID'' ik eid old@(I.Store _ index _) =
           I.IndexDimensionM $! goM k eid m
 
         (I.IndexDimensionM m, I.IKeyDimensionM ks) ->
-          I.IndexDimensionM $!Data.List.foldl' (\acc k -> goM k eid acc) m ks
+          I.IndexDimensionM $! Data.List.foldl' (\acc k -> goM k eid acc) m ks
     {-# INLINEABLE combine #-}
 
     goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Data.Map.Map k Int

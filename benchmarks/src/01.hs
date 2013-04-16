@@ -36,18 +36,42 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , RNF elems01x50000
   , RNF elems01x100000
   , RNF elems01x150000
+  , RNF elems01x200000
 
   , RNF elems01x5000x5000
   , RNF elems01x10000x5000
 
   , RNF ds01x5000 
   , RNF ds01x10000
+  , RNF ds01x100000
+  , RNF ds01x200000
 
   , RNF ts01x5000
   , RNF ts01x10000
+  --, RNF ts01x100000
+  --, RNF ts01x200000
+  
+  , RNF elem01x500000
   ])
+  -- Insert 1 element into a store of size N. No collisions.
+  [ C.bgroup "insert (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x500000) ds01x100000
+#ifndef BENCH_DS
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x500000) ts01x100000
+#endif
+      ]
+    ]
+  , C.bgroup "insert (Int) 01 200000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x500000) ds01x200000
+#ifndef BENCH_DS
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x500000) ts01x200000
+#endif
+      ]
+    ]
   -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
-  [ C.bgroup "insert (Int) 01 5000"
+  , C.bgroup "insert-accum (Int) 01 5000"
     [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) DS.B01.empty
       , C.bench "DS (Unsafe)" $ C.nf (insertDS01Unsafe elems01x5000) DS.B01.empty
@@ -56,7 +80,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
 #endif
       ]
     ]
-  , C.bgroup "insert (Int) 01 10000"
+  , C.bgroup "insert-accum (Int) 01 10000"
     [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) DS.B01.empty
       , C.bench "DS (Unsafe)" $ C.nf (insertDS01Unsafe elems01x10000) DS.B01.empty
@@ -69,7 +93,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   -- Insert N elements into store of the same N elements (the inserts are
   -- accumulative, thus we basically "overwrite" the shole store).
   -- Collisions (obviously).
-  , C.bgroup "insert-collisions (Int) 01 5000"
+  , C.bgroup "insert-accum-collisions (Int) 01 5000"
     [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) ds01x5000
 #ifndef BENCH_DS
@@ -77,7 +101,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
 #endif
       ]
     ]
-    , C.bgroup "insert-collisions (Int) 01 10000"
+    , C.bgroup "insert-accum-collisions (Int) 01 10000"
     [ C.bcompare
       [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) ds01x10000
 #ifndef BENCH_DS      
@@ -237,17 +261,32 @@ insertTS01 xs s0 = foldl' (flip TS.B01.insert) s0 xs
 
 ---
 
+elem01x500000 :: C01
+elem01x500000 = head $! generate01 500000 1 
+
 ds01x5000 :: DS.B01.DS
 ds01x5000 = insertDS01 elems01x5000 DS.B01.empty
 
 ds01x10000 :: DS.B01.DS
 ds01x10000 = insertDS01 elems01x10000 DS.B01.empty
 
+ds01x100000 :: DS.B01.DS
+ds01x100000 = insertDS01 elems01x100000 DS.B01.empty
+
+ds01x200000 :: DS.B01.DS
+ds01x200000 = insertDS01 elems01x200000 DS.B01.empty
+
 ts01x5000 :: TS.B01.TS
 ts01x5000 = insertTS01 elems01x5000 TS.B01.empty
 
 ts01x10000 :: TS.B01.TS
 ts01x10000 = insertTS01 elems01x10000 TS.B01.empty
+
+ts01x100000 :: TS.B01.TS
+ts01x100000 = insertTS01 elems01x100000 TS.B01.empty
+
+ts01x200000 :: TS.B01.TS
+ts01x200000 = insertTS01 elems01x200000 TS.B01.empty
 
 elems01x5000 :: [C01]
 elems01x5000 = generate01 0 5000
@@ -272,6 +311,9 @@ elems01x100000 = generate01 0 100000
 
 elems01x150000 :: [C01]
 elems01x150000 = generate01 0 150000
+
+elems01x200000 :: [C01]
+elems01x200000 = generate01 0 200000
 
 generate01 :: Int -> Int -> [C01]
 generate01 o n = map (\x -> C01 x (x `div` s) [x .. x + s]) [o .. (n + o) - 1]
