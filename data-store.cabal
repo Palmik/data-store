@@ -50,7 +50,7 @@ library
     , criterion  >= 0.6.2
     , random     >= 1.0.1
     , unordered-containers >= 0.2
-  ghc-options: -O2 -Wall 
+  ghc-options: -O2 -Wall
 
 test-suite data-store-tests
   type:           exitcode-stdio-1.0

@@ -172,7 +172,7 @@ indexInsertID' :: I.IKey krs ts
                -> Int
                -> I.Store tag krs irs ts e
                -> Identity (I.Store tag krs irs ts e)
-indexInsertID' ik eid old@(I.Store _ index _) = 
+indexInsertID' ik eid old@(I.Store _ index _) = {-# SCC "indexInsertID'" #-} 
   indexInsertID'' ik eid $! Data.IntSet.foldl' go old collisions
   where
     go s'@(I.Store es' ix' _) i =
@@ -196,7 +196,7 @@ indexInsertID'' :: I.IKey krs ts
                 -> Int
                 -> I.Store tag krs irs ts e
                 -> Identity (I.Store tag krs irs ts e)
-indexInsertID'' ik eid old@(I.Store _ index _) =
+indexInsertID'' ik eid old@(I.Store _ index _) = {-# SCC "indexInsertID''" #-}
   Identity $! old { I.storeI = zipD ik index }
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
@@ -231,7 +231,7 @@ indexInsertID'' ik eid old@(I.Store _ index _) =
 {-# INLINE indexInsertID'' #-}
 
 findCollisions :: I.IKey krs ts -> I.Index irs ts -> [Int]
-findCollisions ik ix = zipD ik ix [] 
+findCollisions ik ix = {-# SCC "findCollisions" #-} zipD ik ix [] 
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> [Int] -> [Int]
     zipD (I.KN kd kt) (I.IN ixd it) = combine kd ixd . zipD kt it

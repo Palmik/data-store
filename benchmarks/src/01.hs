@@ -14,7 +14,6 @@ import           Data.List
 --------------------------------------------------------------------------------
 import qualified Criterion.Config as C
 import qualified Criterion.Main   as C
-import qualified Criterion.Monad  as C
 --------------------------------------------------------------------------------
 import qualified DS.B01
 import qualified TS.B01
@@ -37,6 +36,8 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , RNF elems01x100000
   , RNF elems01x150000
   , RNF elems01x200000
+  --, RNF elems01x400000
+  --, RNF elems01x800000
 
   , RNF elems01x5000x5000
   , RNF elems01x10000x5000
@@ -45,28 +46,30 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , RNF ds01x10000
   , RNF ds01x100000
   , RNF ds01x200000
+  --, RNF ds01x400000
+  --, RNF ds01x800000
 
   , RNF ts01x5000
   , RNF ts01x10000
   --, RNF ts01x100000
   --, RNF ts01x200000
-  
-  , RNF elem01x500000
+
+  , RNF elem01
   ])
   -- Insert 1 element into a store of size N. No collisions.
   [ C.bgroup "insert (Int) 01 100000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x500000) ds01x100000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01) ds01x100000
 #ifndef BENCH_DS
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x500000) ts01x100000
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01) ts01x100000
 #endif
       ]
     ]
   , C.bgroup "insert (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x500000) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01) ds01x200000
 #ifndef BENCH_DS
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x500000) ts01x200000
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01) ts01x200000
 #endif
       ]
     ]
@@ -261,8 +264,8 @@ insertTS01 xs s0 = foldl' (flip TS.B01.insert) s0 xs
 
 ---
 
-elem01x500000 :: C01
-elem01x500000 = head $! generate01 500000 1 
+elem01 :: C01
+elem01 = head $! generate01 9999999 1 
 
 ds01x5000 :: DS.B01.DS
 ds01x5000 = insertDS01 elems01x5000 DS.B01.empty
@@ -276,6 +279,12 @@ ds01x100000 = insertDS01 elems01x100000 DS.B01.empty
 ds01x200000 :: DS.B01.DS
 ds01x200000 = insertDS01 elems01x200000 DS.B01.empty
 
+ds01x400000 :: DS.B01.DS
+ds01x400000 = insertDS01 elems01x400000 DS.B01.empty
+
+ds01x800000 :: DS.B01.DS
+ds01x800000 = insertDS01 elems01x800000 DS.B01.empty
+
 ts01x5000 :: TS.B01.TS
 ts01x5000 = insertTS01 elems01x5000 TS.B01.empty
 
@@ -287,6 +296,12 @@ ts01x100000 = insertTS01 elems01x100000 TS.B01.empty
 
 ts01x200000 :: TS.B01.TS
 ts01x200000 = insertTS01 elems01x200000 TS.B01.empty
+
+ts01x400000 :: TS.B01.TS
+ts01x400000 = insertTS01 elems01x800000 TS.B01.empty
+
+ts01x800000 :: TS.B01.TS
+ts01x800000 = insertTS01 elems01x800000 TS.B01.empty
 
 elems01x5000 :: [C01]
 elems01x5000 = generate01 0 5000
@@ -314,6 +329,12 @@ elems01x150000 = generate01 0 150000
 
 elems01x200000 :: [C01]
 elems01x200000 = generate01 0 200000
+
+elems01x400000 :: [C01]
+elems01x400000 = generate01 0 400000
+
+elems01x800000 :: [C01]
+elems01x800000 = generate01 0 800000
 
 generate01 :: Int -> Int -> [C01]
 generate01 o n = map (\x -> C01 x (x `div` s) [x .. x + s]) [o .. (n + o) - 1]
