@@ -631,7 +631,7 @@ fromList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) I.empty
 --
 -- * 'Data.Store.fromList'
 fromList' :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
-fromList' = Data.Foldable.foldl (\s (k, v) -> snd $ insert' k v s) I.empty 
+fromList' = Data.List.foldl' (\s (k, v) -> snd $! insert' k v $! s) I.empty 
 {-# INLINE fromList' #-}
 
 -- | UNSAFE! This function can corrupt the store.

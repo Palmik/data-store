@@ -23,13 +23,8 @@ import           Control.Applicative ((<$>), (<*>))
 import           Data.Monoid ((<>))
 import           Data.Data (Typeable, Typeable2)
 import qualified Data.Data
-#if MIN_VERSION_containers(0,5,0)
 import qualified Data.Map.Strict    as Data.Map
 import qualified Data.IntMap.Strict as Data.IntMap
-#else
-import qualified Data.Map
-import qualified Data.IntMap
-#endif
 import qualified Data.IntSet
 import qualified Data.List
 import qualified Data.Foldable as F

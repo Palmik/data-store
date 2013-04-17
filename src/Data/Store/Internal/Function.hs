@@ -28,7 +28,7 @@ genericSubset :: I.Empty (I.Index irs ts)
               -> I.Store tag krs irs ts v
               -> I.Store tag krs irs ts v
 genericSubset ids (I.Store vs _ _) =
-  Data.IntSet.foldl' (\acc i ->
+  Data.IntSet.foldr (\i acc ->
     case Data.IntMap.lookup i vs of
       Just (ik, e) -> runIdentity $! genericInsert indexInsertID'' ik e acc
       _ -> acc
@@ -38,8 +38,8 @@ genericSubset ids (I.Store vs _ _) =
 genericLookup :: Data.IntSet.IntSet
               -> I.Store tag krs irs ts v
               -> [(I.RawKey krs ts, v)]
-genericLookup ids (I.Store vs _ _) =
-  Data.IntSet.foldl' (\acc i ->
+genericLookup ids (I.Store vs _ _) = {-# SCC "genericLookup" #-} 
+  Data.IntSet.foldr (\i acc ->
     case Data.IntMap.lookup i vs of
       Just (ik, v) -> (keyInternalToRaw ik, v) : acc
       _ -> acc
@@ -167,7 +167,7 @@ indexInsertID' :: I.IKey krs ts
                -> Int
                -> I.Store tag krs irs ts e
                -> Identity (I.Store tag krs irs ts e)
-indexInsertID' ik eid old@(I.Store _ index _) = {-# SCC "indexInsertID'" #-} 
+indexInsertID' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID'" #-} 
   indexInsertID'' ik eid $! Data.IntSet.foldl' go old collisions
   where
     go s'@(I.Store es' ix' _) i =
@@ -191,19 +191,19 @@ indexInsertID'' :: I.IKey krs ts
                 -> Int
                 -> I.Store tag krs irs ts e
                 -> Identity (I.Store tag krs irs ts e)
-indexInsertID'' ik eid old@(I.Store _ index _) = {-# SCC "indexInsertID''" #-}
+indexInsertID'' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID''" #-}
   zipped `seq` Identity $! old { I.storeI = zipped }
   where
-    zipped = zipD ik $! index    
+    zipped = zipD ik index
 
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
-    zipD (I.KN kd kt) (I.IN ixd it) = combined `seq` I.IN combined $! zipD kt it where combined = combine kd ixd
+    zipD (I.KN kd kt) (I.IN ixd it) = combined `seq` I.IN combined $! zipD kt it where combined = kd `seq` ixd `seq` combine kd ixd
     zipD (I.K1 kd) (I.I1 ixd) = I.I1 $! combine kd ixd
     zipD _ _ = error $ moduleName <> ".indexInsertID''.zipD: The impossible happened."
     {-# INLINE zipD #-}
 
     combine :: I.IKeyDimension krs ts -> I.IndexDimension irs ts -> I.IndexDimension irs ts
-    combine kd ixd = kd `seq` ixd `seq` 
+    combine kd ixd =
       case (ixd, kd) of
         (I.IndexDimensionO m, I.IKeyDimensionO k)  ->
           I.IndexDimensionO $! goO k eid m
@@ -212,18 +212,18 @@ indexInsertID'' ik eid old@(I.Store _ index _) = {-# SCC "indexInsertID''" #-}
           I.IndexDimensionO $! Data.List.foldl' (\acc k -> goO k eid acc) m ks 
 
         (I.IndexDimensionM m, I.IKeyDimensionO k)  ->
-          I.IndexDimensionM $! goM k eid m
+          I.IndexDimensionM $! goM k eid $! m
 
         (I.IndexDimensionM m, I.IKeyDimensionM ks) ->
           I.IndexDimensionM $! Data.List.foldl' (\acc k -> goM k eid acc) m ks
     {-# INLINEABLE combine #-}
 
     goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Data.Map.Map k Int
-    goO = Data.Map.insert
+    goO = Data.Map.insert 
     {-# INLINE goO #-}
 
     goM :: Ord k => k -> Int -> Data.Map.Map k Data.IntSet.IntSet -> Data.Map.Map k Data.IntSet.IntSet
-    goM k v = Data.Map.insertWith (\_ s -> Data.IntSet.insert v s) k (Data.IntSet.singleton v)
+    goM k e = Data.Map.insertWith (\_ s -> Data.IntSet.insert e s) k (Data.IntSet.singleton e)
     {-# INLINE goM #-}
 {-# INLINE indexInsertID'' #-}
 
@@ -245,7 +245,7 @@ findCollisions ik ix = {-# SCC "findCollisions" #-} zipD ik ix []
 
     goO :: Ord k => k -> Data.Map.Map k Int -> [Int] -> [Int]
     goO k m =
-      case Data.Map.lookup k m of
+      case Data.Map.lookup k $! m of
         Nothing -> id
         Just  i -> (i:)
     {-# INLINE goO #-}

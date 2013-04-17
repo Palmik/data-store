@@ -22,6 +22,8 @@ import qualified TS.B01
 import Common
 --------------------------------------------------------------------------------
 
+#define BENCH_ESSENTIALS
+
 data RNF where
     RNF :: NFData a => a -> RNF
 
@@ -58,27 +60,92 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   --, RNF ts01x100000
   --, RNF ts01x200000
 
-  , RNF elem01
+  , RNF elem01x9999999
+  , RNF elem01x2500
   ])
   -- Insert 1 element into a store of size N. No collisions.
   [ C.bgroup "insert (Int) 01 100000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01) ds01x100000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x9999999) ds01x100000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem01) map01x100000
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01) ts01x100000
+      , C.bench "Map" $ C.nf (insertMap elem01x9999999) map01x100000
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x9999999) ts01x100000
 #endif
       ]
     ]
+  {-
   , C.bgroup "insert (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x9999999) ds01x200000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem01) map01x200000
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01) ts01x200000
+      , C.bench "Map" $ C.nf (insertMap elem01x9999999) map01x200000
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x9999999) ts01x200000
 #endif
       ]
     ]
+  , C.bgroup "insert-collision (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x2500) ds01x100000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (insertMap elem01x2500) map01x100000
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x2500) ts01x100000
+#endif
+      ]
+    ]
+  , C.bgroup "insert-collision (Int) 01 200000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x2500) ds01x200000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (insertMap elem01x2500) map01x200000
+      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x2500) ts01x200000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OO EQ (Int) 01 200000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOOEQ 2500) ds01x200000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (Data.Map.lookup 2500) map01x200000
+      --, C.bench "TS" $ C.nf (TS.B01.lookupOOEQ 2500) ts01x200000
+#endif
+      ]
+    ]
+    -}
+  , C.bgroup "lookup OO GE (Int) 01 200000 (500)"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOOGE 199000) ds01x200000
+#ifndef BENCH_DS
+      --, C.bench "TS" $ C.nf (TS.B01.lookupOOGE 199500) ts01x200000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OM EQ (Int) 01 200000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOMEQ 200) ds01x200000
+#ifndef BENCH_DS
+      --, C.bench "TS" $ C.nf (TS.B01.lookupOMEQ 200) ts01x200000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OM GE (Int) 01 200000 (500)"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOMGE 39900) ds01x200000
+#ifndef BENCH_DS
+      --, C.bench "TS" $ C.nf (TS.B01.lookupOMGE 39900) ts01x200000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup MM EQ (Int) 01 200000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupMMEQ 200) ds01x200000
+#ifndef BENCH_DS
+      --, C.bench "TS" $ C.nf (TS.B01.lookupOOGE 200) ts01x200000
+#endif
+      ]
+    ]
+  
+
+#ifndef BENCH_ESSENTIALS
   -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
   , C.bgroup "insert-accum (Int) 01 5000"
     [ C.bcompare
@@ -196,8 +263,11 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
 #endif
         ]
       ]
+-- SHALLOW
 #endif
     ]
+-- ESSENTIALS
+#endif
   ]
 
 ---
@@ -284,8 +354,11 @@ map01x200000 = insertMapMany elems01x200000 Data.Map.empty
 
 ---
 
-elem01 :: C01
-elem01 = head $! generate01 9999999 1 
+elem01x9999999 :: C01
+elem01x9999999 = head $! generate01 9999999 1 
+
+elem01x2500 :: C01
+elem01x2500 = head $! generate01 2500 1 
 
 ds01x5000 :: DS.B01.DS
 ds01x5000 = insertDS01 elems01x5000 DS.B01.empty
