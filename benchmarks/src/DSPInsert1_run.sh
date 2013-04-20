@@ -22,3 +22,7 @@ rm *.aux
 
 ./DSPInsert1 +RTS -sstderr &> DSPInsert/01/s.out
 
+ghc -outputdir='.ghc_garbage' --make -package-db=../../cabal-dev/packages-7.6.2.conf/ DSPInsert1.hs -O2 -fforce-recomp
+
+time ./DSPInsert1
+

@@ -18,10 +18,12 @@ import qualified Criterion.Main   as C
 --------------------------------------------------------------------------------
 import qualified DS.B01
 import qualified TS.B01
+import qualified IS.B01
 --------------------------------------------------------------------------------
 import Common
 --------------------------------------------------------------------------------
 
+#define BENCH_SMALL
 #define BENCH_ESSENTIALS
 
 data RNF where
@@ -32,136 +34,255 @@ instance NFData RNF where
 
 main :: IO ()
 main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
-  [ RNF elems01x5000
-  , RNF elems01x10000
-  , RNF elems01x15000
-  , RNF elems01x50000
-  , RNF elems01x100000
-  , RNF elems01x150000
-  , RNF elems01x200000
-  --, RNF elems01x400000
-  --, RNF elems01x800000
+  [ RNF elems10000
+  , RNF elems20000
+#ifndef BENCH_SMALL
+  , RNF elems100000
+  , RNF elems200000
+  , RNF elems400000
+  , RNF elems800000
+#endif
 
-  , RNF elems01x5000x5000
-  , RNF elems01x10000x5000
+  , RNF elems5000x5000
+  , RNF elems10000x5000
 
-  , RNF ds01x5000 
-  , RNF ds01x10000
-  , RNF ds01x100000
-  , RNF ds01x200000
-  --, RNF ds01x400000
-  --, RNF ds01x800000
+  , RNF ds10000
+  , RNF ds20000
+#ifndef BENCH_SMALL
+  , RNF ds100000
+  , RNF ds200000
+  --, RNF ds400000
+  --, RNF ds800000
+#endif
 
-  , RNF map01x100000
-  , RNF map01x200000
+  , RNF map10000
+  , RNF map20000
+#ifndef BENCH_SMALL
+  , RNF map100000
+  , RNF map200000
+  --, RNF map400000
+  --, RNF map800000
+#endif
+  
+  , RNF is10000
+  , RNF is20000
+#ifndef BENCH_SMALL
+  , RNF is100000
+  , RNF is200000
+#endif
+  
+  , RNF ts10000
+  , RNF ts20000
+#ifndef BENCH_SMALL
+  , RNF ts100000
+  , RNF ts200000
+#endif
 
-  , RNF ts01x5000
-  , RNF ts01x10000
-  --, RNF ts01x100000
-  --, RNF ts01x200000
-
-  , RNF elem01x9999999
-  , RNF elem01x2500
+  , RNF elem9999999
+  , RNF elem2500
   ])
   -- Insert 1 element into a store of size N. No collisions.
-  [ C.bgroup "insert (Int) 01 100000"
+  [ C.bgroup "insert (Int) 01 10000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x9999999) ds01x100000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds10000
+      , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds10000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem01x9999999) map01x100000
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x9999999) ts01x100000
+      , C.bench "Map" $ C.nf (insertMap elem9999999) map10000
+      , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is10000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts10000
 #endif
       ]
     ]
-  {-
+  , C.bgroup "insert (Int) 01 20000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds20000
+      , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds20000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (insertMap elem9999999) map20000
+      , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is20000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts20000
+#endif
+      ]
+    ]
+  , C.bgroup "insert-collision (Int) 01 10000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds10000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (insertMap elem2500) map10000
+      , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is10000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts10000
+#endif
+      ]
+    ]
+  , C.bgroup "insert-collision (Int) 01 20000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds20000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (insertMap elem2500) map20000
+      , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is20000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts20000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OO EQ (Int) 01 20000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOOEQ 10000) ds20000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOOEQLens 10000) ds20000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (Data.Map.lookup 10000) map20000
+      , C.bench "IS" $ C.nf (IS.B01.lookupOOEQ 10000) is20000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOOEQ 10000) ts20000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OO GE (Int) 01 20000 (500)"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOOGE 19500) ds20000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOOGELens 19500) ds20000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.nf (IS.B01.lookupOOGE 19500) is20000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOOGE 19500) ts20000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OM EQ (Int) 01 20000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOMEQ 200) ds20000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOMEQLens 200) ds20000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.nf (IS.B01.lookupOMEQ 200) is20000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOMEQ 200) ts20000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OM GE (Int) 01 20000 (500)"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOMGE 3900) ds20000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOMGELens 3900) ds20000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.nf (IS.B01.lookupOMGE 3900) is20000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOMGE 3900) ts20000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup MM EQ (Int) 01 20000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.lookupMMEQ 200) ds20000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupMMEQLens 200) ds20000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.nf (IS.B01.lookupMMEQ 200) is20000
+      , C.bench "TS" $ C.nf (TS.B01.lookupMMEQ 200) ts20000
+#endif
+      ]
+    ]
+
+  -- BIG INPUTS
+  -- Insert 1 element into a store of size N. No collisions.
+#ifndef BENCH_SMALL 
+  , C.bgroup "insert (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds100000
+      , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds100000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is100000
+      , C.bench "Map" $ C.nf (insertMap elem9999999) map100000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts100000
+#endif
+      ]
+    ]
   , C.bgroup "insert (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x9999999) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds200000
+      , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds200000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem01x9999999) map01x200000
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x9999999) ts01x200000
+      , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is200000
+      , C.bench "Map" $ C.nf (insertMap elem9999999) map200000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts200000
 #endif
       ]
     ]
   , C.bgroup "insert-collision (Int) 01 100000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x2500) ds01x100000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds100000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem01x2500) map01x100000
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x2500) ts01x100000
+      , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is100000
+      , C.bench "Map" $ C.nf (insertMap elem2500) map100000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts100000
 #endif
       ]
     ]
   , C.bgroup "insert-collision (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem01x2500) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds200000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem01x2500) map01x200000
-      --, C.bench "TS" $ C.nf (TS.B01.insert elem01x2500) ts01x200000
+      , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is200000
+      , C.bench "Map" $ C.nf (insertMap elem2500) map200000
+      , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts200000
 #endif
       ]
     ]
   , C.bgroup "lookup OO EQ (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.lookupOOEQ 2500) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOOEQ 2500) ds200000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOOEQLens 2500) ds200000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (Data.Map.lookup 2500) map01x200000
-      --, C.bench "TS" $ C.nf (TS.B01.lookupOOEQ 2500) ts01x200000
+      , C.bench "IS" $ C.nf (IS.B01.lookupOOEQ 2500) is200000
+      , C.bench "Map" $ C.nf (Data.Map.lookup 2500) map200000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOOEQ 2500) ts200000
 #endif
       ]
     ]
-    -}
   , C.bgroup "lookup OO GE (Int) 01 200000 (500)"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.lookupOOGE 199000) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOOGE 199000) ds200000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOOGELens 199000) ds200000
 #ifndef BENCH_DS
-      --, C.bench "TS" $ C.nf (TS.B01.lookupOOGE 199500) ts01x200000
+      , C.bench "IS" $ C.nf (IS.B01.lookupOOGE 199000) is200000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOOGE 199500) ts200000
 #endif
       ]
     ]
   , C.bgroup "lookup OM EQ (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.lookupOMEQ 200) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOMEQ 200) ds200000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOMEQLens 200) ds200000
 #ifndef BENCH_DS
-      --, C.bench "TS" $ C.nf (TS.B01.lookupOMEQ 200) ts01x200000
+      , C.bench "IS" $ C.nf (IS.B01.lookupOMEQ 200) is200000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOMEQ 200) ts200000
 #endif
       ]
     ]
   , C.bgroup "lookup OM GE (Int) 01 200000 (500)"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.lookupOMGE 39900) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.lookupOMGE 39900) ds200000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOMGELens 39900) ds200000
 #ifndef BENCH_DS
-      --, C.bench "TS" $ C.nf (TS.B01.lookupOMGE 39900) ts01x200000
+      , C.bench "IS" $ C.nf (IS.B01.lookupOMGE 39900) is200000
+      , C.bench "TS" $ C.nf (TS.B01.lookupOMGE 39900) ts200000
 #endif
       ]
     ]
   , C.bgroup "lookup MM EQ (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.lookupMMEQ 200) ds01x200000
+      [ C.bench "DS" $ C.nf (DS.B01.lookupMMEQ 200) ds200000
+      , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupMMEQLens 200) ds200000
 #ifndef BENCH_DS
-      --, C.bench "TS" $ C.nf (TS.B01.lookupOOGE 200) ts01x200000
+      , C.bench "IS" $ C.nf (IS.B01.lookupMMEQ 200) is200000
+      , C.bench "TS" $ C.nf (TS.B01.lookupMMEQ 200) ts200000
 #endif
       ]
     ]
-  
+-- BENCH_SMALL
+#endif
 
 #ifndef BENCH_ESSENTIALS
   -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
-  , C.bgroup "insert-accum (Int) 01 5000"
-    [ C.bcompare
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) DS.B01.empty
-      , C.bench "DS (Unsafe)" $ C.nf (insertDS01Unsafe elems01x5000) DS.B01.empty
-#ifndef BENCH_DS
-      , C.bench "TS" $ C.nf (insertTS01 elems01x5000) TS.B01.empty
-#endif
-      ]
-    ]
   , C.bgroup "insert-accum (Int) 01 10000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) DS.B01.empty
-      , C.bench "DS (Unsafe)" $ C.nf (insertDS01Unsafe elems01x10000) DS.B01.empty
+      [ C.bench "DS" $ C.nf (insertListDS elems10000) DS.B01.empty
+      , C.bench "DS (Unsafe)" $ C.nf (insertListDSUnsafe elems10000) DS.B01.empty
 #ifndef BENCH_DS
-      , C.bench "TS" $ C.nf (insertTS01 elems01x10000) TS.B01.empty
+      , C.bench "TS" $ C.nf (insertListTS elems10000) TS.B01.empty
 #endif
       ]
     ]
@@ -169,102 +290,13 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   -- Insert N elements into store of the same N elements (the inserts are
   -- accumulative, thus we basically "overwrite" the shole store).
   -- Collisions (obviously).
-  , C.bgroup "insert-accum-collisions (Int) 01 5000"
-    [ C.bcompare
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x5000) ds01x5000
-#ifndef BENCH_DS
-      , C.bench "TS" $ C.nf (insertTS01 elems01x5000) ts01x5000
-#endif
-      ]
-    ]
     , C.bgroup "insert-accum-collisions (Int) 01 10000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (insertDS01 elems01x10000) ds01x10000
+      [ C.bench "DS" $ C.nf (insertListDS elems10000) ds10000
 #ifndef BENCH_DS      
-      , C.bench "TS" $ C.nf (insertTS01 elems01x10000) ts01x10000
+      , C.bench "TS" $ C.nf (insertListTS elems10000) ts10000
 #endif
       ]
-    ]
-
-  -- Lookup in store of N elements.
-  , C.bgroup "lookup (Int) 01"
-    [ C.bgroup "5000"
-      [ C.bcompare
-        [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 5000) ds01x5000
-        , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 5000) ds01x5000
-#ifndef BENCH_DS
-        , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 5000) ts01x5000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 5000) ds01x5000
-        , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 5000) ds01x5000
-#ifndef BENCH_DS
-        , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 5000) ts01x5000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 5000) ds01x5000
-        , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 5000) ds01x5000
-#ifndef BENCH_DS
-        , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 5000) ts01x5000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 5000) ds01x5000
-        , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 5000) ds01x5000
-#ifndef BENCH_DS
-        , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 5000) ts01x5000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 5000) ds01x5000
-        , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 5000) ds01x5000
-#ifndef BENCH_DS
-        , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 5000) ts01x5000
-#endif
-        ]
-      ]
-#ifndef BENCH_SHALLOW
-    , C.bgroup "10000"
-      [ C.bcompare
-        [ C.bench "DS OO EQ" $ C.nf (lookupDS01xOOEQ 10000) ds01x10000
-        , C.bench "DS OO EQ (Lens)" $ C.nf (lookupDS01xOOEQLens 10000) ds01x10000
-#ifndef BENCH_DS
-        , C.bench "TS OO EQ" $ C.nf (lookupTS01xOOEQ 10000) ts01x10000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS OO GE" $ C.nf (lookupDS01xOOGE 10000) ds01x10000
-        , C.bench "DS OO GE (Lens)" $ C.nf (lookupDS01xOOGELens 10000) ds01x10000
-#ifndef BENCH_DS
-        , C.bench "TS OO GE" $ C.nf (lookupTS01xOOGE 10000) ts01x10000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS OM EQ" $ C.nf (lookupDS01xOMEQ 10000) ds01x10000
-        , C.bench "DS OM EQ (Lens)" $ C.nf (lookupDS01xOMEQLens 10000) ds01x10000
-#ifndef BENCH_DS
-        , C.bench "TS OM EQ" $ C.nf (lookupTS01xOMEQ 10000) ts01x10000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS OM GE" $ C.nf (lookupDS01xOMGE 10000) ds01x10000
-        , C.bench "DS OM GE (Lens)" $ C.nf (lookupDS01xOMGELens 10000) ds01x10000
-#ifndef BENCH_DS
-        , C.bench "TS OM GE" $ C.nf (lookupTS01xOMGE 10000) ts01x10000
-#endif
-        ]
-      , C.bcompare
-        [ C.bench "DS MM EQ" $ C.nf (lookupDS01xMMEQ 10000) ds01x10000
-        , C.bench "DS MM EQ (Lens)" $ C.nf (lookupDS01xMMEQLens 10000) ds01x10000
-#ifndef BENCH_DS
-        , C.bench "TS MM EQ" $ C.nf (lookupTS01xMMEQ 10000) ts01x10000
-#endif
-        ]
-      ]
--- SHALLOW
-#endif
     ]
 -- ESSENTIALS
 #endif
@@ -272,165 +304,135 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
 
 ---
 
-lookupDS01xOOEQ :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
-lookupDS01xOOEQ size o = map (`DS.B01.lookupOOEQ` o) [ 0, (size `div` 1000) .. size ]
+insertListDS :: [C01] -> DS.B01.DS -> DS.B01.DS
+insertListDS xs s0 = foldl' (flip DS.B01.insert) s0 xs
 
-lookupDS01xOOGE :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
-lookupDS01xOOGE size o = map (`DS.B01.lookupOOGE` o) [ 0, (size `div` 10) .. size ]
+#ifndef BENCH_ESSENTIALS
+insertListDSUnsafe :: [C01] -> DS.B01.DS -> DS.B01.DS
+insertListDSUnsafe xs s0 = foldl' (flip DS.B01.insertUnsafe) s0 xs
+#endif
 
-lookupDS01xOMEQ :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
-lookupDS01xOMEQ size o = map (`DS.B01.lookupOMEQ` o) [ 0, (s `div` 10) .. s ]
-  where s = size `div` 5
+insertListTS :: [C01] -> TS.B01.TS -> TS.B01.TS
+insertListTS xs s0 = foldl' (flip TS.B01.insert) s0 xs
 
-lookupDS01xOMGE :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
-lookupDS01xOMGE size o = map (`DS.B01.lookupOMGE` o) [ 0, (s `div` 10) .. s ]
-  where s = size `div` 5
+insertListIS :: [C01] -> IS.B01.IS -> IS.B01.IS
+insertListIS xs s0 = foldl' (\s x -> IS.B01.insert x $! s) s0 xs
 
-lookupDS01xMMEQ :: Int -> DS.B01.DS -> [[(DS.B01.DSRawKey, C01)]] 
-lookupDS01xMMEQ size o = map (`DS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. size ]
-
--- lookup DS (Lens)
-
-lookupDS01xOOEQLens :: Int -> DS.B01.DS -> [DS.B01.DS] 
-lookupDS01xOOEQLens size o = map (`DS.B01.lookupOOEQLens` o) [ 0, (size `div` 1000) .. size ]
-
-lookupDS01xOOGELens :: Int -> DS.B01.DS -> [DS.B01.DS]
-lookupDS01xOOGELens size o = map (`DS.B01.lookupOOGELens` o) [ 0, (size `div` 10) .. size ]
-
-lookupDS01xOMEQLens :: Int -> DS.B01.DS -> [DS.B01.DS]
-lookupDS01xOMEQLens size o = map (`DS.B01.lookupOMEQLens` o) [ 0, (s `div` 10) .. s ]
-  where s = size `div` 5
-
-lookupDS01xOMGELens :: Int -> DS.B01.DS -> [DS.B01.DS]
-lookupDS01xOMGELens size o = map (`DS.B01.lookupOMGELens` o) [ 0, (s `div` 10) .. s ]
-  where s = size `div` 5
-
-lookupDS01xMMEQLens :: Int -> DS.B01.DS -> [DS.B01.DS]
-lookupDS01xMMEQLens size o = map (`DS.B01.lookupMMEQLens` o) [ 0, (size `div` 10) .. size ]
-
--- lookup TS
-
-lookupTS01xOOEQ :: Int -> TS.B01.TS -> [TS.B01.TS] 
-lookupTS01xOOEQ size o = map (`TS.B01.lookupOOEQ` o) [ 0, (size `div` 1000) .. size ]
-
-lookupTS01xOOGE :: Int -> TS.B01.TS -> [TS.B01.TS]
-lookupTS01xOOGE size o = map (`TS.B01.lookupOOGE` o) [ 0, (size `div` 10) .. size ]
-
-lookupTS01xOMEQ :: Int -> TS.B01.TS -> [TS.B01.TS]
-lookupTS01xOMEQ size o = map (`TS.B01.lookupOMEQ` o) [ 0, (s `div` 10) .. s ]
-  where s = size `div` 5
-
-lookupTS01xOMGE :: Int -> TS.B01.TS -> [TS.B01.TS]
-lookupTS01xOMGE size o = map (`TS.B01.lookupOMGE` o) [ 0, (s `div` 10) .. s ]
-  where s = size `div` 5
-
-lookupTS01xMMEQ :: Int -> TS.B01.TS -> [TS.B01.TS]
-lookupTS01xMMEQ size o = map (`TS.B01.lookupMMEQ` o) [ 0, (size `div` 10) .. size ]
-
----
-
-insertDS01 :: [C01] -> DS.B01.DS -> DS.B01.DS
-insertDS01 xs s0 = foldl' (flip DS.B01.insert) s0 xs
-
-insertDS01Unsafe :: [C01] -> DS.B01.DS -> DS.B01.DS
-insertDS01Unsafe xs s0 = foldl' (flip DS.B01.insertUnsafe) s0 xs
-
-insertTS01 :: [C01] -> TS.B01.TS -> TS.B01.TS
-insertTS01 xs s0 = foldl' (flip TS.B01.insert) s0 xs
-
----
+insertListMap :: [C01] -> Data.Map.Map Int C01 -> Data.Map.Map Int C01
+insertListMap xs s0 = foldl' (flip insertMap) s0 xs
 
 insertMap :: C01 -> Data.Map.Map Int C01 -> Data.Map.Map Int C01
-insertMap x@(C01 oo _ _) m = Data.Map.insert oo x m
+insertMap x@(C01 oo _ _) = Data.Map.insert oo x
 
-insertMapMany :: [C01] -> Data.Map.Map Int C01 -> Data.Map.Map Int C01
-insertMapMany xs s0 = foldl' (flip insertMap) s0 xs
+-- MAP
 
-map01x100000 :: Data.Map.Map Int C01
-map01x100000 = insertMapMany elems01x100000 Data.Map.empty
+map10000 :: Data.Map.Map Int C01
+map10000 = insertListMap elems10000 Data.Map.empty
 
-map01x200000 :: Data.Map.Map Int C01
-map01x200000 = insertMapMany elems01x200000 Data.Map.empty
+map20000 :: Data.Map.Map Int C01
+map20000 = insertListMap elems20000 Data.Map.empty
 
----
+#ifndef BENCH_SMALL
+map100000 :: Data.Map.Map Int C01
+map100000 = insertListMap elems100000 Data.Map.empty
 
-elem01x9999999 :: C01
-elem01x9999999 = head $! generate01 9999999 1 
+map200000 :: Data.Map.Map Int C01
+map200000 = insertListMap elems200000 Data.Map.empty
 
-elem01x2500 :: C01
-elem01x2500 = head $! generate01 2500 1 
+map800000 :: Data.Map.Map Int C01
+map800000 = insertListMap elems800000 Data.Map.empty
+#endif
 
-ds01x5000 :: DS.B01.DS
-ds01x5000 = insertDS01 elems01x5000 DS.B01.empty
+-- IS
 
-ds01x10000 :: DS.B01.DS
-ds01x10000 = insertDS01 elems01x10000 DS.B01.empty
+is10000 :: IS.B01.IS
+is10000 = insertListIS elems10000 IS.B01.empty
 
-ds01x100000 :: DS.B01.DS
-ds01x100000 = insertDS01 elems01x100000 DS.B01.empty
+is20000 :: IS.B01.IS
+is20000 = insertListIS elems20000 IS.B01.empty
 
-ds01x200000 :: DS.B01.DS
-ds01x200000 = insertDS01 elems01x200000 DS.B01.empty
+#ifndef BENCH_SMALL
+is100000 :: IS.B01.IS
+is100000 = insertListIS elems100000 IS.B01.empty
 
-ds01x400000 :: DS.B01.DS
-ds01x400000 = insertDS01 elems01x400000 DS.B01.empty
+is200000 :: IS.B01.IS
+is200000 = insertListIS elems200000 IS.B01.empty
+#endif
 
-ds01x800000 :: DS.B01.DS
-ds01x800000 = insertDS01 elems01x800000 DS.B01.empty
+-- DS
 
-ts01x5000 :: TS.B01.TS
-ts01x5000 = insertTS01 elems01x5000 TS.B01.empty
+ds10000 :: DS.B01.DS
+ds10000 = insertListDS elems10000 DS.B01.empty
 
-ts01x10000 :: TS.B01.TS
-ts01x10000 = insertTS01 elems01x10000 TS.B01.empty
+ds20000 :: DS.B01.DS
+ds20000 = insertListDS elems20000 DS.B01.empty
 
-ts01x100000 :: TS.B01.TS
-ts01x100000 = insertTS01 elems01x100000 TS.B01.empty
+#ifndef BENCH_SMALL
+ds100000 :: DS.B01.DS
+ds100000 = insertListDS elems100000 DS.B01.empty
 
-ts01x200000 :: TS.B01.TS
-ts01x200000 = insertTS01 elems01x200000 TS.B01.empty
+ds200000 :: DS.B01.DS
+ds200000 = insertListDS elems200000 DS.B01.empty
 
-ts01x400000 :: TS.B01.TS
-ts01x400000 = insertTS01 elems01x800000 TS.B01.empty
+ds400000 :: DS.B01.DS
+ds400000 = insertListDS elems400000 DS.B01.empty
 
-ts01x800000 :: TS.B01.TS
-ts01x800000 = insertTS01 elems01x800000 TS.B01.empty
+ds800000 :: DS.B01.DS
+ds800000 = insertListDS elems800000 DS.B01.empty
+#endif
 
-elems01x5000 :: [C01]
-elems01x5000 = generate01 0 5000
+-- TS
 
-elems01x5000x5000 :: [C01]
-elems01x5000x5000 = generate01 5000 5000
+ts10000 :: TS.B01.TS
+ts10000 = insertListTS elems10000 TS.B01.empty
 
-elems01x10000x5000 :: [C01]
-elems01x10000x5000 = generate01 10000 5000
+ts20000 :: TS.B01.TS
+ts20000 = insertListTS elems20000 TS.B01.empty
 
-elems01x10000 :: [C01]
-elems01x10000 = generate01 0 10000
+#ifndef BENCH_SMALL
+ts100000 :: TS.B01.TS
+ts100000 = insertListTS elems100000 TS.B01.empty
 
-elems01x15000 :: [C01]
-elems01x15000 = generate01 0 15000
+ts200000 :: TS.B01.TS
+ts200000 = insertListTS elems200000 TS.B01.empty
+#endif
 
-elems01x50000 :: [C01]
-elems01x50000 = generate01 0 50000
+-- ELEM
 
-elems01x100000 :: [C01]
-elems01x100000 = generate01 0 100000
+elem9999999 :: C01
+elem9999999 = head $! generate 9999999 1 
 
-elems01x150000 :: [C01]
-elems01x150000 = generate01 0 150000
+elem2500 :: C01
+elem2500 = head $! generate 2500 1 
 
-elems01x200000 :: [C01]
-elems01x200000 = generate01 0 200000
+elems5000x5000 :: [C01]
+elems5000x5000 = generate 5000 5000
 
-elems01x400000 :: [C01]
-elems01x400000 = generate01 0 400000
+elems10000x5000 :: [C01]
+elems10000x5000 = generate 10000 5000
 
-elems01x800000 :: [C01]
-elems01x800000 = generate01 0 800000
+elems10000 :: [C01]
+elems10000 = generate 0 10000
 
-generate01 :: Int -> Int -> [C01]
-generate01 o n = map (\x -> C01 x (x `div` s) [x .. x + s]) [o .. (n + o) - 1]
+elems20000 :: [C01]
+elems20000 = generate 0 20000
+
+#ifndef BENCH_SMALL
+elems100000 :: [C01]
+elems100000 = generate 0 100000
+
+elems200000 :: [C01]
+elems200000 = generate 0 200000
+
+elems400000 :: [C01]
+elems400000 = generate 0 400000
+
+elems800000 :: [C01]
+elems800000 = generate 0 800000
+#endif
+
+generate :: Int -> Int -> [C01]
+generate o n = map (\x -> C01 x (x `div` s) [x .. x + s]) [o .. (n + o) - 1]
   where
     s = 5
 

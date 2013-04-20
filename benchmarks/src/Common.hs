@@ -3,6 +3,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} 
 
 module Common
@@ -11,6 +12,7 @@ module Common
 
 --------------------------------------------------------------------------------
 import           Control.DeepSeq (NFData(..))
+import           Data.Data
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type as DS
 --------------------------------------------------------------------------------
@@ -19,7 +21,7 @@ data C01 = C01
     {-# UNPACK #-} !Int
     {-# UNPACK #-} !Int
                    ![Int]
-    deriving Show
+    deriving (Eq, Ord, Show, Typeable)
 
 instance NFData C01 where
     rnf (C01 x y z) = rnf x `seq` rnf y `seq` rnf z

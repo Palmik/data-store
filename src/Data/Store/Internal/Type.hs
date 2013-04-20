@@ -211,8 +211,8 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 -- * 'Data.Store.Internal.Type.Key'
 --
 data Store tag krs irs ts v = Store
-    { storeV :: Data.IntMap.IntMap (IKey krs ts, v)
-    , storeI :: Index irs ts
+    { storeV :: !(Data.IntMap.IntMap (IKey krs ts, v))
+    , storeI :: !(Index irs ts)
     , storeNID :: {-# UNPACK #-} !Int
     } deriving (Typeable)
 
@@ -234,8 +234,8 @@ instance (Show (IKey krs ts), Show v) => Show (Store tag krs irs ts v) where
                                        $ F.toList vs
 
 data GenericKey dim rs ts where
-    KN :: dim r t -> GenericKey dim rt tt -> GenericKey dim (r :. rt) (t :. tt)
-    K1 :: dim r t -> GenericKey dim r t
+    KN :: !(dim r t) -> !(GenericKey dim rt tt) -> GenericKey dim (r :. rt) (t :. tt)
+    K1 :: !(dim r t) -> GenericKey dim r t
 
 instance Eq (GenericKey IKeyDimension rs ts) where
     (K1 x) == (K1 y) = x == y
@@ -317,8 +317,8 @@ instance (Show t, Show (IKey rt tt)) => Show (IKey (r :. rt) (t :. tt)) where
     show (K1 _) = error $ moduleName <> ".IKey.show: The impossible happened."
 
 data Index rs ts where
-    IN :: Ord t => IndexDimension r t -> Index rt tt -> Index (r :. rt) (t :. tt)
-    I1 :: Ord t => IndexDimension r t -> Index r t
+    IN :: Ord t => !(IndexDimension r t) -> !(Index rt tt) -> Index (r :. rt) (t :. tt)
+    I1 :: Ord t => !(IndexDimension r t) -> Index r t
 
 instance (Ord t, Ser.Serialize t) => Ser.Serialize (Index O t) where
     get = I1 <$> Ser.get
@@ -419,11 +419,11 @@ instance Show t => Show (IKeyDimension r t) where
 
 data IndexDimension r t where
     IndexDimensionO :: Ord t
-                    => Data.Map.Map t Int
+                    => !(Data.Map.Map t Int)
                     -> IndexDimension O t
     
     IndexDimensionM :: Ord t
-                    => Data.Map.Map t Data.IntSet.IntSet
+                    => !(Data.Map.Map t Data.IntSet.IntSet)
                     -> IndexDimension M t
 
 instance (Ord t, Ser.Serialize t) => Ser.Serialize (IndexDimension O t) where

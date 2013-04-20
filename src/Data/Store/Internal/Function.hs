@@ -197,7 +197,7 @@ indexInsertID'' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID''" #-}
     zipped = zipD ik index
 
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
-    zipD (I.KN kd kt) (I.IN ixd it) = combined `seq` I.IN combined $! zipD kt it where combined = kd `seq` ixd `seq` combine kd ixd
+    zipD (I.KN kd kt) (I.IN ixd it) = I.IN (combine kd ixd) $! zipD kt it
     zipD (I.K1 kd) (I.I1 ixd) = I.I1 $! combine kd ixd
     zipD _ _ = error $ moduleName <> ".indexInsertID''.zipD: The impossible happened."
     {-# INLINE zipD #-}
@@ -258,7 +258,7 @@ indexDeleteID :: I.IKey krs ts
 indexDeleteID ik eid = zipD ik
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> I.Index irs ts
-    zipD (I.KN kd kt) (I.IN ixd it) = combined `seq` I.IN combined $! zipD kt it where combined = combine kd ixd
+    zipD (I.KN kd kt) (I.IN ixd it) = I.IN (combine kd ixd) $! zipD kt it
     zipD (I.K1 kd) (I.I1 ixd) = I.I1 $! combine kd ixd
     zipD _ _ = error $ moduleName <> ".indexDeleteID.zipD: The impossible happened."
     {-# INLINEABLE zipD #-}
