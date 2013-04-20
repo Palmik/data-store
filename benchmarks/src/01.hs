@@ -87,7 +87,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds10000
       , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds10000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem9999999) map10000
+      , C.bench "Map" $ C.whnf (insertMap elem9999999) map10000
       , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is10000
       , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts10000
 #endif
@@ -98,7 +98,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds20000
       , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds20000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem9999999) map20000
+      , C.bench "Map" $ C.whnf (insertMap elem9999999) map20000
       , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is20000
       , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts20000
 #endif
@@ -108,7 +108,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds10000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem2500) map10000
+      , C.bench "Map" $ C.whnf (insertMap elem2500) map10000
       , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is10000
       , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts10000
 #endif
@@ -118,7 +118,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds20000
 #ifndef BENCH_DS
-      , C.bench "Map" $ C.nf (insertMap elem2500) map20000
+      , C.bench "Map" $ C.whnf (insertMap elem2500) map20000
       , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is20000
       , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts20000
 #endif
@@ -185,7 +185,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds100000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is100000
-      , C.bench "Map" $ C.nf (insertMap elem9999999) map100000
+      , C.bench "Map" $ C.whnf (insertMap elem9999999) map100000
       , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts100000
 #endif
       ]
@@ -193,10 +193,10 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "insert (Int) 01 200000"
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds200000
-      , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds200000
+      , C.bench "DS (Unsafe)" $ C.whnf (DS.B01.insertUnsafe elem9999999) ds200000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is200000
-      , C.bench "Map" $ C.nf (insertMap elem9999999) map200000
+      , C.bench "Map" $ C.whnf (insertMap elem9999999) map200000
       , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts200000
 #endif
       ]
@@ -205,7 +205,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds100000
 #ifndef BENCH_DS
-      , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is100000
+      , C.bench "IS" $ C.whnf (IS.B01.insert elem2500) is100000
       , C.bench "Map" $ C.nf (insertMap elem2500) map100000
       , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts100000
 #endif
@@ -227,7 +227,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOOEQLens 2500) ds200000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.nf (IS.B01.lookupOOEQ 2500) is200000
-      , C.bench "Map" $ C.nf (Data.Map.lookup 2500) map200000
+      , C.bench "Map" $ C.whnf (Data.Map.lookup 2500) map200000
       , C.bench "TS" $ C.nf (TS.B01.lookupOOEQ 2500) ts200000
 #endif
       ]

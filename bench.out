@@ -4,248 +4,245 @@ Building data-store-0.2.0...
 Preprocessing library data-store-0.2.0...
 In-place registering data-store-0.2.0...
 Preprocessing benchmark 'data-store-benchmark-01' for data-store-0.2.0...
-[11 of 11] Compiling Main             ( benchmarks/src/01.hs, dist/build/data-store-benchmark-01/data-store-benchmark-01-tmp/Main.o )
-Linking dist/build/data-store-benchmark-01/data-store-benchmark-01 ...
 Running 1 benchmarks...
 Benchmark data-store-benchmark-01: RUNNING...
 warming up
 estimating clock resolution...
-mean is 1.507179 us (640001 iterations)
-found 2696 outliers among 639999 samples (0.4%)
-  2444 (0.4%) high severe
+mean is 1.532637 us (640001 iterations)
+found 2684 outliers among 639999 samples (0.4%)
+  2464 (0.4%) high severe
 estimating cost of a clock call...
-mean is 43.79600 ns (11 iterations)
-found 1 outliers among 11 samples (9.1%)
-  1 (9.1%) high mild
+mean is 44.17680 ns (11 iterations)
+found 2 outliers among 11 samples (18.2%)
+  1 (9.1%) low mild
+  1 (9.1%) high severe
 
 benchmarking insert (Int) 01 10000/DS
-mean: 2.236821 ms, lb 2.231247 ms, ub 2.255699 ms, ci 0.950
-std dev: 46.98692 us, lb 15.92785 us, ub 106.1057 us, ci 0.950
-found 6 outliers among 100 samples (6.0%)
-  5 (5.0%) high mild
+mean: 2.276190 ms, lb 2.265147 ms, ub 2.297641 ms, ci 0.950
+std dev: 76.08746 us, lb 48.14560 us, ub 144.5038 us, ci 0.950
+found 3 outliers among 100 samples (3.0%)
+  2 (2.0%) high mild
   1 (1.0%) high severe
-variance introduced by outliers: 14.203%
+variance introduced by outliers: 28.741%
 variance is moderately inflated by outliers
 
 benchmarking insert (Int) 01 10000/DS (Unsafe)
-mean: 2.553965 ms, lb 2.531060 ms, ub 2.589261 ms, ci 0.950
-std dev: 143.0432 us, lb 102.8667 us, ub 198.2922 us, ci 0.950
-found 16 outliers among 100 samples (16.0%)
-  4 (4.0%) high mild
-  12 (12.0%) high severe
-variance introduced by outliers: 53.493%
-variance is severely inflated by outliers
-
-benchmarking insert (Int) 01 10000/Map
-mean: 678.3467 us, lb 673.6816 us, ub 688.0137 us, ci 0.950
-std dev: 33.04941 us, lb 19.61139 us, ub 59.92683 us, ci 0.950
-found 20 outliers among 100 samples (20.0%)
-  20 (20.0%) high severe
-variance introduced by outliers: 46.483%
+mean: 2.604219 ms, lb 2.591599 ms, ub 2.628437 ms, ci 0.950
+std dev: 86.69984 us, lb 55.11643 us, ub 163.1495 us, ci 0.950
+found 2 outliers among 100 samples (2.0%)
+  1 (1.0%) high severe
+variance introduced by outliers: 28.731%
 variance is moderately inflated by outliers
 
-benchmarking insert (Int) 01 10000/IS
-mean: 6.640531 ms, lb 6.622707 ms, ub 6.691999 ms, ci 0.950
-std dev: 141.4375 us, lb 48.68152 us, ub 300.5596 us, ci 0.950
+benchmarking insert (Int) 01 10000/Map
+mean: 764.8178 us, lb 757.2559 us, ub 784.9633 us, ci 0.950
+std dev: 58.75950 us, lb 28.90244 us, ub 123.7935 us, ci 0.950
 found 5 outliers among 100 samples (5.0%)
-  2 (2.0%) high mild
-  3 (3.0%) high severe
-variance introduced by outliers: 14.225%
+  4 (4.0%) high mild
+  1 (1.0%) high severe
+variance introduced by outliers: 68.703%
+variance is severely inflated by outliers
+
+benchmarking insert (Int) 01 10000/IS
+mean: 7.401742 ms, lb 7.378842 ms, ub 7.433096 ms, ci 0.950
+std dev: 136.2419 us, lb 107.5581 us, ub 212.6082 us, ci 0.950
+found 1 outliers among 100 samples (1.0%)
+  1 (1.0%) high severe
+variance introduced by outliers: 11.336%
 variance is moderately inflated by outliers
 
 benchmarking insert (Int) 01 10000/TS
-mean: 6.256303 ms, lb 6.240493 ms, ub 6.303283 ms, ci 0.950
-std dev: 128.0150 us, lb 49.86784 us, ub 279.9408 us, ci 0.950
-found 4 outliers among 100 samples (4.0%)
-  2 (2.0%) high mild
-  2 (2.0%) high severe
-variance introduced by outliers: 13.269%
+mean: 6.288549 ms, lb 6.258603 ms, ub 6.331984 ms, ci 0.950
+std dev: 182.4041 us, lb 139.6265 us, ub 302.5617 us, ci 0.950
+found 1 outliers among 100 samples (1.0%)
+  1 (1.0%) high severe
+variance introduced by outliers: 23.839%
 variance is moderately inflated by outliers
 
 benchmarking insert (Int) 01 20000/DS
-mean: 6.017157 ms, lb 6.012203 ms, ub 6.031906 ms, ci 0.950
-std dev: 40.25238 us, lb 16.25881 us, ub 88.21235 us, ci 0.950
+mean: 5.750440 ms, lb 5.743250 ms, ub 5.762230 ms, ci 0.950
+std dev: 46.40420 us, lb 32.72149 us, ub 82.80777 us, ci 0.950
 
 benchmarking insert (Int) 01 20000/DS (Unsafe)
-mean: 5.724265 ms, lb 5.719642 ms, ub 5.737466 ms, ci 0.950
-std dev: 36.96866 us, lb 16.10366 us, ub 80.19631 us, ci 0.950
+mean: 6.570283 ms, lb 6.561879 ms, ub 6.580774 ms, ci 0.950
+std dev: 47.90830 us, lb 38.92180 us, ub 64.69670 us, ci 0.950
 
 benchmarking insert (Int) 01 20000/Map
-mean: 2.806703 ms, lb 2.798730 ms, ub 2.827875 ms, ci 0.950
-std dev: 61.74200 us, lb 29.06664 us, ub 131.3971 us, ci 0.950
-found 5 outliers among 100 samples (5.0%)
-  4 (4.0%) high mild
+mean: 1.791490 ms, lb 1.780013 ms, ub 1.815091 ms, ci 0.950
+std dev: 80.99470 us, lb 49.69893 us, ub 156.9605 us, ci 0.950
+found 1 outliers among 100 samples (1.0%)
   1 (1.0%) high severe
-variance introduced by outliers: 15.173%
+variance introduced by outliers: 43.452%
 variance is moderately inflated by outliers
 
 benchmarking insert (Int) 01 20000/IS
-mean: 17.26037 ms, lb 17.24623 ms, ub 17.28267 ms, ci 0.950
-std dev: 89.35561 us, lb 62.09538 us, ub 132.9092 us, ci 0.950
+mean: 16.88722 ms, lb 16.87089 ms, ub 16.91859 ms, ci 0.950
+std dev: 112.0970 us, lb 69.69694 us, ub 210.8054 us, ci 0.950
 
 benchmarking insert (Int) 01 20000/TS
-mean: 14.61511 ms, lb 14.59893 ms, ub 14.64271 ms, ci 0.950
-std dev: 106.1689 us, lb 69.74948 us, ub 161.6509 us, ci 0.950
+mean: 14.79741 ms, lb 14.77893 ms, ub 14.82258 ms, ci 0.950
+std dev: 108.8913 us, lb 83.60713 us, ub 154.9379 us, ci 0.950
 
 benchmarking insert-collision (Int) 01 10000/DS
-mean: 2.695333 ms, lb 2.685854 ms, ub 2.720005 ms, ci 0.950
-std dev: 72.79121 us, lb 33.65439 us, ub 151.1143 us, ci 0.950
-found 9 outliers among 100 samples (9.0%)
-  5 (5.0%) high mild
-  4 (4.0%) high severe
-variance introduced by outliers: 20.963%
+mean: 3.323268 ms, lb 3.310338 ms, ub 3.341016 ms, ci 0.950
+std dev: 77.38764 us, lb 61.62957 us, ub 116.9392 us, ci 0.950
+found 1 outliers among 100 samples (1.0%)
+  1 (1.0%) high severe
+variance introduced by outliers: 17.066%
 variance is moderately inflated by outliers
 
 benchmarking insert-collision (Int) 01 10000/Map
-mean: 687.0833 us, lb 678.5026 us, ub 726.7347 us, ci 0.950
-std dev: 80.37109 us, lb 5.799638 us, ub 190.5401 us, ci 0.950
-found 6 outliers among 100 samples (6.0%)
+mean: 683.3946 us, lb 672.8899 us, ub 729.9268 us, ci 0.950
+std dev: 96.08915 us, lb 14.26605 us, ub 226.1689 us, ci 0.950
+found 12 outliers among 100 samples (12.0%)
   3 (3.0%) high mild
-  3 (3.0%) high severe
-variance introduced by outliers: 84.175%
+  9 (9.0%) high severe
+variance introduced by outliers: 88.374%
 variance is severely inflated by outliers
 
 benchmarking insert-collision (Int) 01 10000/IS
-mean: 6.241147 ms, lb 6.230294 ms, ub 6.277303 ms, ci 0.950
-std dev: 91.07274 us, lb 30.14271 us, ub 203.9302 us, ci 0.950
-found 7 outliers among 100 samples (7.0%)
-  4 (4.0%) high mild
-  3 (3.0%) high severe
-variance introduced by outliers: 7.530%
-variance is slightly inflated by outliers
+mean: 6.338473 ms, lb 6.322094 ms, ub 6.377808 ms, ci 0.950
+std dev: 122.8275 us, lb 63.79795 us, ub 252.5839 us, ci 0.950
+found 2 outliers among 100 samples (2.0%)
+  2 (2.0%) high severe
+variance introduced by outliers: 12.297%
+variance is moderately inflated by outliers
 
 benchmarking insert-collision (Int) 01 10000/TS
-mean: 5.427531 ms, lb 5.413772 ms, ub 5.474736 ms, ci 0.950
-std dev: 117.0317 us, lb 36.23557 us, ub 264.6941 us, ci 0.950
-found 5 outliers among 100 samples (5.0%)
-  4 (4.0%) high severe
-variance introduced by outliers: 15.140%
+mean: 5.372482 ms, lb 5.357000 ms, ub 5.413295 ms, ci 0.950
+std dev: 121.0306 us, lb 58.60432 us, ub 256.7385 us, ci 0.950
+found 2 outliers among 100 samples (2.0%)
+  1 (1.0%) high severe
+variance introduced by outliers: 16.110%
 variance is moderately inflated by outliers
 
 benchmarking insert-collision (Int) 01 20000/DS
-mean: 5.907828 ms, lb 5.903980 ms, ub 5.912894 ms, ci 0.950
-std dev: 22.49277 us, lb 17.90136 us, ub 33.67415 us, ci 0.950
+mean: 6.106971 ms, lb 6.099743 ms, ub 6.115588 ms, ci 0.950
+std dev: 40.51299 us, lb 34.58103 us, ub 52.77240 us, ci 0.950
 
 benchmarking insert-collision (Int) 01 20000/Map
-mean: 2.146839 ms, lb 2.137448 ms, ub 2.178728 ms, ci 0.950
-std dev: 79.19867 us, lb 26.54277 us, ub 178.6853 us, ci 0.950
-found 5 outliers among 100 samples (5.0%)
-  3 (3.0%) high mild
-  2 (2.0%) high severe
-variance introduced by outliers: 33.594%
+mean: 2.162429 ms, lb 2.145265 ms, ub 2.190074 ms, ci 0.950
+std dev: 109.1378 us, lb 79.01627 us, ub 188.3113 us, ci 0.950
+found 2 outliers among 100 samples (2.0%)
+  1 (1.0%) high severe
+variance introduced by outliers: 48.466%
 variance is moderately inflated by outliers
 
 benchmarking insert-collision (Int) 01 20000/IS
-mean: 18.09489 ms, lb 18.07231 ms, ub 18.12476 ms, ci 0.950
-std dev: 133.2476 us, lb 105.5628 us, ub 161.6899 us, ci 0.950
+mean: 18.07135 ms, lb 18.06072 ms, ub 18.08495 ms, ci 0.950
+std dev: 61.31977 us, lb 48.62684 us, ub 91.90009 us, ci 0.950
 
 benchmarking insert-collision (Int) 01 20000/TS
-mean: 14.75085 ms, lb 14.73714 ms, ub 14.77742 ms, ci 0.950
-std dev: 94.37904 us, lb 48.80003 us, ub 157.9091 us, ci 0.950
+mean: 14.99911 ms, lb 14.95485 ms, ub 15.13538 ms, ci 0.950
+std dev: 357.4968 us, lb 105.2102 us, ub 775.3830 us, ci 0.950
+found 4 outliers among 100 samples (4.0%)
+  3 (3.0%) high severe
+variance introduced by outliers: 17.109%
+variance is moderately inflated by outliers
 
 benchmarking lookup OO EQ (Int) 01 20000/DS
-mean: 860.5033 ns, lb 859.4288 ns, ub 863.7814 ns, ci 0.950
-std dev: 8.743754 ns, lb 3.371792 ns, ub 19.10545 ns, ci 0.950
+mean: 861.8378 ns, lb 860.9243 ns, ub 863.9762 ns, ci 0.950
+std dev: 6.808794 ns, lb 3.456170 ns, ub 13.80848 ns, ci 0.950
 
 benchmarking lookup OO EQ (Int) 01 20000/DS (Lens)
-mean: 1.731137 us, lb 1.725669 us, ub 1.738159 us, ci 0.950
-std dev: 31.66869 ns, lb 25.45350 ns, ub 48.46904 ns, ci 0.950
+mean: 1.738849 us, lb 1.733055 us, ub 1.745620 us, ci 0.950
+std dev: 31.97551 ns, lb 27.18097 ns, ub 45.10933 ns, ci 0.950
 found 1 outliers among 100 samples (1.0%)
-  1 (1.0%) high severe
-variance introduced by outliers: 11.328%
+variance introduced by outliers: 11.335%
 variance is moderately inflated by outliers
 
 benchmarking lookup OO EQ (Int) 01 20000/Map
-mean: 168.7352 ns, lb 167.6424 ns, ub 169.8373 ns, ci 0.950
-std dev: 5.622414 ns, lb 5.137833 ns, ub 6.152186 ns, ci 0.950
-variance introduced by outliers: 28.733%
+mean: 167.5439 ns, lb 166.7392 ns, ub 168.4293 ns, ci 0.950
+std dev: 4.311588 ns, lb 3.867978 ns, ub 4.829214 ns, ci 0.950
+variance introduced by outliers: 19.960%
 variance is moderately inflated by outliers
 
 benchmarking lookup OO EQ (Int) 01 20000/IS
-mean: 9.652899 us, lb 9.644086 us, ub 9.667717 us, ci 0.950
-std dev: 57.21176 ns, lb 38.19879 ns, ub 104.1067 ns, ci 0.950
+mean: 9.710509 us, lb 9.702949 us, ub 9.721012 us, ci 0.950
+std dev: 45.07955 ns, lb 34.11853 ns, ub 74.16400 ns, ci 0.950
 
 benchmarking lookup OO EQ (Int) 01 20000/TS
-mean: 1.652868 us, lb 1.651402 us, ub 1.654374 us, ci 0.950
-std dev: 7.621764 ns, lb 6.570828 ns, ub 9.355634 ns, ci 0.950
+mean: 1.670345 us, lb 1.669421 us, ub 1.671643 us, ci 0.950
+std dev: 5.544522 ns, lb 4.204760 ns, ub 9.035603 ns, ci 0.950
 
 benchmarking lookup OO GE (Int) 01 20000 (500)/DS
-mean: 135.9728 us, lb 135.7998 us, ub 136.6003 us, ci 0.950
-std dev: 1.509976 us, lb 397.7254 ns, ub 3.483424 us, ci 0.950
+mean: 135.8506 us, lb 135.6774 us, ub 136.4923 us, ci 0.950
+std dev: 1.525746 us, lb 381.8878 ns, ub 3.536916 us, ci 0.950
 
 benchmarking lookup OO GE (Int) 01 20000 (500)/DS (Lens)
-mean: 1.956972 ms, lb 1.947271 ms, ub 1.966836 ms, ci 0.950
-std dev: 50.18545 us, lb 45.67516 us, ub 55.83104 us, ci 0.950
-variance introduced by outliers: 19.952%
+mean: 1.962262 ms, lb 1.952954 ms, ub 1.973976 ms, ci 0.950
+std dev: 53.12534 us, lb 44.00867 us, ub 78.42090 us, ci 0.950
+found 1 outliers among 100 samples (1.0%)
+variance introduced by outliers: 20.968%
 variance is moderately inflated by outliers
 
 benchmarking lookup OO GE (Int) 01 20000 (500)/IS
-mean: 2.628469 ms, lb 2.624356 ms, ub 2.633077 ms, ci 0.950
-std dev: 22.31302 us, lb 18.91724 us, ub 31.55343 us, ci 0.950
+mean: 2.638899 ms, lb 2.634751 ms, ub 2.643646 ms, ci 0.950
+std dev: 22.73955 us, lb 19.41865 us, ub 31.60415 us, ci 0.950
 
 benchmarking lookup OO GE (Int) 01 20000 (500)/TS
-mean: 3.030106 ms, lb 2.221912 ms, ub 5.054995 ms, ci 0.950
-std dev: 5.730645 ms, lb 251.3899 us, ub 10.50842 ms, ci 0.950
+mean: 3.042184 ms, lb 2.200981 ms, ub 5.155505 ms, ci 0.950
+std dev: 5.951632 ms, lb 243.8996 us, ub 10.84927 ms, ci 0.950
 found 2 outliers among 100 samples (2.0%)
   2 (2.0%) high severe
 variance introduced by outliers: 98.996%
 variance is severely inflated by outliers
 
 benchmarking lookup OM EQ (Int) 01 20000/DS
-mean: 1.687338 us, lb 1.683046 us, ub 1.692346 us, ci 0.950
-std dev: 23.69262 ns, lb 19.88779 ns, ub 34.07662 ns, ci 0.950
-found 1 outliers among 100 samples (1.0%)
-variance introduced by outliers: 6.612%
+mean: 1.707819 us, lb 1.702230 us, ub 1.713392 us, ci 0.950
+std dev: 28.63360 ns, lb 26.19585 ns, ub 34.13331 ns, ci 0.950
+variance introduced by outliers: 9.444%
 variance is slightly inflated by outliers
 
 benchmarking lookup OM EQ (Int) 01 20000/DS (Lens)
-mean: 6.999270 us, lb 6.992338 us, ub 7.012560 us, ci 0.950
-std dev: 47.36178 ns, lb 29.78548 ns, ub 90.18557 ns, ci 0.950
+mean: 7.056591 us, lb 7.048878 us, ub 7.066413 us, ci 0.950
+std dev: 44.60431 ns, lb 35.78295 ns, ub 66.77158 ns, ci 0.950
 
 benchmarking lookup OM EQ (Int) 01 20000/IS
-mean: 22.10339 us, lb 22.08382 us, ub 22.14771 us, ci 0.950
-std dev: 143.2339 ns, lb 77.61907 ns, ub 282.3603 ns, ci 0.950
+mean: 22.24580 us, lb 22.22686 us, ub 22.28285 us, ci 0.950
+std dev: 130.4393 ns, lb 81.85876 ns, ub 251.1911 ns, ci 0.950
 
 benchmarking lookup OM EQ (Int) 01 20000/TS
-mean: 7.981438 us, lb 7.973162 us, ub 7.999313 us, ci 0.950
-std dev: 59.59149 ns, lb 34.28361 ns, ub 119.5885 ns, ci 0.950
+mean: 8.023295 us, lb 8.015503 us, ub 8.034798 us, ci 0.950
+std dev: 47.74645 ns, lb 34.14813 ns, ub 83.26583 ns, ci 0.950
 
 benchmarking lookup OM GE (Int) 01 20000 (500)/DS
-mean: 122.7923 us, lb 122.6320 us, ub 123.4072 us, ci 0.950
-std dev: 1.458671 us, lb 253.7190 ns, ub 3.430564 us, ci 0.950
+mean: 123.0762 us, lb 122.9175 us, ub 123.6740 us, ci 0.950
+std dev: 1.422806 us, lb 294.0634 ns, ub 3.327410 us, ci 0.950
 
 benchmarking lookup OM GE (Int) 01 20000 (500)/DS (Lens)
-mean: 1.974024 ms, lb 1.966082 ms, ub 1.981908 ms, ci 0.950
-std dev: 40.58307 us, lb 36.57036 us, ub 46.28307 us, ci 0.950
-variance introduced by outliers: 13.275%
+mean: 1.962625 ms, lb 1.954895 ms, ub 1.970924 ms, ci 0.950
+std dev: 40.97502 us, lb 36.54503 us, ub 51.84087 us, ci 0.950
+found 1 outliers among 100 samples (1.0%)
+variance introduced by outliers: 14.193%
 variance is moderately inflated by outliers
 
 benchmarking lookup OM GE (Int) 01 20000 (500)/IS
-mean: 2.575127 ms, lb 2.569555 ms, ub 2.580449 ms, ci 0.950
-std dev: 27.79911 us, lb 24.00897 us, ub 33.13188 us, ci 0.950
+mean: 2.580117 ms, lb 2.574538 ms, ub 2.585629 ms, ci 0.950
+std dev: 28.36587 us, lb 24.46038 us, ub 34.52980 us, ci 0.950
 
 benchmarking lookup OM GE (Int) 01 20000 (500)/TS
-mean: 3.113307 ms, lb 2.316288 ms, ub 5.113863 ms, ci 0.950
-std dev: 5.637589 ms, lb 202.4509 us, ub 10.28635 ms, ci 0.950
-found 10 outliers among 100 samples (10.0%)
-  8 (8.0%) low mild
+mean: 3.109575 ms, lb 2.298890 ms, ub 5.141550 ms, ci 0.950
+std dev: 5.732431 ms, lb 198.1205 us, ub 10.46483 ms, ci 0.950
+found 9 outliers among 100 samples (9.0%)
+  7 (7.0%) low mild
   2 (2.0%) high severe
 variance introduced by outliers: 98.995%
 variance is severely inflated by outliers
 
 benchmarking lookup MM EQ (Int) 01 20000/DS
-mean: 2.042588 us, lb 2.040708 us, ub 2.047167 us, ci 0.950
-std dev: 14.16589 ns, lb 7.071921 ns, ub 29.19695 ns, ci 0.950
+mean: 2.026832 us, lb 2.025140 us, ub 2.032145 us, ci 0.950
+std dev: 13.95627 ns, lb 5.425871 ns, ub 30.91151 ns, ci 0.950
 
 benchmarking lookup MM EQ (Int) 01 20000/DS (Lens)
-mean: 8.748169 us, lb 8.739838 us, ub 8.765454 us, ci 0.950
-std dev: 58.77763 ns, lb 34.57399 ns, ub 116.7780 ns, ci 0.950
+mean: 8.705909 us, lb 8.697394 us, ub 8.723388 us, ci 0.950
+std dev: 60.24829 ns, lb 35.66483 ns, ub 119.4953 ns, ci 0.950
 
 benchmarking lookup MM EQ (Int) 01 20000/IS
-mean: 28.21912 us, lb 28.19748 us, ub 28.26950 us, ci 0.950
-std dev: 160.1711 ns, lb 87.56615 ns, ub 324.0958 ns, ci 0.950
+mean: 28.34313 us, lb 28.31799 us, ub 28.39884 us, ci 0.950
+std dev: 182.6919 ns, lb 103.4185 ns, ub 365.7426 ns, ci 0.950
 
 benchmarking lookup MM EQ (Int) 01 20000/TS
-mean: 9.391928 us, lb 9.381825 us, ub 9.410644 us, ci 0.950
-std dev: 67.97097 ns, lb 43.42300 ns, ub 128.9646 ns, ci 0.950
+mean: 9.419603 us, lb 9.410637 us, ub 9.435327 us, ci 0.950
+std dev: 59.51635 ns, lb 38.51099 ns, ub 110.6915 ns, ci 0.950
 Benchmark data-store-benchmark-01: FINISH
