@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} 
 
 module TS.B01
@@ -14,6 +15,7 @@ import Control.Lens
 --------------------------------------------------------------------------------
 import qualified Data.IntSet
 import           Data.Foldable (toList)
+import           Data.Functor.Identity
 --------------------------------------------------------------------------------
 import Common (C01(..))
 --------------------------------------------------------------------------------
@@ -81,4 +83,21 @@ lookupMMEQ x o = toList (o ^. T.withAny D3 [x])
 
 empty :: TS
 empty = T.empty
+
+force :: TS -> ()
+force T.EmptyTable = ()
+force (T.Table tab) = seq go ()
+  where
+    go :: T.Tab C01 (T.AnIndex C01)
+    go = runIdentity $! T.forTab tab (\_ i -> Identity $! case i of
+      T.PrimaryMap m -> m `seq` T.PrimaryMap m
+      T.CandidateMap m -> m `seq` T.CandidateMap m
+      T.CandidateIntMap m -> m `seq` T.CandidateIntMap m
+      T.CandidateHashMap m -> m `seq` T.CandidateHashMap m
+      T.SupplementalMap m -> m `seq` T.SupplementalMap m
+      T.SupplementalIntMap m -> m `seq` T.SupplementalIntMap m
+      T.SupplementalHashMap m -> m `seq` T.SupplementalHashMap m
+      T.InvertedMap m -> m `seq` T.InvertedMap m
+      T.InvertedIntMap m -> m `seq` T.InvertedIntMap m
+      T.InvertedHashMap m -> m `seq` T.InvertedHashMap m)
 

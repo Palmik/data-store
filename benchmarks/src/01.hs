@@ -86,12 +86,12 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   [ {-
     C.bgroup "insert (Int) 01 10000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds10000
-      , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds10000
+      [ C.bench "DS" $ C.whnf (DS.B01.insert elem9999999) ds10000
+      , C.bench "DS (Unsafe)" $ C.whnf (DS.B01.insertUnsafe elem9999999) ds10000
 #ifndef BENCH_DS
       , C.bench "Map" $ C.whnf (insertMap elem9999999) map10000
-      , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is10000
-      , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts10000
+      , C.bench "IS" $ C.whnf (IS.B01.force . IS.B01.insert elem9999999) is10000
+      , C.bench "TS" $ C.whnf (TS.B01.force . TS.B01.insert elem9999999) ts10000
 #endif
       ]
     ]
@@ -101,28 +101,28 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds20000
 #ifndef BENCH_DS
       , C.bench "Map" $ C.whnf (insertMap elem9999999) map20000
-      , C.bench "IS" $ C.nf (IS.B01.insert elem9999999) is20000
-      , C.bench "TS" $ C.nf (TS.B01.insert elem9999999) ts20000
+      , C.bench "IS" $ C.whnf (IS.B01.force . IS.B01.insert elem9999999) is20000
+      , C.bench "TS" $ C.whnf (TS.B01.force . TS.B01.insert elem9999999) ts20000
 #endif
       ]
     ]
   , C.bgroup "insert-collision (Int) 01 10000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds10000
+      [ C.bench "DS" $ C.whnf (DS.B01.insert elem2500) ds10000
 #ifndef BENCH_DS
       , C.bench "Map" $ C.whnf (insertMap elem2500) map10000
-      , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is10000
-      , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts10000
+      , C.bench "IS" $ C.whnf (IS.B01.force . IS.B01.insert elem2500) is10000
+      , C.bench "TS" $ C.whnf (TS.B01.force . TS.B01.insert elem2500) ts10000
 #endif
       ]
     ]
   , C.bgroup "insert-collision (Int) 01 20000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (DS.B01.insert elem2500) ds20000
+      [ C.bench "DS" $ C.whnf (DS.B01.insert elem2500) ds20000
 #ifndef BENCH_DS
       , C.bench "Map" $ C.whnf (insertMap elem2500) map20000
-      , C.bench "IS" $ C.nf (IS.B01.insert elem2500) is20000
-      , C.bench "TS" $ C.nf (TS.B01.insert elem2500) ts20000
+      , C.bench "IS" $ C.whnf (IS.B01.force . IS.B01.insert elem2500) is20000
+      , C.bench "TS" $ C.whnf (TS.B01.force . TS.B01.insert elem2500) ts20000
 #endif
       ]
     ]
@@ -283,10 +283,11 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
   , C.bgroup "insert-accum (Int) 01 10000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (insertListDS elems10000) DS.B01.empty
-      , C.bench "DS (Unsafe)" $ C.nf (insertListDSUnsafe elems10000) DS.B01.empty
+      [ C.bench "DS" $ C.whnf (insertListDS elems10000) DS.B01.empty
+      , C.bench "DS (Unsafe)" $ C.whnf (insertListDSUnsafe elems10000) DS.B01.empty
 #ifndef BENCH_DS
-      , C.bench "TS" $ C.nf (insertListTS elems10000) TS.B01.empty
+      , C.bench "IS" $ C.whnf (IS.B01.force . insertListIS elems10000) IS.B01.empty
+      , C.bench "TS" $ C.whnf (TS.B01.force . insertListTS elems10000) TS.B01.empty
 #endif
       ]
     ]
@@ -296,9 +297,10 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   -- Collisions (obviously).
     , C.bgroup "insert-accum-collisions (Int) 01 10000"
     [ C.bcompare
-      [ C.bench "DS" $ C.nf (insertListDS elems10000) ds10000
+      [ C.bench "DS" $ C.whnf (insertListDS elems10000) ds10000
 #ifndef BENCH_DS      
-      , C.bench "TS" $ C.nf (insertListTS elems10000) ts10000
+      , C.bench "IS" $ C.whnf (IS.B01.force . insertListTS elems10000) is10000
+      , C.bench "TS" $ C.whnf (TS.B01.force . insertListTS elems10000) ts10000
 #endif
       ]
     ]
@@ -313,8 +315,10 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
 insertListDS :: [C01] -> DS.B01.DS -> DS.B01.DS
 insertListDS xs s0 = foldl' (flip DS.B01.insert) s0 xs
 
+#ifndef BENCH_ESSENTIALS
 insertListDSUnsafe :: [C01] -> DS.B01.DS -> DS.B01.DS
 insertListDSUnsafe xs s0 = foldl' (flip DS.B01.insertUnsafe) s0 xs
+#endif
 
 insertListTS :: [C01] -> TS.B01.TS -> TS.B01.TS
 insertListTS xs s0 = foldl' (flip TS.B01.insert) s0 xs
@@ -448,5 +452,4 @@ forceList ll = seq (go ll) ()
   where
     go [] = ()
     go (_:xs) = go xs
-
 

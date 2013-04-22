@@ -56,3 +56,9 @@ lookupOMGE x s = I.toList (s @>= D2 x)
 lookupMMEQ :: Int -> IS -> [C01]
 lookupMMEQ x s = I.toList (s @= D3 x)
 
+force :: IS -> ()
+force (I.IxSet ll) = seq (go ll) ()
+  where
+    go [] = ()
+    go (I.Ix m _:xs) = m `seq` go xs
+
