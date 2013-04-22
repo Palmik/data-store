@@ -34,7 +34,8 @@ instance NFData RNF where
 
 main :: IO ()
 main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
-  [ RNF elems10000
+  [ RNF elems500
+  , RNF elems10000
   , RNF elems20000
 #ifndef BENCH_SMALL
   , RNF elems100000
@@ -82,7 +83,8 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , RNF elem2500
   ])
   -- Insert 1 element into a store of size N. No collisions.
-  [ C.bgroup "insert (Int) 01 10000"
+  [ {-
+    C.bgroup "insert (Int) 01 10000"
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.insert elem9999999) ds10000
       , C.bench "DS (Unsafe)" $ C.nf (DS.B01.insertUnsafe elem9999999) ds10000
@@ -124,7 +126,8 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
 #endif
       ]
     ]
-  , C.bgroup "lookup OO EQ (Int) 01 20000"
+  -}
+    C.bgroup "lookup OO EQ (Int) 01 20000"
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.lookupOOEQ 10000) ds20000
       , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOOEQLens 10000) ds20000
@@ -139,6 +142,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     [ C.bcompare
       [ C.bench "DS" $ C.nf (DS.B01.lookupOOGE 19500) ds20000
       , C.bench "DS (Lens)" $ C.nf (DS.B01.lookupOOGELens 19500) ds20000
+      , C.bench "DS (Test)" $ C.nf (insertListDSUnsafe elems500) DS.B01.empty
 #ifndef BENCH_DS
       , C.bench "IS" $ C.nf (IS.B01.lookupOOGE 19500) is20000
       , C.bench "TS" $ C.nf (TS.B01.lookupOOGE 19500) ts20000
@@ -275,6 +279,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
 -- BENCH_SMALL
 #endif
 
+{-
 #ifndef BENCH_ESSENTIALS
   -- Insert N elements into an empty store (the inserts are accumulative). No collisions.
   , C.bgroup "insert-accum (Int) 01 10000"
@@ -300,17 +305,17 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     ]
 -- ESSENTIALS
 #endif
+-}
   ]
+
 
 ---
 
 insertListDS :: [C01] -> DS.B01.DS -> DS.B01.DS
 insertListDS xs s0 = foldl' (flip DS.B01.insert) s0 xs
 
-#ifndef BENCH_ESSENTIALS
 insertListDSUnsafe :: [C01] -> DS.B01.DS -> DS.B01.DS
 insertListDSUnsafe xs s0 = foldl' (flip DS.B01.insertUnsafe) s0 xs
-#endif
 
 insertListTS :: [C01] -> TS.B01.TS -> TS.B01.TS
 insertListTS xs s0 = foldl' (flip TS.B01.insert) s0 xs
@@ -410,6 +415,9 @@ elems5000x5000 = generate 5000 5000
 
 elems10000x5000 :: [C01]
 elems10000x5000 = generate 10000 5000
+
+elems500 :: [C01]
+elems500 = generate 19500 500
 
 elems10000 :: [C01]
 elems10000 = generate 0 10000
