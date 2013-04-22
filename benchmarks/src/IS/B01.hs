@@ -41,18 +41,18 @@ size = I.size
 insert :: C01 -> IS -> IS
 insert = I.insert
 
-lookupOOEQ :: Int -> IS -> IS
-lookupOOEQ x s = s @= D1 x
+lookupOOEQ :: Int -> IS -> [C01]
+lookupOOEQ x s = I.toList (s @= D1 x)
 
-lookupOOGE :: Int -> IS -> IS
-lookupOOGE x s = s @>= D1 x
+lookupOOGE :: Int -> IS -> [C01]
+lookupOOGE x s = I.toList (s @>= D1 x)
 
-lookupOMEQ :: Int -> IS -> IS
-lookupOMEQ x s = s @= D2 x
+lookupOMEQ :: Int -> IS -> [C01]
+lookupOMEQ x s = I.toList (s @= D2 x)
 
-lookupOMGE :: Int -> IS -> IS
-lookupOMGE x s = s @>= D2 x
+lookupOMGE :: Int -> IS -> [C01]
+lookupOMGE x s = I.toList (s @>= D2 x)
 
-lookupMMEQ :: Int -> IS -> IS
-lookupMMEQ x s = s @= D3 x
+lookupMMEQ :: Int -> IS -> [C01]
+lookupMMEQ x s = I.toList (s @= D3 x)
 

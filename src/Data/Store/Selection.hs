@@ -194,7 +194,7 @@ resolveSD (SelectionDimension n (Condition lt eq gt) v) (I.Store _ ix _) = {-# S
       {-# INLINE trMaybeO #-}
 
       trM :: Data.Map.Map k Data.IntSet.IntSet -> Data.IntSet.IntSet
-      trM xs = Data.Map.foldl' Data.IntSet.union Data.IntSet.empty xs
+      trM = Data.Map.foldl' Data.IntSet.union Data.IntSet.empty
       {-# INLINE trM #-}
 
       trMaybeM :: Maybe Data.IntSet.IntSet -> Data.IntSet.IntSet

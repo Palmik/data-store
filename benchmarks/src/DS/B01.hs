@@ -52,32 +52,32 @@ insertUnsafe e s = snd $! S.unsafeInsert (key e) e s
 lookupOOEQ :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
 lookupOOEQ x = S.lookup (sD1 .== x)
 
-lookupOOEQLens :: Int -> DS -> DS
-lookupOOEQLens x o = o ^. with (sD1 .== x) 
+lookupOOEQLens :: Int -> DS -> [C01]
+lookupOOEQLens x o = S.elements (o ^. with (sD1 .== x))
 
 lookupOOGE :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
 lookupOOGE x = S.lookup (sD1 .>= x)
 
-lookupOOGELens :: Int -> DS -> DS
-lookupOOGELens x o = o ^. with (sD1 .>= x)
+lookupOOGELens :: Int -> DS -> [C01]
+lookupOOGELens x o = S.elements (o ^. with (sD1 .>= x))
 
 lookupOMEQ :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
 lookupOMEQ x = S.lookup (sD2 .== x)
 
-lookupOMEQLens :: Int -> DS -> DS
-lookupOMEQLens x o = o ^. with (sD2 .== x)
+lookupOMEQLens :: Int -> DS -> [C01]
+lookupOMEQLens x o = S.elements (o ^. with (sD2 .== x))
 
 lookupOMGE :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
 lookupOMGE x = S.lookup (sD2 .>= x)
 
-lookupOMGELens :: Int -> DS -> DS
-lookupOMGELens x o = o ^. with (sD2 .>= x)
+lookupOMGELens :: Int -> DS -> [C01]
+lookupOMGELens x o = S.elements (o ^. with (sD2 .>= x))
 
 lookupMMEQ :: Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
 lookupMMEQ x = S.lookup (sD3 .== x)
 
-lookupMMEQLens :: Int -> DS -> DS 
-lookupMMEQLens x o = o ^. with (sD3 .== x)
+lookupMMEQLens :: Int -> DS -> [C01] 
+lookupMMEQLens x o = S.elements (o ^. with (sD3 .== x))
 
 empty :: DS
 empty = S.empty

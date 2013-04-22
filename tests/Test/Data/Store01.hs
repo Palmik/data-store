@@ -14,7 +14,6 @@ import Test.QuickCheck
 --------------------------------------------------------------------------------
 import qualified Data.List as L
 import           Data.Maybe
-import           Data.Proxy
 import qualified Data.Foldable
 import qualified Data.Set
 import qualified Data.IntSet

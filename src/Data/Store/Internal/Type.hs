@@ -19,14 +19,15 @@ where
 
 --------------------------------------------------------------------------------
 import           Control.Applicative ((<$>), (<*>))
+import           Control.DeepSeq (NFData(rnf))
 --------------------------------------------------------------------------------
-import           Data.Monoid ((<>))
 import           Data.Data (Typeable, Typeable2)
 import qualified Data.Data
+import qualified Data.List
 import qualified Data.Map.Strict    as Data.Map
+import           Data.Monoid ((<>))
 import qualified Data.IntMap.Strict as Data.IntMap
 import qualified Data.IntSet
-import qualified Data.List
 import qualified Data.Foldable as F
 
 import qualified Data.SafeCopy  as Ser
@@ -513,4 +514,42 @@ instance Empty (Index irs ts) => Empty (Store tag krs irs ts e) where
 -- > [1, 2, 3] :. 3.5 :. "Foo" :. ["Bar1", "Bar2"]
 data h :. t = h :. t
 infixr 3 :.
+
+
+-- NFDATA INSTANCES
+
+instance (NFData e, NFData (IKey krs ts), NFData (Index irs ts)) => NFData (Store tag krs irs ts e) where
+    rnf (Store ke ix nid) = rnf ke `seq` rnf ix `seq` rnf nid
+
+instance NFData t => NFData (IndexDimension r t) where
+    rnf (IndexDimensionO m) = rnf m
+    rnf (IndexDimensionM m) = rnf m
+
+instance NFData t => NFData (Index O t) where
+    rnf (I1 kd) = rnf kd
+     
+instance NFData t => NFData (Index M t) where
+    rnf (I1 kd) = rnf kd
+
+instance (NFData t, NFData (Index rt tt)) => NFData (Index (r :. rt) (t :. tt)) where
+    rnf (IN kd kt) = rnf kd `seq` rnf kt
+    rnf (I1 _) = error "Impossible! (Index NFData)"
+
+instance NFData t => NFData (IKeyDimension r t) where
+    rnf (IKeyDimensionO x) = rnf x
+    rnf (IKeyDimensionM x) = rnf x
+
+instance NFData t => NFData (IKey O t) where
+    rnf (K1 kd) = rnf kd
+     
+instance NFData t => NFData (IKey M t) where
+    rnf (K1 kd) = rnf kd
+
+instance (NFData t, NFData (IKey rt tt)) => NFData (IKey (r :. rt) (t :. tt)) where
+    rnf (KN kd kt) = rnf kd `seq` rnf kt
+    rnf (K1 _) = error "Impossible! (IKey NFData)"
+
+instance (NFData a, NFData b) => NFData (a :. b) where
+    rnf (a :. b) = rnf a `seq` rnf b
+
 

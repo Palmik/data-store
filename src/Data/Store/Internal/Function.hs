@@ -30,7 +30,7 @@ genericSubset :: I.Empty (I.Index irs ts)
 genericSubset ids (I.Store vs _ _) =
   Data.IntSet.foldr (\i acc ->
     case Data.IntMap.lookup i vs of
-      Just (ik, e) -> runIdentity $! genericInsert indexInsertID'' ik e acc
+      Just (ik, e) -> runIdentity $ genericInsert indexInsertID'' ik e acc
       _ -> acc
     ) I.empty ids
 {-# INLINE genericSubset #-}
