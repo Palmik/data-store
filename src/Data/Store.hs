@@ -362,7 +362,9 @@ singleton k v = snd . fromJust $ insert k v I.empty
 -- See also:
 --
 -- * 'Data.Store.insert''
+--
 -- * 'Data.Store.Internal.Type.Key'
+--
 -- * 'Data.Store.Internal.Type.RawKey'
 insert :: I.Key krs ts
        -> v
@@ -381,7 +383,9 @@ insert k v old@(I.Store _ index _) =
 -- See also:
 --
 -- * 'Data.Store.insert'
+--
 -- * 'Data.Store.Internal.Type.Key'
+--
 -- * 'Data.Store.Internal.Type.RawKey'
 insert' :: I.Key krs ts
         -> e
@@ -403,8 +407,11 @@ insert' k e old@(I.Store _ index _) =
 -- See also:
 --
 -- * 'Data.Store.insert'
+--
 -- * 'Data.Store.insert''
+--
 -- * 'Data.Store.Internal.Type.Key'
+--
 -- * 'Data.Store.Internal.Type.RawKey'
 unsafeInsert :: I.Key krs ts
              -> e
@@ -450,7 +457,9 @@ size (I.Store vs _ _) = Data.IntMap.size vs
 -- selection @sel@, those are updated as follows:
 --
 -- * If @(tr k e)@ is @Nothing@ the pair is not included in @new@.
+--
 -- * If @(tr k e)@ is (@Just (e', Nothing)@) the pair is replaced by pair @(k, e')@.
+--
 -- * If @(tr k e)@ is (@Just (e', Just k')@) the pair is replaced by pair @(k', e')@.
 --
 -- If any of the updated key-element pairs would cause a collision, the
@@ -475,7 +484,9 @@ updateWithKey tr sel s = I.genericUpdateWithKey I.indexInsertID tr (resolve sel 
 -- selection @sel@, those are updated as follows:
 --
 -- * If @(tr k e)@ is @Nothing@ the pair is not included in @new@.
+--
 -- * If @(tr k e)@ is (@Just (e', Nothing)@) the pair is replaced by pair @(k, e')@.
+--
 -- * If @(tr k e)@ is (@Just (e', Just k')@) the pair is replaced by pair @(k', e')@.
 --
 -- Any pairs of the original store @old@ that would, after the update, cause collisons
@@ -642,6 +653,7 @@ fromList' = Data.List.foldl' (\s (k, v) -> snd $! insert' k v $! s) I.empty
 -- See also:
 --
 -- * 'Data.Store.fromList'
+--
 -- * 'Data.Store.fromList'
 unsafeFromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
 unsafeFromList = Data.Foldable.foldl (\s (k, v) -> snd $ unsafeInsert k v s) I.empty 

@@ -38,12 +38,12 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   [
     C.bgroup "lookup OO EQ (Int) 01 200000"
     [ C.bcompare
-      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 100000) hs200000
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 10000) hs200000
       ]
     ]
   , C.bgroup "lookup OO GE (Int) 01 200000 (500)"
     [ C.bcompare
-      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOGE 19500) hs200000
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOGE 199500) hs200000
       ]
     ]
   , C.bgroup "lookup OM EQ (Int) 01 200000"
@@ -53,7 +53,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     ]
   , C.bgroup "lookup OM GE (Int) 01 200000 (500)"
     [ C.bcompare
-      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMGE 3900) hs200000
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMGE 39900) hs200000
       ]
     ]
   , C.bgroup "lookup MM EQ (Int) 01 200000"
