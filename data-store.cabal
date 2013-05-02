@@ -1,5 +1,5 @@
 name:                data-store
-version:             0.3.0.3
+version:             0.3.0.4
 
 synopsis:    Type safe, in-memory dictionary with multidimensional keys.
 description: Type safe, in-memory dictionary with multidimensional keys.
@@ -41,7 +41,7 @@ library
 
   build-depends:
       base         >= 4.5 && < 5
-    , containers   == 0.4 && < 1
+    , containers   >= 0.4 && < 1
     , lens         >= 3.9 && < 4
     , transformers >= 0.2 && < 0.4
     , vector       >= 0.10 && < 0.11
