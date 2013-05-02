@@ -1,5 +1,5 @@
 name:                data-store
-version:             0.3.0.2
+version:             0.3.0.3
 
 synopsis:    Type safe, in-memory dictionary with multidimensional keys.
 description: Type safe, in-memory dictionary with multidimensional keys.
@@ -40,8 +40,8 @@ library
     , Data.IntSet.Extra
 
   build-depends:
-      base         >= 4.6 && < 5
-    , containers   >= 0.4 && < 1
+      base         >= 4.5 && < 5
+    , containers   == 0.4 && < 1
     , lens         >= 3.9 && < 4
     , transformers >= 0.2 && < 0.4
     , vector       >= 0.10 && < 0.11
@@ -63,7 +63,7 @@ test-suite data-store-tests
     , Data.Store.Lens    
   
   build-depends:
-      base         >= 4.6 && < 5
+      base         >= 4.5 && < 5
     , containers   >= 0.4 && < 1
     , lens         >= 3.9 && < 4
     , transformers >= 0.2 && < 0.4
@@ -90,7 +90,7 @@ benchmark data-store-benchmark-01
 
   build-depends:
       base         >= 4.6 && < 5
-    , containers   >= 0.4 && < 1
+    , containers   >= 0.5 && < 1
     , lens         >= 3.9 && < 4
     , transformers >= 0.2 && < 0.4
     , vector       >= 0.10 && < 0.11

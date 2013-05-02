@@ -12,8 +12,13 @@ import           Control.Applicative hiding (empty)
 import           Data.Monoid ((<>))
 import           Data.Functor.Identity 
 import qualified Data.List
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
+import qualified Data.Map.Strict as Data.Map
+#else
+import qualified Data.IntMap
 import qualified Data.Map
+#endif
 import qualified Data.IntSet
 import qualified Data.IntSet.Extra
 --------------------------------------------------------------------------------

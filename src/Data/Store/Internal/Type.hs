@@ -24,9 +24,14 @@ import           Control.DeepSeq (NFData(rnf))
 import           Data.Data (Typeable, Typeable2)
 import qualified Data.Data
 import qualified Data.List
-import qualified Data.Map.Strict    as Data.Map
 import           Data.Monoid ((<>))
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
+import qualified Data.Map.Strict    as Data.Map
+#else
+import qualified Data.IntMap
+import qualified Data.Map
+#endif
 import qualified Data.IntSet
 import qualified Data.Foldable as F
 

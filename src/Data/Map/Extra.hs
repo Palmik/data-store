@@ -5,7 +5,11 @@ module Data.Map.Extra
 ) where
 
 --------------------------------------------------------------------------------
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.Map.Strict as Data.Map
+#else
+import qualified Data.Map
+#endif
 --------------------------------------------------------------------------------
 
 -- | The expression (@insertUnique k v old@)

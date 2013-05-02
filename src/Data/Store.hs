@@ -102,19 +102,19 @@
 -- * /d/ -- the (constant) number of dimensions of the store.
 -- 
 -- * /k/ -- the (variable) number of key dimensions values of a key (or
--- maximum of key dimension values over all keys in case of for example
--- @'Data.Store.update'@).
+-- maximum of the number of key dimension values over all keys in case of for example
+-- @'Data.Store.updateWithKey'@).
 --
 -- * /s/ -- the (variable) size of the output of the operation or the
 -- (variable) number of elements affected by the operation. This is
--- of then the number of key-element pairs that correspond to a selection.
+-- often the number of key-element pairs that correspond to some selection.
 -- 
 -- * /s(sel)/ -- the (variable) number of key-element pairs that correspond
--- to a selection /sel/ if /sel/ would otherwise be ambigious.
+-- to a selection /sel/ if /s/ would otherwise be ambigious.
 --
 -- * /c/ -- the (variable) complexity of selection.
 --
--- * /c/ -- the (variable) complexity of selection /sel/ if /sel/
+-- * /c(sel)/ -- the (variable) complexity of resolving the selection /sel/ if /c/
 -- would otherwise be ambiguous.
 module Data.Store
 (
@@ -230,7 +230,11 @@ import           Control.Applicative hiding (empty)
 import           Data.Monoid
 import           Data.Maybe
 import           Data.Functor.Identity
+#if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
+#else
+import qualified Data.IntMap
+#endif
 import qualified Data.List
 import qualified Data.Foldable
 --------------------------------------------------------------------------------
@@ -359,6 +363,8 @@ singleton k v = snd . fromJust $ insert k v I.empty
 -- >>> insert (contentKey content) content store
 -- > Just (1 :. "name" :. "body" :. ["t1", "t2"] :. 0.5, <updated_store>)
 --
+-- Complexity: /O(min(n, W) + k * (log n + min(n, W)))/
+--
 -- See also:
 --
 -- * 'Data.Store.insert''
@@ -379,6 +385,8 @@ insert k v old@(I.Store _ index _) =
 -- where @rk@ is the raw key of @k@ and @new@ is a store that contains
 -- the same key-element pairs as @old@ plus @(k, e)@.
 -- Any key-value pairs from @old@ colliding with @(k, e)@ are not included in @new@.
+--
+-- Complexity: /O(min(n, W) + k * (log n + min(n, W)))/
 --
 -- See also:
 --
@@ -465,7 +473,7 @@ size (I.Store vs _ _) = Data.IntMap.size vs
 -- If any of the updated key-element pairs would cause a collision, the
 -- result is @Nothing@.
 --
--- Complexity: /O(c + s * (min(n, W) + q * log n))/
+-- Complexity: /O(c + s * (min(n, W) + k * (log n + min(n, W))))/
 --
 -- See also:
 --
@@ -492,7 +500,7 @@ updateWithKey tr sel s = I.genericUpdateWithKey I.indexInsertID tr (resolve sel 
 -- Any pairs of the original store @old@ that would, after the update, cause collisons
 -- are not included in @new@. 
 --
--- Complexity: /O(c + d * s * (min(n, W) + q * log n))/
+-- Complexity: /O(c + s * d * (min(n, W) + k * (log n + min(n, W))))/
 --
 -- See also:
 --
