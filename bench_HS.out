@@ -1,0 +1,54 @@
+warming up
+estimating clock resolution...
+mean is 1.499899 us (640001 iterations)
+found 3632 outliers among 639999 samples (0.6%)
+  2885 (0.5%) high severe
+estimating cost of a clock call...
+mean is 46.91713 ns (10 iterations)
+found 2 outliers among 10 samples (20.0%)
+  1 (10.0%) low severe
+  1 (10.0%) low mild
+
+benchmarking lookup OO EQ (Int) 01 200000/HS
+mean: 2.140457 us, lb 2.131271 us, ub 2.153201 us, ci 0.950
+std dev: 55.14255 ns, lb 42.25015 ns, ub 69.24783 ns, ci 0.950
+found 13 outliers among 100 samples (13.0%)
+  4 (4.0%) high mild
+  9 (9.0%) high severe
+variance introduced by outliers: 19.962%
+variance is moderately inflated by outliers
+
+benchmarking lookup OO GE (Int) 01 200000 (500)/HS
+mean: 66.52307 us, lb 66.21385 us, ub 66.95958 us, ci 0.950
+std dev: 1.861598 us, lb 1.423029 us, ub 2.365254 us, ci 0.950
+found 9 outliers among 100 samples (9.0%)
+  8 (8.0%) high severe
+variance introduced by outliers: 22.851%
+variance is moderately inflated by outliers
+
+benchmarking lookup OM EQ (Int) 01 200000/HS
+mean: 3.088753 us, lb 3.075548 us, ub 3.108105 us, ci 0.950
+std dev: 81.15811 ns, lb 60.56350 ns, ub 104.7674 ns, ci 0.950
+found 14 outliers among 100 samples (14.0%)
+  5 (5.0%) high mild
+  9 (9.0%) high severe
+variance introduced by outliers: 20.002%
+variance is moderately inflated by outliers
+
+benchmarking lookup OM GE (Int) 01 200000 (500)/HS
+mean: 33.19415 us, lb 33.04742 us, ub 33.39842 us, ci 0.950
+std dev: 877.6648 ns, lb 674.9040 ns, ub 1.116395 us, ci 0.950
+found 10 outliers among 100 samples (10.0%)
+  2 (2.0%) high mild
+  8 (8.0%) high severe
+variance introduced by outliers: 20.918%
+variance is moderately inflated by outliers
+
+benchmarking lookup MM EQ (Int) 01 200000/HS
+mean: 3.640257 us, lb 3.624908 us, ub 3.662418 us, ci 0.950
+std dev: 93.90065 ns, lb 69.66653 ns, ub 121.2823 ns, ci 0.950
+found 14 outliers among 100 samples (14.0%)
+  7 (7.0%) high mild
+  7 (7.0%) high severe
+variance introduced by outliers: 19.964%
+variance is moderately inflated by outliers
