@@ -36,7 +36,32 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   ])
   -- Insert 1 element into a store of size N. No collisions.
   [
-    C.bgroup "lookup OO EQ (Int) 01 200000"
+    C.bgroup "lookup OO EQ (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 10000) hs100000
+      ]
+    ]
+  , C.bgroup "lookup OO GE (Int) 01 100000 (500)"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOGE 99500) hs100000
+      ]
+    ]
+  , C.bgroup "lookup OM EQ (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMEQ 200) hs100000
+      ]
+    ]
+  , C.bgroup "lookup OM GE (Int) 01 100000 (500)"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMGE 19900) hs200000
+      ]
+    ]
+  , C.bgroup "lookup MM EQ (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupMMEQ 200) hs100000
+      ]
+    ]
+  , C.bgroup "lookup OO EQ (Int) 01 200000"
     [ C.bcompare
       [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 10000) hs200000
       ]
