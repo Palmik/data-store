@@ -107,7 +107,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     C.bgroup "lookup OO EQ (Int) 01 100000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOOEQ 10000) ds100000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOEQLens 10000) ds100000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOEQLens 10000) ds100000
 #ifndef BENCH_DS
       , C.bench "Map" $ C.nf (Data.Map.lookup 10000) map100000
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOOEQ 10000) is100000
@@ -118,7 +118,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup OO GE (Int) 01 100000 (500)"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOOGE 99500) ds100000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOGELens 99500) ds100000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOGELens 99500) ds100000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOOGE 99500) is100000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOOGE 99500) ts100000
@@ -128,7 +128,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup OM EQ (Int) 01 100000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOMEQ 200) ds100000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMEQLens 200) ds100000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMEQLens 200) ds100000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOMEQ 200) is100000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOMEQ 200) ts100000
@@ -138,7 +138,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup OM GE (Int) 01 100000 (500)"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOMGE 19900) ds100000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMGELens 19900) ds100000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMGELens 19900) ds100000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOMGE 19900) is100000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOMGE 19900) ts100000
@@ -148,7 +148,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup MM EQ (Int) 01 100000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupMMEQ 200) ds100000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupMMEQLens 200) ds100000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupMMEQLens 200) ds100000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupMMEQ 200) is100000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupMMEQ 200) ts100000
@@ -158,7 +158,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup OO EQ (Int) 01 200000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOOEQ 10000) ds200000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOEQLens 10000) ds200000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOEQLens 10000) ds200000
 #ifndef BENCH_DS
       , C.bench "Map" $ C.nf (Data.Map.lookup 10000) map200000
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOOEQ 10000) is200000
@@ -169,7 +169,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup OO GE (Int) 01 200000 (500)"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOOGE 199500) ds200000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOGELens 199500) ds200000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOGELens 199500) ds200000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOOGE 199500) is200000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOOGE 199500) ts200000
@@ -179,7 +179,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup OM EQ (Int) 01 200000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOMEQ 200) ds200000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMEQLens 200) ds200000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMEQLens 200) ds200000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOMEQ 200) is200000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOMEQ 200) ts200000
@@ -189,7 +189,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup OM GE (Int) 01 200000 (500)"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOMGE 39900) ds200000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMGELens 39900) ds200000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMGELens 39900) ds200000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOMGE 39900) is200000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOMGE 39900) ts200000
@@ -199,7 +199,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , C.bgroup "lookup MM EQ (Int) 01 200000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupMMEQ 200) ds200000
-      , C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupMMEQLens 200) ds200000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupMMEQLens 200) ds200000
 #ifndef BENCH_DS
       , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupMMEQ 200) is200000
       , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupMMEQ 200) ts200000
