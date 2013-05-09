@@ -1,55 +1,72 @@
 warming up
 estimating clock resolution...
-mean is 1.543418 us (640001 iterations)
-found 2770 outliers among 639999 samples (0.4%)
-  2566 (0.4%) high severe
+mean is 1.559169 us (640001 iterations)
+found 2802 outliers among 639999 samples (0.4%)
+  2550 (0.4%) high severe
 estimating cost of a clock call...
-mean is 45.82872 ns (11 iterations)
+mean is 52.37311 ns (10 iterations)
+found 1 outliers among 10 samples (10.0%)
+  1 (10.0%) high severe
 
-benchmarking lookup OO EQ (Int) 01 100000/HS
-mean: 2.113488 us, lb 2.109151 us, ub 2.121188 us, ci 0.950
-std dev: 28.69642 ns, lb 16.87253 ns, ub 45.88219 ns, ci 0.950
-found 3 outliers among 100 samples (3.0%)
-  2 (2.0%) high severe
-variance introduced by outliers: 6.585%
+benchmarking lookup OO EQ (Int) 01 50000/HS
+mean: 2.007572 us, lb 2.002660 us, ub 2.013349 us, ci 0.950
+std dev: 27.20646 ns, lb 22.94442 ns, ub 38.92882 ns, ci 0.950
+found 1 outliers among 100 samples (1.0%)
+variance introduced by outliers: 6.583%
 variance is slightly inflated by outliers
 
+benchmarking lookup OO GE (Int) 01 50000 (500)/HS
+mean: 68.35440 us, lb 68.25686 us, ub 68.52337 us, ci 0.950
+std dev: 639.2484 ns, lb 423.1896 ns, ub 1.182585 us, ci 0.950
+
+benchmarking lookup OM EQ (Int) 01 50000/HS
+mean: 2.990579 us, lb 2.987317 us, ub 2.998668 us, ci 0.950
+std dev: 24.75942 ns, lb 12.75286 ns, ub 51.63829 ns, ci 0.950
+
+benchmarking lookup OM GE (Int) 01 50000 (500)/HS
+mean: 33.35572 us, lb 33.30180 us, ub 33.45464 us, ci 0.950
+std dev: 361.9775 ns, lb 216.8003 ns, ub 642.7790 ns, ci 0.950
+
+benchmarking lookup MM EQ (Int) 01 50000/HS
+mean: 3.495817 us, lb 3.492398 us, ub 3.505193 us, ci 0.950
+std dev: 26.81261 ns, lb 12.43606 ns, ub 57.29953 ns, ci 0.950
+
+benchmarking lookup OO EQ (Int) 01 100000/HS
+mean: 2.037558 us, lb 2.033885 us, ub 2.041465 us, ci 0.950
+std dev: 19.56175 ns, lb 16.73808 ns, ub 24.32987 ns, ci 0.950
+
 benchmarking lookup OO GE (Int) 01 100000 (500)/HS
-mean: 67.06971 us, lb 66.98357 us, ub 67.23547 us, ci 0.950
-std dev: 590.1608 ns, lb 369.1622 ns, ub 1.137684 us, ci 0.950
+mean: 67.52720 us, lb 67.45339 us, ub 67.68068 us, ci 0.950
+std dev: 522.5307 ns, lb 307.8627 ns, ub 1.036073 us, ci 0.950
 
 benchmarking lookup OM EQ (Int) 01 100000/HS
-mean: 3.025111 us, lb 3.020916 us, ub 3.030346 us, ci 0.950
-std dev: 23.83202 ns, lb 19.26658 ns, ub 35.90035 ns, ci 0.950
+mean: 2.958832 us, lb 2.952477 us, ub 2.966774 us, ci 0.950
+std dev: 36.28919 ns, lb 30.69363 ns, ub 48.56589 ns, ci 0.950
 
 benchmarking lookup OM GE (Int) 01 100000 (500)/HS
-mean: 37.49840 ms, lb 27.47287 ms, ub 57.46675 ms, ci 0.950
-std dev: 65.94059 ms, lb 33.07756 ms, ub 100.6106 ms, ci 0.950
-found 4 outliers among 100 samples (4.0%)
-  4 (4.0%) high severe
-variance introduced by outliers: 98.995%
-variance is severely inflated by outliers
+mean: 33.09052 us, lb 33.03178 us, ub 33.19791 us, ci 0.950
+std dev: 395.3075 ns, lb 259.2710 ns, ub 737.8036 ns, ci 0.950
 
 benchmarking lookup MM EQ (Int) 01 100000/HS
-mean: 3.551411 us, lb 3.546373 us, ub 3.561515 us, ci 0.950
-std dev: 35.24756 ns, lb 21.46928 ns, ub 68.89265 ns, ci 0.950
+mean: 3.567551 us, lb 3.560313 us, ub 3.576477 us, ci 0.950
+std dev: 41.14521 ns, lb 33.68743 ns, ub 58.77257 ns, ci 0.950
 
 benchmarking lookup OO EQ (Int) 01 200000/HS
-mean: 2.144298 us, lb 2.142174 us, ub 2.149160 us, ci 0.950
-std dev: 15.67777 ns, lb 8.699005 ns, ub 31.69524 ns, ci 0.950
+mean: 2.130113 us, lb 2.128260 us, ub 2.134671 us, ci 0.950
+std dev: 14.01700 ns, lb 7.282805 ns, ub 29.07156 ns, ci 0.950
 
 benchmarking lookup OO GE (Int) 01 200000 (500)/HS
-mean: 66.89546 us, lb 66.76495 us, ub 67.07977 us, ci 0.950
-std dev: 784.7360 ns, lb 575.1127 ns, ub 1.192830 us, ci 0.950
+mean: 67.59078 us, lb 67.49322 us, ub 67.74386 us, ci 0.950
+std dev: 613.9900 ns, lb 444.9925 ns, ub 1.018488 us, ci 0.950
 
 benchmarking lookup OM EQ (Int) 01 200000/HS
-mean: 3.100854 us, lb 3.096172 us, ub 3.110905 us, ci 0.950
-std dev: 33.52121 ns, lb 14.42648 ns, ub 59.88429 ns, ci 0.950
+mean: 3.042082 us, lb 3.039014 us, ub 3.047259 us, ci 0.950
+std dev: 19.97878 ns, lb 13.64066 ns, ub 36.21115 ns, ci 0.950
 
 benchmarking lookup OM GE (Int) 01 200000 (500)/HS
-mean: 33.00534 us, lb 32.94512 us, ub 33.10735 us, ci 0.950
-std dev: 391.2565 ns, lb 267.2831 ns, ub 712.5047 ns, ci 0.950
+mean: 33.13104 us, lb 33.06513 us, ub 33.20818 us, ci 0.950
+std dev: 364.2080 ns, lb 305.3215 ns, ub 525.0645 ns, ci 0.950
 
 benchmarking lookup MM EQ (Int) 01 200000/HS
-mean: 3.510687 us, lb 3.506639 us, ub 3.520553 us, ci 0.950
-std dev: 30.54881 ns, lb 15.94128 ns, ub 63.32260 ns, ci 0.950
+mean: 3.571176 us, lb 3.566989 us, ub 3.578811 us, ci 0.950
+std dev: 28.11559 ns, lb 18.09016 ns, ub 52.80111 ns, ci 0.950

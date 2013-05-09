@@ -1,23 +1,34 @@
 Reference,Name,% faster than reference
+lookup OO EQ (Int) 01 50000/DS,lookup OO EQ (Int) 01 50000/Map,73
+lookup OO EQ (Int) 01 50000/DS,lookup OO EQ (Int) 01 50000/IS,-515
+lookup OO EQ (Int) 01 50000/DS,lookup OO EQ (Int) 01 50000/TS,-34
+lookup OO GE (Int) 01 50000 (500)/DS,lookup OO GE (Int) 01 50000 (500)/IS,-450
+lookup OO GE (Int) 01 50000 (500)/DS,lookup OO GE (Int) 01 50000 (500)/TS,-626
+lookup OM EQ (Int) 01 50000/DS,lookup OM EQ (Int) 01 50000/IS,-520
+lookup OM EQ (Int) 01 50000/DS,lookup OM EQ (Int) 01 50000/TS,-178
+lookup OM GE (Int) 01 50000 (500)/DS,lookup OM GE (Int) 01 50000 (500)/IS,-937
+lookup OM GE (Int) 01 50000 (500)/DS,lookup OM GE (Int) 01 50000 (500)/TS,-980
+lookup MM EQ (Int) 01 50000/DS,lookup MM EQ (Int) 01 50000/IS,-490
+lookup MM EQ (Int) 01 50000/DS,lookup MM EQ (Int) 01 50000/TS,-201
 lookup OO EQ (Int) 01 100000/DS,lookup OO EQ (Int) 01 100000/Map,73
-lookup OO EQ (Int) 01 100000/DS,lookup OO EQ (Int) 01 100000/IS,-475
-lookup OO EQ (Int) 01 100000/DS,lookup OO EQ (Int) 01 100000/TS,-24
-lookup OO GE (Int) 01 100000 (500)/DS,lookup OO GE (Int) 01 100000 (500)/IS,-448
-lookup OO GE (Int) 01 100000 (500)/DS,lookup OO GE (Int) 01 100000 (500)/TS,-630
-lookup OM EQ (Int) 01 100000/DS,lookup OM EQ (Int) 01 100000/IS,-483
-lookup OM EQ (Int) 01 100000/DS,lookup OM EQ (Int) 01 100000/TS,-160
-lookup OM GE (Int) 01 100000 (500)/DS,lookup OM GE (Int) 01 100000 (500)/IS,-890
-lookup OM GE (Int) 01 100000 (500)/DS,lookup OM GE (Int) 01 100000 (500)/TS,-958
-lookup MM EQ (Int) 01 100000/DS,lookup MM EQ (Int) 01 100000/IS,-418
-lookup MM EQ (Int) 01 100000/DS,lookup MM EQ (Int) 01 100000/TS,-160
-lookup OO EQ (Int) 01 200000/DS,lookup OO EQ (Int) 01 200000/Map,75
-lookup OO EQ (Int) 01 200000/DS,lookup OO EQ (Int) 01 200000/IS,-466
-lookup OO EQ (Int) 01 200000/DS,lookup OO EQ (Int) 01 200000/TS,-21
-lookup OO GE (Int) 01 200000 (500)/DS,lookup OO GE (Int) 01 200000 (500)/IS,-431
-lookup OO GE (Int) 01 200000 (500)/DS,lookup OO GE (Int) 01 200000 (500)/TS,-620
-lookup OM EQ (Int) 01 200000/DS,lookup OM EQ (Int) 01 200000/IS,-462
-lookup OM EQ (Int) 01 200000/DS,lookup OM EQ (Int) 01 200000/TS,-153
-lookup OM GE (Int) 01 200000 (500)/DS,lookup OM GE (Int) 01 200000 (500)/IS,-869
-lookup OM GE (Int) 01 200000 (500)/DS,lookup OM GE (Int) 01 200000 (500)/TS,-926
-lookup MM EQ (Int) 01 200000/DS,lookup MM EQ (Int) 01 200000/IS,-403
-lookup MM EQ (Int) 01 200000/DS,lookup MM EQ (Int) 01 200000/TS,-155
+lookup OO EQ (Int) 01 100000/DS,lookup OO EQ (Int) 01 100000/IS,-493
+lookup OO EQ (Int) 01 100000/DS,lookup OO EQ (Int) 01 100000/TS,-26
+lookup OO GE (Int) 01 100000 (500)/DS,lookup OO GE (Int) 01 100000 (500)/IS,-455
+lookup OO GE (Int) 01 100000 (500)/DS,lookup OO GE (Int) 01 100000 (500)/TS,-640
+lookup OM EQ (Int) 01 100000/DS,lookup OM EQ (Int) 01 100000/IS,-508
+lookup OM EQ (Int) 01 100000/DS,lookup OM EQ (Int) 01 100000/TS,-169
+lookup OM GE (Int) 01 100000 (500)/DS,lookup OM GE (Int) 01 100000 (500)/IS,-928
+lookup OM GE (Int) 01 100000 (500)/DS,lookup OM GE (Int) 01 100000 (500)/TS,-970
+lookup MM EQ (Int) 01 100000/DS,lookup MM EQ (Int) 01 100000/IS,-477
+lookup MM EQ (Int) 01 100000/DS,lookup MM EQ (Int) 01 100000/TS,-191
+lookup OO EQ (Int) 01 200000/DS,lookup OO EQ (Int) 01 200000/Map,76
+lookup OO EQ (Int) 01 200000/DS,lookup OO EQ (Int) 01 200000/IS,-463
+lookup OO EQ (Int) 01 200000/DS,lookup OO EQ (Int) 01 200000/TS,-26
+lookup OO GE (Int) 01 200000 (500)/DS,lookup OO GE (Int) 01 200000 (500)/IS,-444
+lookup OO GE (Int) 01 200000 (500)/DS,lookup OO GE (Int) 01 200000 (500)/TS,-614
+lookup OM EQ (Int) 01 200000/DS,lookup OM EQ (Int) 01 200000/IS,-464
+lookup OM EQ (Int) 01 200000/DS,lookup OM EQ (Int) 01 200000/TS,-157
+lookup OM GE (Int) 01 200000 (500)/DS,lookup OM GE (Int) 01 200000 (500)/IS,-885
+lookup OM GE (Int) 01 200000 (500)/DS,lookup OM GE (Int) 01 200000 (500)/TS,-940
+lookup MM EQ (Int) 01 200000/DS,lookup MM EQ (Int) 01 200000/IS,-434
+lookup MM EQ (Int) 01 200000/DS,lookup MM EQ (Int) 01 200000/TS,-170

@@ -28,15 +28,42 @@ instance NFData RNF where
 main :: IO ()
 main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   [
-    RNF elems100000
+    RNF elems50000
+  , RNF elems100000
   , RNF elems200000
 
+  , RNF hs50000
   , RNF hs100000
   , RNF hs200000
   ])
   -- Insert 1 element into a store of size N. No collisions.
   [
-    C.bgroup "lookup OO EQ (Int) 01 100000"
+    C.bgroup "lookup OO EQ (Int) 01 50000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 10000) hs50000
+      ]
+    ]
+  , C.bgroup "lookup OO GE (Int) 01 50000 (500)"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOGE 49500) hs50000
+      ]
+    ]
+  , C.bgroup "lookup OM EQ (Int) 01 50000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMEQ 200) hs50000
+      ]
+    ]
+  , C.bgroup "lookup OM GE (Int) 01 50000 (500)"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMGE 9900) hs50000
+      ]
+    ]
+  , C.bgroup "lookup MM EQ (Int) 01 50000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupMMEQ 200) hs50000
+      ]
+    ]
+  , C.bgroup "lookup OO EQ (Int) 01 100000"
     [ C.bcompare
       [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 10000) hs100000
       ]
@@ -53,7 +80,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
     ]
   , C.bgroup "lookup OM GE (Int) 01 100000 (500)"
     [ C.bcompare
-      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMGE 19900) hs200000
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOMGE 19900) hs100000
       ]
     ]
   , C.bgroup "lookup MM EQ (Int) 01 100000"
@@ -87,6 +114,9 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       ]
     ]
   ]
+
+hs50000 :: HS.B01.HS
+hs50000 = insertListHS elems50000 HS.B01.empty
 
 hs100000 :: HS.B01.HS
 hs100000 = insertListHS elems100000 HS.B01.empty

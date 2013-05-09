@@ -35,7 +35,8 @@ instance NFData RNF where
 main :: IO ()
 main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   [
-    RNF elems100000
+    RNF elems50000
+  , RNF elems100000
   , RNF elems200000
   , RNF elems400000
   , RNF elems800000
@@ -43,15 +44,19 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , RNF elems5000x5000
   , RNF elems10000x5000
 
+  , RNF ds50000
   , RNF ds100000
   , RNF ds200000
 
+  , RNF map50000
   , RNF map100000
   , RNF map200000
   
+  , RNF is50000
   , RNF is100000
   , RNF is200000
  
+  , RNF ts50000
   , RNF ts100000
   , RNF ts200000
 
@@ -104,7 +109,58 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       ]
     ]
     -}
-    C.bgroup "lookup OO EQ (Int) 01 100000"
+    C.bgroup "lookup OO EQ (Int) 01 50000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOOEQ 10000) ds50000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOEQLens 10000) ds50000
+#ifndef BENCH_DS
+      , C.bench "Map" $ C.nf (Data.Map.lookup 10000) map50000
+      , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOOEQ 10000) is50000
+      , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOOEQ 10000) ts50000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OO GE (Int) 01 50000 (500)"
+    [ C.bcompare
+      [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOOGE 49500) ds50000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOGELens 99500) ds50000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOOGE 49500) is50000
+      , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOOGE 49500) ts50000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OM EQ (Int) 01 50000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOMEQ 200) ds50000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMEQLens 200) ds50000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOMEQ 200) is50000
+      , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOMEQ 200) ts50000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OM GE (Int) 01 50000 (500)"
+    [ C.bcompare
+      [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOMGE 9900) ds50000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOMGELens 9900) ds50000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupOMGE 9900) is50000
+      , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupOMGE 9900) ts50000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup MM EQ (Int) 01 50000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupMMEQ 200) ds50000
+      --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupMMEQLens 200) ds50000
+#ifndef BENCH_DS
+      , C.bench "IS" $ C.whnf (forceList . IS.B01.lookupMMEQ 200) is50000
+      , C.bench "TS" $ C.whnf (forceList . TS.B01.lookupMMEQ 200) ts50000
+#endif
+      ]
+    ]
+  , C.bgroup "lookup OO EQ (Int) 01 100000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (forceList . DS.B01.lookupOOEQ 10000) ds100000
       --, C.bench "DS (Lens)" $ C.whnf (forceList . DS.B01.lookupOOEQLens 10000) ds100000
@@ -238,6 +294,9 @@ insertMap x@(C01 oo _ _) = Data.Map.insert oo x
 
 -- MAP
 
+map50000 :: Data.Map.Map Int C01
+map50000 = insertListMap elems50000 Data.Map.empty
+
 map100000 :: Data.Map.Map Int C01
 map100000 = insertListMap elems100000 Data.Map.empty
 
@@ -245,6 +304,9 @@ map200000 :: Data.Map.Map Int C01
 map200000 = insertListMap elems200000 Data.Map.empty
 
 -- IS
+
+is50000 :: IS.B01.IS
+is50000 = insertListIS elems50000 IS.B01.empty
 
 is100000 :: IS.B01.IS
 is100000 = insertListIS elems100000 IS.B01.empty
@@ -254,6 +316,9 @@ is200000 = insertListIS elems200000 IS.B01.empty
 
 -- DS
 
+ds50000 :: DS.B01.DS
+ds50000 = insertListDS elems50000 DS.B01.empty
+
 ds100000 :: DS.B01.DS
 ds100000 = insertListDS elems100000 DS.B01.empty
 
@@ -261,6 +326,9 @@ ds200000 :: DS.B01.DS
 ds200000 = insertListDS elems200000 DS.B01.empty
 
 -- TS
+
+ts50000 :: TS.B01.TS
+ts50000 = insertListTS elems50000 TS.B01.empty
 
 ts100000 :: TS.B01.TS
 ts100000 = insertListTS elems100000 TS.B01.empty

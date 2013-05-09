@@ -46,6 +46,9 @@ elems20000 :: [C01]
 elems20000 = generate 0 20000
 
 #else
+elems50000 :: [C01]
+elems50000 = generate 0 50000
+
 elems100000 :: [C01]
 elems100000 = generate 0 100000
 
