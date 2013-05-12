@@ -50,9 +50,13 @@ instance T.Tabular C01 where
           <*> f D3
   
   forTab (C01IX d1 d2 d3) f =
-    C01IX <$> f D1 d1
-          <*> f D2 d2
-          <*> f D3 d3
+    let x1 = f D1 d1
+        x2 = f D2 d2
+        x3 = f D3 d3
+    in
+    C01IX <$> seq x1 x1 
+          <*> seq x2 x2
+          <*> seq x3 x3
 
   ixTab (C01IX x _ _) D1 = x
   ixTab (C01IX _ x _) D2 = x
@@ -65,6 +69,13 @@ type TS = T.Table C01
 
 insert :: C01 -> TS -> TS
 insert = T.insert
+
+insertLookup :: Int -> Int -> Int -> TS -> [C01]
+insertLookup d1 d2 d3 s = 
+  toList (new ^. T.with D1 (==) d1) ++
+  toList (new ^. T.with D2 (==) d2) ++
+  toList (new ^. T.withAny D3 [d3])
+  where new = T.insert (C01 d1 d2 [d3]) s
 
 lookupOOEQ :: Int -> TS -> [C01]
 lookupOOEQ x o = toList (o ^. T.with D1 (==) x)

@@ -46,6 +46,14 @@ sD3 = (DSTag, S.n2)
 insert :: C01 -> DS -> DS
 insert e s = snd $! S.insert' (key e) e s
 
+insertLookup :: Int -> Int -> Int -> DS -> [(S.RawKey DSKRS DSTS, C01)]
+insertLookup d1 d2 d3 s =
+  S.lookup (sD1 .== d1) new ++
+  S.lookup (sD2 .== d2) new ++
+  S.lookup (sD3 .== d3) new
+  where new = snd $! S.insert' (key e) e s
+        e   = C01 d1 d2 [d3]
+
 insertUnsafe :: C01 -> DS -> DS
 insertUnsafe e s = snd $! S.unsafeInsert (key e) e s
 

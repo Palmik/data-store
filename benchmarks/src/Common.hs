@@ -7,7 +7,7 @@
 {-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-} 
 
-#define BENCH_ESSENTIALS
+-- #define BENCH_ESSENTIALS
 
 module Common
 where
@@ -38,14 +38,14 @@ elems5000x5000 = generate 5000 5000
 elems10000x5000 :: [C01]
 elems10000x5000 = generate 10000 5000
 
-#ifdef BENCH_SMALL
+-- #ifdef BENCH_SMALL
 elems10000 :: [C01]
 elems10000 = generate 0 10000
 
 elems20000 :: [C01]
 elems20000 = generate 0 20000
 
-#else
+-- #else
 elems50000 :: [C01]
 elems50000 = generate 0 50000
 
@@ -60,7 +60,7 @@ elems400000 = generate 0 400000
 
 elems800000 :: [C01]
 elems800000 = generate 0 800000
-#endif
+-- #endif
 
 generate :: Int -> Int -> [C01]
 generate o n = map (\x -> C01 x (x `div` s) [x .. x + s]) [o .. (n + o) - 1]

@@ -62,6 +62,13 @@ empty = H.empty
 insert :: C01 -> HS -> HS
 insert = H.insert 
 
+insertLookup :: Int -> Int -> Int -> HS -> [C01]
+insertLookup d1 d2 d3 s = 
+  H.queryList (H.equals $! DimOO d1) new ++
+  H.queryList (H.equals $! DimOM d2) new ++
+  H.queryList (H.equals $! DimMM d3) new
+  where new = H.insert (C01 d1 d2 [d3]) s
+
 lookupOOEQ :: Int -> HS -> [C01]
 lookupOOEQ x = H.queryList (H.equals $! DimOO x)
 

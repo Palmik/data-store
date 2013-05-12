@@ -41,6 +41,13 @@ size = I.size
 insert :: C01 -> IS -> IS
 insert = I.insert
 
+insertLookup :: Int -> Int -> Int -> IS -> [C01]
+insertLookup d1 d2 d3 s =
+  I.toList (new @= D1 d1) ++
+  I.toList (new @= D2 d2) ++
+  I.toList (new @= D3 d3)
+  where new = I.insert (C01 d1 d2 [d3]) s 
+
 lookupOOEQ :: Int -> IS -> [C01]
 lookupOOEQ x s = I.toList (s @= D1 x)
 

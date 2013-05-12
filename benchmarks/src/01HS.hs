@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP #-}
 
 module Main
 ( main
@@ -35,10 +36,26 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
   , RNF hs50000
   , RNF hs100000
   , RNF hs200000
+  
+  , RNF elem9999999
+  , RNF elem2500
   ])
   -- Insert 1 element into a store of size N. No collisions.
   [
-    C.bgroup "lookup OO EQ (Int) 01 50000"
+#ifdef BENCH_SMALL
+    C.bgroup "insertLookup (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.insertLookup 9999999 9999999 9999999) hs100000
+      ]
+    ] ,
+#endif
+    C.bgroup "insertLookup (Int) 01 200000"
+    [ C.bcompare
+      [ C.bench "HS" $ C.whnf (forceList . HS.B01.insertLookup 9999999 9999999 9999999) hs200000
+      ]
+    ]
+#ifdef BENCH_SMALL
+  , C.bgroup "lookup OO EQ (Int) 01 50000"
     [ C.bcompare
       [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 10000) hs50000
       ]
@@ -88,6 +105,7 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupMMEQ 200) hs100000
       ]
     ]
+#endif
   , C.bgroup "lookup OO EQ (Int) 01 200000"
     [ C.bcompare
       [ C.bench "HS" $ C.whnf (forceList . HS.B01.lookupOOEQ 10000) hs200000

@@ -1,72 +1,7 @@
-warming up
-estimating clock resolution...
-mean is 1.559169 us (640001 iterations)
-found 2802 outliers among 639999 samples (0.4%)
-  2550 (0.4%) high severe
-estimating cost of a clock call...
-mean is 52.37311 ns (10 iterations)
-found 1 outliers among 10 samples (10.0%)
-  1 (10.0%) high severe
-
-benchmarking lookup OO EQ (Int) 01 50000/HS
-mean: 2.007572 us, lb 2.002660 us, ub 2.013349 us, ci 0.950
-std dev: 27.20646 ns, lb 22.94442 ns, ub 38.92882 ns, ci 0.950
-found 1 outliers among 100 samples (1.0%)
-variance introduced by outliers: 6.583%
-variance is slightly inflated by outliers
-
-benchmarking lookup OO GE (Int) 01 50000 (500)/HS
-mean: 68.35440 us, lb 68.25686 us, ub 68.52337 us, ci 0.950
-std dev: 639.2484 ns, lb 423.1896 ns, ub 1.182585 us, ci 0.950
-
-benchmarking lookup OM EQ (Int) 01 50000/HS
-mean: 2.990579 us, lb 2.987317 us, ub 2.998668 us, ci 0.950
-std dev: 24.75942 ns, lb 12.75286 ns, ub 51.63829 ns, ci 0.950
-
-benchmarking lookup OM GE (Int) 01 50000 (500)/HS
-mean: 33.35572 us, lb 33.30180 us, ub 33.45464 us, ci 0.950
-std dev: 361.9775 ns, lb 216.8003 ns, ub 642.7790 ns, ci 0.950
-
-benchmarking lookup MM EQ (Int) 01 50000/HS
-mean: 3.495817 us, lb 3.492398 us, ub 3.505193 us, ci 0.950
-std dev: 26.81261 ns, lb 12.43606 ns, ub 57.29953 ns, ci 0.950
-
-benchmarking lookup OO EQ (Int) 01 100000/HS
-mean: 2.037558 us, lb 2.033885 us, ub 2.041465 us, ci 0.950
-std dev: 19.56175 ns, lb 16.73808 ns, ub 24.32987 ns, ci 0.950
-
-benchmarking lookup OO GE (Int) 01 100000 (500)/HS
-mean: 67.52720 us, lb 67.45339 us, ub 67.68068 us, ci 0.950
-std dev: 522.5307 ns, lb 307.8627 ns, ub 1.036073 us, ci 0.950
-
-benchmarking lookup OM EQ (Int) 01 100000/HS
-mean: 2.958832 us, lb 2.952477 us, ub 2.966774 us, ci 0.950
-std dev: 36.28919 ns, lb 30.69363 ns, ub 48.56589 ns, ci 0.950
-
-benchmarking lookup OM GE (Int) 01 100000 (500)/HS
-mean: 33.09052 us, lb 33.03178 us, ub 33.19791 us, ci 0.950
-std dev: 395.3075 ns, lb 259.2710 ns, ub 737.8036 ns, ci 0.950
-
-benchmarking lookup MM EQ (Int) 01 100000/HS
-mean: 3.567551 us, lb 3.560313 us, ub 3.576477 us, ci 0.950
-std dev: 41.14521 ns, lb 33.68743 ns, ub 58.77257 ns, ci 0.950
-
-benchmarking lookup OO EQ (Int) 01 200000/HS
-mean: 2.130113 us, lb 2.128260 us, ub 2.134671 us, ci 0.950
-std dev: 14.01700 ns, lb 7.282805 ns, ub 29.07156 ns, ci 0.950
-
-benchmarking lookup OO GE (Int) 01 200000 (500)/HS
-mean: 67.59078 us, lb 67.49322 us, ub 67.74386 us, ci 0.950
-std dev: 613.9900 ns, lb 444.9925 ns, ub 1.018488 us, ci 0.950
-
-benchmarking lookup OM EQ (Int) 01 200000/HS
-mean: 3.042082 us, lb 3.039014 us, ub 3.047259 us, ci 0.950
-std dev: 19.97878 ns, lb 13.64066 ns, ub 36.21115 ns, ci 0.950
-
-benchmarking lookup OM GE (Int) 01 200000 (500)/HS
-mean: 33.13104 us, lb 33.06513 us, ub 33.20818 us, ci 0.950
-std dev: 364.2080 ns, lb 305.3215 ns, ub 525.0645 ns, ci 0.950
-
-benchmarking lookup MM EQ (Int) 01 200000/HS
-mean: 3.571176 us, lb 3.566989 us, ub 3.578811 us, ci 0.950
-std dev: 28.11559 ns, lb 18.09016 ns, ub 52.80111 ns, ci 0.950
+Name,Mean,MeanLB,MeanUB,Stddev,StddevLB,StddevUB
+"insertLookup (Int) 01 200000/HS",1.1653500029986555e-5,1.1645649246774709e-5,1.167127924402813e-5,5.7078572032927897e-8,3.1973189221534044e-8,1.1577535335855529e-7
+"lookup OO EQ (Int) 01 200000/HS",1.9950351746194694e-6,1.9934162830329785e-6,1.9995651276223987e-6,1.2917404096788364e-8,5.7220109972193034e-9,2.7887646890939262e-8
+"lookup OO GE (Int) 01 200000 (500)/HS",6.604962397163564e-5,6.59513955170458e-5,6.617569971626461e-5,5.675327431664682e-7,4.5968229226521835e-7,8.419152304197632e-7
+"lookup OM EQ (Int) 01 200000/HS",3.1145013559762893e-6,3.112144366220913e-6,3.118607957357771e-6,1.5550260286332983e-8,1.0085974599939391e-8,2.907993279385151e-8
+"lookup OM GE (Int) 01 200000 (500)/HS",3.319108510288326e-5,3.313596272739499e-5,3.326294446262449e-5,3.1991994515458154e-7,2.518879377781568e-7,5.045393796395123e-7
+"lookup MM EQ (Int) 01 200000/HS",3.693556271123985e-6,3.689622364568809e-6,3.699966479739373e-6,2.5180175432217174e-8,1.7027219399939233e-8,4.515316167212985e-8
