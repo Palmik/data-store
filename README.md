@@ -3,5 +3,5 @@ supports multidimensional keys.
 
 See:
   
-  * [Documentation](http://palmik.net/data-store/)
+  * [Documentation](http://hackage.haskell.org/package/data-store)
   * [Examples](https://github.com/Palmik/data-store/tree/v0.2/examples)
