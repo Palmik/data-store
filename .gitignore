@@ -1,0 +1,6 @@
+*.swp
+*.un~
+*cabal-dev*
+*.hi
+*.o
+*dist*

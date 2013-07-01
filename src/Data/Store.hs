@@ -159,6 +159,9 @@ module Data.Store
 , toList
 , elements
 , keys
+, insertList
+, insertList'
+, unsafeInsertList
 , fromList
 , fromList'
 , unsafeFromList
@@ -630,7 +633,7 @@ keys :: I.Store tag krs irs ts v -> [I.RawKey krs ts]
 keys (I.Store vs _ _) = Data.List.map (I.keyInternalToRaw . fst) $ Data.IntMap.elems vs
 {-# INLINE keys #-}
 
--- | The expression (@'Data.Store.fromList' kvs@) is either
+-- | The expression (@'Data.Store.fromList' kes@) is either
 -- a) (@Just store@) where @store@ is a store containing exactly the given
 -- key-element pairs or;
 -- b) @Nothing@ if inserting any of the key-element pairs would
@@ -639,23 +642,63 @@ keys (I.Store vs _ _) = Data.List.map (I.keyInternalToRaw . fst) $ Data.IntMap.e
 -- See also:
 --
 -- * 'Data.Store.fromList''
+--
+-- * 'Data.Store.insertList'
+--
+-- * 'Data.Store.insertList''
 fromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> Maybe (I.Store tag krs irs ts v)
-fromList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) I.empty 
+fromList = insertList I.empty
 {-# INLINE fromList #-}
 
--- | The expression (@'Data.Store.fromList'' kvs@) is @store@
+-- | The expression (@'Data.Store.fromList' old kes@) is either
+-- a) (@Just store@) where @store@ is a store containing exactly the key element pairs of @old@ plus the given
+-- key-element pairs @kes@ or;
+-- b) @Nothing@ if inserting any of the key-element pairs would
+-- cause a collision.
+--
+-- See also:
+--
+-- * 'Data.Store.insertList''
+--
+-- * 'Data.Store.fromList'
+--
+-- * 'Data.Store.fromList''
+insertList :: I.Empty (I.Index irs ts) => I.Store tag krs irs ts v -> [(I.Key krs ts, v)] -> Maybe (I.Store tag krs irs ts v)
+insertList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) 
+{-# INLINE insertList #-}
+
+-- | The expression (@'Data.Store.fromList'' kes@) is @store@
 -- containing the given key-element pairs (colliding pairs are not included).
 --
 -- See also:
 --
 -- * 'Data.Store.fromList'
+--
+-- * 'Data.Store.insertList''
+--
+-- * 'Data.Store.insertList'
 fromList' :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
-fromList' = Data.List.foldl' (\s (k, v) -> snd $! insert' k v $! s) I.empty 
+fromList' = insertList' I.empty
 {-# INLINE fromList' #-}
+
+-- | The expression (@'Data.Store.insertList'' old kes@) is @store@
+-- containing the key-element pairs of @old@ plus the given key-element pairs @kvs@
+-- (colliding pairs are not included and the pairs from @kes@ take precedence).
+--
+-- See also:
+--
+-- * 'Data.Store.insertList'
+--
+-- * 'Data.Store.fromList''
+--
+-- * 'Data.Store.fromList'
+insertList' :: I.Empty (I.Index irs ts) => I.Store tag krs irs ts v -> [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
+insertList' = Data.List.foldl' (\s (k, v) -> snd $! insert' k v $! s)
+{-# INLINE insertList' #-}
 
 -- | UNSAFE! This function can corrupt the store.
 -- 
--- The expression (@'Data.Store.fromList'' kvs@) is @store@
+-- The expression (@'Data.Store.unsafeFromList' kes@) is @store@
 -- containing the given key-element pairs (colliding pairs cause UNDEFINED BEHAVIOUR).
 --
 -- See also:
@@ -664,8 +707,27 @@ fromList' = Data.List.foldl' (\s (k, v) -> snd $! insert' k v $! s) I.empty
 --
 -- * 'Data.Store.fromList'
 unsafeFromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
-unsafeFromList = Data.Foldable.foldl (\s (k, v) -> snd $ unsafeInsert k v s) I.empty 
+unsafeFromList = unsafeInsertList I.empty 
 {-# INLINE unsafeFromList #-}
+
+-- | UNSAFE! This function can corrupt the store.
+-- 
+-- The expression (@'Data.Store.unsafeInsertList' old kvs@) is @store@
+-- containing the key-element pairs of @old@ plus the given key-element pairs @kvs@
+-- (colliding pairs cause UNDEFINED BEHAVIOUR).
+--
+-- See also:
+--
+-- * 'Data.Store.insertList'
+--
+-- * 'Data.Store.insertList''
+--
+-- * 'Data.Store.fromList'
+--
+-- * 'Data.Store.fromList''
+unsafeInsertList :: I.Empty (I.Index irs ts) => I.Store tag krs irs ts v -> [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
+unsafeInsertList = Data.Foldable.foldl (\s (k, v) -> snd $ unsafeInsert k v s)
+{-# INLINE unsafeInsertList #-}
 
 -- INSTANCES
 
