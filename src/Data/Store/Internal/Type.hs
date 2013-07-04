@@ -142,6 +142,15 @@ type instance DimensionType (S n) (r :. rt) (t :. tt) = DimensionType n rt tt
 
 type family   RawDimensionType n a :: *
 type instance RawDimensionType n (Index irs ts) = IndexDimension (DimensionRelation n irs ts) (DimensionType n irs ts)
+type instance RawDimensionType n (IKey krs ts) = IKeyDimension (DimensionRelation n krs ts) (DimensionType n krs ts)
+
+type family   LookupMap n krs irs ts v :: *
+type instance LookupMap n krs irs ts v =
+  Data.Map.Map (DimensionType n krs ts) (LookupMapElement (DimensionRelation n krs ts) (RawKey krs ts, v))
+
+type family   LookupMapElement r e :: *
+type instance LookupMapElement O e = e
+type instance LookupMapElement M e = [e]
 
 -- | The pupose of the @'Data.Store.Internal.Type.RawKey'@ type family is
 -- to derive a type of a \"raw key\" that is easier to pattern match against
@@ -155,6 +164,13 @@ type instance RawKey (O :. rt) (t :. tt) =  t  :. RawKey rt tt
 type instance RawKey (M :. rt) (t :. tt) = [t] :. RawKey rt tt
 type instance RawKey O t =  t
 type instance RawKey M t = [t]
+
+type family   RawKeyDimension n kspec tspec :: *
+type instance RawKeyDimension Z (O :. rt) (t :. tt) = t
+type instance RawKeyDimension Z (M :. rt) (t :. tt) = [t]
+type instance RawKeyDimension Z O t = t
+type instance RawKeyDimension Z M t = [t]
+type instance RawKeyDimension (S n) (r :. rt) (t :. tt) = RawKeyDimension n rt tt
 
 class (Ord k, Enum k, Bounded k) => Auto k where
 instance (Ord k, Enum k, Bounded k) => Auto k where
@@ -468,6 +484,20 @@ instance GetDimension Z (Index (r :. rt) (t :. tt)) where
 instance GetDimension n (Index rt tt) => GetDimension (S n) (Index (r :. rt) (t :. tt)) where
     getDimension (S n) (IN _ ixt) = getDimension n ixt
     getDimension _ (I1 _) = error $ moduleName <> ".Index.getDimension: The impossible happened."
+
+instance GetDimension Z (IKey O t) where
+    getDimension _ (K1 kd) = kd
+
+instance GetDimension Z (IKey M t) where
+    getDimension _ (K1 kd) = kd
+
+instance GetDimension Z (IKey (r :. rt) (t :. tt)) where
+    getDimension _ (KN kd _) = kd
+    getDimension _ (K1 _) = error $ moduleName <> ".IKey.getDimension: The impossible happened."
+
+instance GetDimension n (IKey rt tt) => GetDimension (S n) (IKey (r :. rt) (t :. tt)) where
+    getDimension (S n) (KN _ kt) = getDimension n kt
+    getDimension _ (K1 _) = error $ moduleName <> ".IKey.getDimension: The impossible happened."
 
 data TT
 data FF

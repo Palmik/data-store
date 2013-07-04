@@ -169,6 +169,8 @@ module Data.Store
   -- * Querying
 , size
 , lookup
+, lookupOrderByA
+, lookupOrderByD
 
   -- ** Selection
   --
@@ -450,9 +452,59 @@ map tr store@(I.Store vs _ _) = store
 -- list of (raw key)-element pairs that match the selection.
 -- 
 -- Complexity: /O(c + s * min(n, W))/
+--
+-- See also:
+--
+--   * 'Data.Store.lookupOrderByA'
+--
+--   * 'Data.Store.lookupOrderByD'
 lookup :: IsSelection sel => sel tag krs irs ts -> I.Store tag krs irs ts v -> [(I.RawKey krs ts, v)]
 lookup sel s = I.genericLookup (resolve sel s) s
 {-# INLINE lookup #-}
+
+-- | The expression (@'Data.Store.Selection.lookup' sel store@) is
+-- list of (raw key)-element pairs that match the selection.
+-- The list is sorted in ascending order with respect to the specified dimension.
+--
+-- NOTE: The function only works (this is ensured on the type level) with when
+-- the ordering is based on dimensions of type one-one and one-many.
+--
+-- Complexity: /O(c + (s * log(s)) + s * min(n, W))/
+--
+-- See also:
+--
+--   * 'Data.Store.lookupOrderByD'
+--
+--   * 'Data.Store.lookup'
+lookupOrderByA :: (I.DimensionRelation n krs ts ~ I.O, I.GetDimension n (I.IKey krs ts), IsSelection sel)
+               => sel tag krs irs ts
+               -> (tag, n)
+               -> I.Store tag krs irs ts v
+               -> [(I.RawKey krs ts, v)]
+lookupOrderByA sel (_, n) s = I.genericLookupAsc (resolve sel s) n s
+{-# INLINE lookupOrderByA #-}
+
+-- | The expression (@'Data.Store.Selection.lookup' sel store@) is
+-- list of (raw key)-element pairs that match the selection.
+-- The list is sorted in descending order with respect to the specified dimension.
+--
+-- NOTE: The function only works (this is ensured on the type level) with when
+-- the ordering is based on dimensions of type one-one and one-many.
+--
+-- Complexity: /O(c + (s * log(s)) + s * min(n, W))/
+--
+-- See also:
+--
+--   * 'Data.Store.lookupOrderByA'
+--
+--   * 'Data.Store.lookup'
+lookupOrderByD :: (I.DimensionRelation n krs ts ~ I.O, I.GetDimension n (I.IKey krs ts), IsSelection sel)
+               => sel tag krs irs ts
+               -> (tag, n)
+               -> I.Store tag krs irs ts v
+               -> [(I.RawKey krs ts, v)]
+lookupOrderByD sel (_, n) s = I.genericLookupDesc (resolve sel s) n s
+{-# INLINE lookupOrderByD #-}
 
 -- | The expression (@'Data.Store.size' store@) is the number of elements
 -- in @store@. 

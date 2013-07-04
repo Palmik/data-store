@@ -51,6 +51,41 @@ genericLookup ids (I.Store vs _ _) = {-# SCC "genericLookup" #-}
     ) [] ids
 {-# INLINE genericLookup #-}
 
+genericLookupAsc :: I.GetDimension n (I.IKey krs ts)
+                 => Data.IntSet.IntSet
+                 -> n
+                 -> I.Store tag krs irs ts v
+                 -> [(I.RawKey krs ts, v)]
+genericLookupAsc ids n (I.Store vs _ _) =
+  map (\(ik, v) -> (keyInternalToRaw ik, v)) . Data.List.sortBy (lookupSortComparator n) $
+  Data.IntSet.foldr (\i acc ->
+    case Data.IntMap.lookup i vs of
+      Just (ik, v) -> (ik, v) : acc
+      _ -> acc
+    ) [] ids
+{-# INLINE genericLookupAsc #-}
+
+genericLookupDesc :: I.GetDimension n (I.IKey krs ts)
+                  => Data.IntSet.IntSet
+                  -> n
+                  -> I.Store tag krs irs ts v
+                  -> [(I.RawKey krs ts, v)]
+genericLookupDesc ids n (I.Store vs _ _) =
+  map (\(ik, v) -> (keyInternalToRaw ik, v)) . Data.List.sortBy (flip $ lookupSortComparator n) $
+  Data.IntSet.foldr (\i acc ->
+    case Data.IntMap.lookup i vs of
+      Just (ik, v) -> (ik, v) : acc
+      _ -> acc
+    ) [] ids
+{-# INLINE genericLookupDesc #-}
+
+lookupSortComparator :: I.GetDimension n (I.IKey krs ts) => n -> (I.IKey krs ts, e) -> (I.IKey krs ts, e) -> Ordering
+lookupSortComparator n (k1, _) (k2, _) = case (I.getDimension n k1, I.getDimension n k2) of
+  (I.IKeyDimensionO d1, I.IKeyDimensionO d2) -> d1 `compare` d2
+  (I.IKeyDimensionM  _, I.IKeyDimensionM  _) -> error $
+    moduleName <> "lookupSortComparator: Comparing keys based on many-one or many-many dimensions is not supported."
+{-# INLINEABLE lookupSortComparator #-}
+
 genericUpdateWithKey :: (Applicative f, Monad f)
                      => (I.IKey krs ts -> Int -> I.Store tag krs irs ts e -> f (I.Store tag krs irs ts e))
                      -> (I.RawKey krs ts -> e -> Maybe (e, Maybe (I.Key krs ts)))
