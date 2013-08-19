@@ -57,28 +57,36 @@ not = SelectionNot
 {-# INLINE not #-}
 
 -- | Selection that matches the intersection of all the selections in the
--- list or everything if the list is empty.
+-- list.
+--
+-- NOTE: Expects nonempty list.
 all :: [Selection tag krs irs ts] -> Selection tag krs irs ts
-all []  = error $ moduleName <> ".all: empty list."
+all []  =  error $ moduleName <> ".all: empty list."
 all [s] = s
 all (s:rest) = Data.List.foldl' (.&&) s rest -- this way we do not have to intersect with "everything"
 {-# INLINE all #-}
 
 -- | The expression (@'Data.Store.Selection.all1D' d ss@) is equivalent to (@'Data.Store.Selection.all'' $ map ($ d) ss@).
+--
+-- NOTE: Expects nonempty list.
 all1D :: (tag, n) -> [(tag, n) -> Selection tag krs irs ts] -> Selection tag krs irs ts
-all1D _ [] = error $ moduleName <> ".all1D: empty list."
+all1D _ [] =  error $ moduleName <> ".all1D: empty list."
 all1D d [h] = h d
 all1D d (h:rest) = Data.List.foldl' (\acc f -> acc .&& f d) (h d) rest -- this way we do not have to intersect with "everything"
 {-# INLINE all1D #-}
 
 -- | Selection that matches the union of all the selections in the
--- list or nothing if the list is empty.
+-- list.
+--
+-- NOTE: Expects nonempty list.
 any :: [Selection tag krs irs ts] -> Selection tag krs irs ts
 any [] = error $ moduleName <> ".any: empty list."
 any (x:xs) = Data.List.foldl' (.||) x xs
 {-# INLINE any #-}
 
 -- | The expression (@'Data.Store.Selection.any1D' d ss@) is equivalent to (@'Data.Store.Selection.any'' $ map ($ d) ss@).
+--
+-- NOTE: Expects nonempty list.
 any1D :: (tag, n) -> [(tag, n) -> Selection tag krs irs ts] -> Selection tag krs irs ts
 any1D _ [] = error $ moduleName <> ".any1D: empty list."
 any1D d (x:xs) = Data.List.foldl' (\acc f -> acc .|| f d) (x d) xs

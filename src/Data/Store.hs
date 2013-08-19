@@ -435,6 +435,11 @@ unsafeInsert k e old@(I.Store _ index _) =
 
 -- | The expression @('Data.Store.map' tr old@) is store where every element of
 -- @old@ was transformed using the function @tr@.
+--
+-- NOTE: This function does not affect the keys of the updated elements. In
+-- case you need to update the elements as well as the keys, see
+-- @'Data.Store.updateWithKey'@, @'Data.Store.updateWithKey''@ and
+-- @'Data.Store.Storable'@ for available options.
 map :: (v1 -> v2) -> I.Store tag krs irs ts v1 -> I.Store tag krs irs ts v2
 map tr store@(I.Store vs _ _) = store
     { I.storeV = Data.IntMap.map (\(ik, v) -> (ik, tr v)) vs
@@ -518,6 +523,11 @@ updateWithKey' tr sel s = runIdentity $! I.genericUpdateWithKey I.indexInsertID'
 -- (@tr' = (\_ v -> tr v) = const tr@).
 --
 -- Complexity: /O(c + s * (min(n, W) + q * log n))/ 
+--
+-- NOTE: This function does not affect the keys of the updated elements. In
+-- case you need to update the elements as well as the keys, see
+-- @'Data.Store.updateWithKey'@, @'Data.Store.updateWithKey''@ and
+-- @'Data.Store.Storable'@ for available options.
 update :: IsSelection sel
        => (v -> Maybe (v, Maybe (I.Key krs ts)))
        -> sel tag krs irs ts
@@ -531,6 +541,11 @@ update tr = updateWithKey (const tr)
 -- (@tr' = (\_ v -> tr v) = const tr@).
 --
 -- Complexity: /O(c + d * s * (min(n, W) + q * log n))/ 
+--
+-- NOTE: This function does not affect the keys of the updated elements. In
+-- case you need to update the elements as well as the keys, see
+-- @'Data.Store.updateWithKey'@, @'Data.Store.updateWithKey''@ and
+-- @'Data.Store.Storable'@ for available options.
 update' :: IsSelection sel
         => (v -> Maybe (v, Maybe (I.Key krs ts)))
         -> sel tag krs irs ts

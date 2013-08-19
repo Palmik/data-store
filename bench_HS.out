@@ -1,35 +1,37 @@
 warming up
 estimating clock resolution...
-mean is 1.611177 us (320001 iterations)
-found 1751 outliers among 319999 samples (0.5%)
-  1357 (0.4%) high severe
+mean is 1.473101 us (640001 iterations)
+found 2770 outliers among 639999 samples (0.4%)
+  2534 (0.4%) high severe
 estimating cost of a clock call...
-mean is 46.66197 ns (11 iterations)
+mean is 46.66939 ns (10 iterations)
+found 2 outliers among 10 samples (20.0%)
+  2 (20.0%) low severe
 
 benchmarking insertLookup (Int) 01 200000/HS
-mean: 11.62902 us, lb 11.61871 us, ub 11.64742 us, ci 0.950
-std dev: 68.68737 ns, lb 44.73856 ns, ub 125.8834 ns, ci 0.950
+mean: 11.54195 us, lb 11.52848 us, ub 11.56466 us, ci 0.950
+std dev: 87.12212 ns, lb 58.04476 ns, ub 155.9983 ns, ci 0.950
+
+benchmarking insertLookup-collision(1) (Int) 01 200000/HS
+mean: 13.21783 us, lb 13.20727 us, ub 13.24561 us, ci 0.950
+std dev: 81.66202 ns, lb 40.27007 ns, ub 171.7359 ns, ci 0.950
 
 benchmarking lookup OO EQ (Int) 01 200000/HS
-mean: 2.002593 us, lb 1.995174 us, ub 2.020350 us, ci 0.950
-std dev: 55.16094 ns, lb 19.73388 ns, ub 96.53896 ns, ci 0.950
-found 6 outliers among 100 samples (6.0%)
-  5 (5.0%) high severe
-variance introduced by outliers: 21.911%
-variance is moderately inflated by outliers
+mean: 2.050975 us, lb 2.048878 us, ub 2.054718 us, ci 0.950
+std dev: 13.97672 ns, lb 9.189438 ns, ub 25.82755 ns, ci 0.950
 
 benchmarking lookup OO GE (Int) 01 200000 (500)/HS
-mean: 66.09892 us, lb 65.99478 us, ub 66.24245 us, ci 0.950
-std dev: 619.2174 ns, lb 482.7676 ns, ub 961.5789 ns, ci 0.950
+mean: 66.85158 us, lb 66.72542 us, ub 67.00199 us, ci 0.950
+std dev: 705.5077 ns, lb 553.3041 ns, ub 1.090207 us, ci 0.950
 
 benchmarking lookup OM EQ (Int) 01 200000/HS
-mean: 3.126248 us, lb 3.123699 us, ub 3.130792 us, ci 0.950
-std dev: 16.87460 ns, lb 11.04158 ns, ub 31.39981 ns, ci 0.950
+mean: 2.991860 us, lb 2.988705 us, ub 2.997277 us, ci 0.950
+std dev: 20.76364 ns, lb 13.83225 ns, ub 37.64952 ns, ci 0.950
 
 benchmarking lookup OM GE (Int) 01 200000 (500)/HS
-mean: 33.00620 us, lb 32.94309 us, ub 33.08546 us, ci 0.950
-std dev: 358.3626 ns, lb 288.6124 ns, ub 553.4793 ns, ci 0.950
+mean: 33.14036 us, lb 33.08860 us, ub 33.23022 us, ci 0.950
+std dev: 340.3386 ns, lb 226.5990 ns, ub 627.2887 ns, ci 0.950
 
 benchmarking lookup MM EQ (Int) 01 200000/HS
-mean: 3.635891 us, lb 3.632254 us, ub 3.643516 us, ci 0.950
-std dev: 25.86845 ns, lb 15.30782 ns, ub 51.28097 ns, ci 0.950
+mean: 3.499823 us, lb 3.495621 us, ub 3.507066 us, ci 0.950
+std dev: 27.66152 ns, lb 18.56754 ns, ub 51.00183 ns, ci 0.950

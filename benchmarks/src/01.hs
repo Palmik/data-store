@@ -84,6 +84,24 @@ main = C.defaultMainWith C.defaultConfig (liftIO . evaluate $ rnf
       ]
     ]
 #ifdef BENCH_SMALL
+  , C.bgroup "insertLookup-collision(1) (Int) 01 100000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.whnf (forceList . DS.B01.insertLookup 20000 9999999 9999999) ds100000
+#ifndef BENCH_DS
+      , C.bench "TS" $ C.whnf (forceList . TS.B01.insertLookup 20000 9999999 9999999) ts100000
+#endif
+      ]
+    ]
+#endif
+  , C.bgroup "insertLookup-collision(1) (Int) 01 200000"
+    [ C.bcompare
+      [ C.bench "DS" $ C.whnf (forceList . DS.B01.insertLookup 20000 9999999 9999999) ds200000
+#ifndef BENCH_DS
+      , C.bench "TS" $ C.whnf (forceList . TS.B01.insertLookup 20000 9999999 9999999) ts200000
+#endif
+      ]
+    ]
+#ifdef BENCH_SMALL
   , C.bgroup "insert (Int) 01 100000"
     [ C.bcompare
       [ C.bench "DS" $ C.whnf (DS.B01.insert elem9999999) ds100000
