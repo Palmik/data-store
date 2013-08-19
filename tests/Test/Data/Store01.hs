@@ -72,6 +72,7 @@ tests =
     , testProperty "insert'1" prop_insert'1
 
     , testProperty "lookup1" prop_lookup1
+    , testProperty "lookupOrderBy1" prop_lookupOrderBy1
     
     , testProperty "update1" prop_update1
     , testProperty "update2" prop_update2
@@ -234,6 +235,57 @@ prop_lookup1 = byOO_EQ  && byOM_EQ  && byMO_EQ  && byMM_EQ  &&
       -- Every key in this list corresponds to exactly 50 ds.
       oms :: [Int]
       oms = [0, 1]
+
+      -- Every key in this list corresponds to exactly 1 d.
+      mos :: [Int]
+      mos = [0..99]
+
+      -- Every key 'k' in this list corresponds to exactly '100 - k'
+      -- ds.
+      mms :: [Int]
+      mms = [0..99]
+
+-- | Tests insert, lookupOrderByA #1.
+prop_lookupOrderBy1 = l1 && l2 
+    where
+      l1 :: Bool
+      l1 = isSortedOM (S.lookupOrderByA (sMM .>= 20) sOM store) &&
+           isSortedOM (S.lookupOrderByA (sMM .<= 50 .&& sOM .== 5) sOM store) &&
+           isSortedOM (S.lookupOrderByA (sOO .>= 20) sOM store) &&
+           isSortedOM (S.lookupOrderByA (sOM .>= 3) sOM store) 
+
+      isSortedOM :: [(S.RawKey DSKRS DSTS, D)] -> Bool
+      isSortedOM [] = True      
+      isSortedOM [_] = True
+      isSortedOM ((_ :. x1 :. _, _) : (_ :. x2 :. _, _) : t) = x1 <= x2 && isSortedOM t       
+      
+      l2 :: Bool
+      l2 = isSortedOO (S.lookupOrderByA (sMM .>= 20) sOO store) &&
+           isSortedOO (S.lookupOrderByA (sMM .<= 50 .&& sOM .== 1) sOO store) &&
+           isSortedOO (S.lookupOrderByA (sOO .>= 20) sOO store) &&
+           isSortedOO (S.lookupOrderByA (sOM .>= 3) sOO store)
+
+      isSortedOO :: [(S.RawKey DSKRS DSTS, D)] -> Bool
+      isSortedOO [] = True      
+      isSortedOO [_] = True
+      isSortedOO ((x1 :. _, _) : (x2 :. _, _) : t) = x1 <= x2 && isSortedOO t       
+
+      store :: DS
+      store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
+
+      ds :: [D]
+      ds = map mval [0..99]
+
+      mval :: Int -> D
+      mval i = D (i `mod` 20) [i] [0..i]
+
+      -- Every key in this list corresponds to exactly 1 d.
+      oos :: [Int]
+      oos = take 100 $ iterate succ minBound
+
+      -- Every key in this list corresponds to exactly 50 ds.
+      oms :: [Int]
+      oms = [0..19]
 
       -- Every key in this list corresponds to exactly 1 d.
       mos :: [Int]

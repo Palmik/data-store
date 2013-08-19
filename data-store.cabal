@@ -1,5 +1,5 @@
 name:                data-store
-version:             0.3.0.5
+version:             0.3.0.6
 
 synopsis:    Type safe, in-memory dictionary with multidimensional keys.
 description: Type safe, in-memory dictionary with multidimensional keys.
@@ -11,7 +11,7 @@ homepage: https://github.com/Palmik/data-store
 license:             BSD3
 license-file:        LICENSE
 
-author:              Petr Pilař
+author:              Petr Pilar
 maintainer:          the.palmik+maintainer@gmail.com
 
 category:            Data
