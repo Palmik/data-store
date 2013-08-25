@@ -175,20 +175,32 @@ type instance RawKeyDimension (S n) (r :. rt) (t :. tt) = RawKeyDimension n rt t
 class (Ord k, Enum k, Bounded k) => Auto k where
 instance (Ord k, Enum k, Bounded k) => Auto k where
 
--- | The store data type has four type arguments that define what and how
+-- | The store data type has five type arguments that define what and how
 -- things are stored.
+--
+-- The @tag@ is arbitrary type (of kind @*@) that is intented to be unique
+-- anong all types of stores. The intended purpose is to prevent accidental
+-- mixup when creating a selection (since the selection tag of any
+-- dimension is a pair consisting of the @tag@ and type-level natural
+-- number that corresponds to the dimension).
+-- 
+-- The @ts@ describes the types of the dimensions. In (the common) case
+-- when our store has multiple dimensions, @'Data.Store.Internal.Type(:.)'@
+-- is used to create a type-list out of the types of the dimensions.
+--
+-- The @v@ is the type of the element stored in the store.
 --
 -- The @krs@ (key relation specification) and @irs@ (index relation
 -- specification) define the relations between the dimensions of the key
 -- and the elements. To that end, we use @'Data.Store.Internal.Type.O'@ and
 -- @'Data.Store.Internal.Type.M'@ type-level tags and
--- @'Data.Store.Type.Internal.(:.)'@ data type to create tuple of these
+-- @'Data.Store.Internal.Type.(:.)'@ data type to create type-list of these
 -- tags (to describe all the dimensions).
 --
--- The possible relations are as follows:
+-- The possible relations are:
 --
 -- * One-one: Every intem is indexed under exactly one key dimension value. One key dimension value
--- corresponds to at most one elements.
+-- corresponds to at most one element.
 --
 -- * One-many: Every element is indexed under exactly one key dimension value. One key dimension value can
 -- correspond to many elements.
