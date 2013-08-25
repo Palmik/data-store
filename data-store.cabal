@@ -1,5 +1,5 @@
 name:                data-store
-version:             0.3.0.7
+version:             0.3.0.8
 
 synopsis:    Type safe, in-memory dictionary with multidimensional keys.
 description: Type safe, in-memory dictionary with multidimensional keys.

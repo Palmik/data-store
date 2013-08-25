@@ -220,7 +220,7 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 -- > type ContentStoreKRS = O         :. O      :. O      :. M      :. O
 -- > type ContentStoreIRS = O         :. O      :. M      :. M      :. M
 -- > type ContentStoreTS  = ContentID :. String :. String :. String :. Double
--- > type ContentStore = Store ContentStoreKRS ContentStoreIRS ContentStoreTS Content
+-- > type ContentStore = 'Data.Store.Store' ContentStoreTag ContentStoreKRS ContentStoreIRS ContentStoreTS Content
 --
 -- See also:
 --
