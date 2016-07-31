@@ -84,7 +84,7 @@ lookupSortComparator n (k1, _) (k2, _) = case (I.getDimension n k1, I.getDimensi
   (I.IKeyDimensionO d1, I.IKeyDimensionO d2) -> d1 `compare` d2
   (I.IKeyDimensionM  _, I.IKeyDimensionM  _) -> error $
     moduleName <> "lookupSortComparator: Comparing keys based on many-one or many-many dimensions is not supported."
-{-# INLINEABLE lookupSortComparator #-}
+{-# INLINEABLE lookupSortComparator #-}
 
 genericUpdateWithKey :: (Applicative f, Monad f)
                      => (I.IKey krs ts -> Int -> I.Store tag krs irs ts e -> f (I.Store tag krs irs ts e))
