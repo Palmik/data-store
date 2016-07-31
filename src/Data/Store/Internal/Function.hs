@@ -7,8 +7,6 @@ module Data.Store.Internal.Function
 where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative hiding (empty)
---------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
 import           Data.Functor.Identity
 import qualified Data.List

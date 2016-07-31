@@ -9,7 +9,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
@@ -18,11 +17,8 @@ module Data.Store.Internal.Type
 where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative ((<$>), (<*>))
 import           Control.DeepSeq (NFData(rnf))
 --------------------------------------------------------------------------------
-import           Data.Data (Typeable, Typeable2)
-import qualified Data.Data
 import qualified Data.List
 import           Data.Monoid ((<>))
 #if MIN_VERSION_containers(0,5,0)
@@ -248,7 +244,7 @@ data Store tag krs irs ts v = Store
     { storeV :: !(Data.IntMap.IntMap (IKey krs ts, v))
     , storeI :: !(Index irs ts)
     , storeNID :: {-# UNPACK #-} !Int
-    } deriving (Typeable)
+    }
 
 instance (Show h, Show t) => Show (h :. t) where
     show (h :. t) = show h <> " :. " <> show t
@@ -323,10 +319,6 @@ instance (Ser.SafeCopy (GenericKey dim rt tt), Ser.SafeCopy (dim r t)) => Ser.Sa
     putCopy (KN d dt) = Ser.contain $ Ser.safePut d >> Ser.safePut dt
     putCopy (K1 _) = error $ moduleName <> ".GenricKey.putCopy: The impossible happened."
 
-instance Typeable2 (GenericKey dim) where
-    typeOf2 (K1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "K1") []
-    typeOf2 (KN _ _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "KN") []
-
 type  Key = GenericKey  KeyDimension
 type IKey = GenericKey IKeyDimension
 
@@ -390,10 +382,6 @@ instance (Ord t, Ser.SafeCopy t, Ser.SafeCopy (Index rt tt)) => Ser.SafeCopy (In
     putCopy (IN ixd ixt) = Ser.contain $ Ser.safePut ixd >> Ser.safePut ixt
     putCopy (I1 _) = error $ moduleName <> ".Index.putCopy: The impossible happened (#2)."
 
-instance Typeable2 Index where
-    typeOf2 (I1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "I1") []
-    typeOf2 (IN _ _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "IN") []
-
 instance Show t => Show (Index O t) where
     show (I1 d) = show d
 
@@ -408,8 +396,6 @@ data KeyDimension r t where
     KeyDimensionO :: Ord t =>  t  -> KeyDimension O t
     KeyDimensionM :: Ord t => [t] -> KeyDimension M t
     KeyDimensionA :: Auto t => KeyDimension O t
-
-deriving instance Typeable2 KeyDimension
 
 instance Show t => Show (KeyDimension r t) where
     show (KeyDimensionM ts) = show ts
@@ -428,8 +414,6 @@ instance Eq (IKeyDimension r t) where
     (IKeyDimensionM x) /= (IKeyDimensionM y) = x /= y
     (IKeyDimensionO x) /= (IKeyDimensionO y) = x /= y
     _ /= _ = True
-
-deriving instance Typeable2 IKeyDimension
 
 instance (Ord t, Ser.Serialize t) => Ser.Serialize (IKeyDimension O t) where
     get = IKeyDimensionO <$> Ser.get

@@ -52,10 +52,10 @@ import Prelude hiding (map)
 -- cause inconsistencies with respect to the user defined
 -- @'Data.Store.Storable.Storable'@ instance.
 class Storable v where
-    type StoreKRS t :: *
-    type StoreIRS t :: *
-    type StoreTS  t :: *
-    
+    type StoreKRS v
+    type StoreIRS v
+    type StoreTS  v
+
     key :: v -> S.Key (StoreKRS v) (StoreTS v)
 
 -- | See @'Data.Store.insert'@ (the key of the inserted element is obtained using the

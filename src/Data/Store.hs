@@ -230,9 +230,6 @@ module Data.Store
 --------------------------------------------------------------------------------
 import           Prelude hiding (lookup, map, foldr, foldl, not)
 --------------------------------------------------------------------------------
-import           Control.Applicative hiding (empty)
---------------------------------------------------------------------------------
-import           Data.Monoid
 import           Data.Maybe
 import           Data.Functor.Identity
 #if MIN_VERSION_containers(0,5,0)
