@@ -12,8 +12,8 @@ import           Data.Store (M, O, (.:), (.:.), (:.)(..), (.<), (.<=), (.>), (.>
 --------------------------------------------------------------------------------
 
 data Content = Content
-    { contentName :: String  
-    , contentBody :: String  
+    { contentName :: String
+    , contentBody :: String
     , contentTags :: [String]
     , contentRating :: Double
     }
@@ -66,7 +66,7 @@ insertContent c = do
 lookupBySelection :: ContentStoreSelection -> Model [Content]
 lookupBySelection sel = go . S.lookup sel <$> State.get
     where
-      go = map snd 
+      go = map snd
 
 lookupByID :: ContentID -> Model (Maybe Content)
 lookupByID cid = go . S.lookup (sContentID .== cid) <$> State.get
@@ -75,7 +75,7 @@ lookupByID cid = go . S.lookup (sContentID .== cid) <$> State.get
       go _        = Nothing
 
 deleteByID :: ContentID -> Model ()
-deleteByID cid = deleteBySelection (sContentID .== cid) 
+deleteByID cid = deleteBySelection (sContentID .== cid)
 
 deleteBySelection :: ContentStoreSelection -> Model ()
 deleteBySelection sel = State.modify $ S.delete sel

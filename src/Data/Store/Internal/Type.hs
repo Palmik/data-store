@@ -9,7 +9,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
@@ -18,11 +17,8 @@ module Data.Store.Internal.Type
 where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative ((<$>), (<*>))
 import           Control.DeepSeq (NFData(rnf))
 --------------------------------------------------------------------------------
-import           Data.Data (Typeable, Typeable2)
-import qualified Data.Data
 import qualified Data.List
 import           Data.Monoid ((<>))
 #if MIN_VERSION_containers(0,5,0)
@@ -63,7 +59,7 @@ moduleName = "Data.Store.Internal.Type"
 -- * 'Data.Store.Internal.Type.Key'
 --
 -- * 'Data.Store.Internal.Type.Store'
-data M 
+data M
 
 -- | This is type-level tag for tagging dimensions of key and the index of a store.
 -- You can think of @'Data.Store.Internal.Type.O'@ as an abbreviation for
@@ -183,7 +179,7 @@ instance (Ord k, Enum k, Bounded k) => Auto k where
 -- mixup when creating a selection (since the selection tag of any
 -- dimension is a pair consisting of the @tag@ and type-level natural
 -- number that corresponds to the dimension).
--- 
+--
 -- The @ts@ describes the types of the dimensions. In (the common) case
 -- when our store has multiple dimensions, @'Data.Store.Internal.Type(:.)'@
 -- is used to create a type-list out of the types of the dimensions.
@@ -248,7 +244,7 @@ data Store tag krs irs ts v = Store
     { storeV :: !(Data.IntMap.IntMap (IKey krs ts, v))
     , storeI :: !(Index irs ts)
     , storeNID :: {-# UNPACK #-} !Int
-    } deriving (Typeable)
+    }
 
 instance (Show h, Show t) => Show (h :. t) where
     show (h :. t) = show h <> " :. " <> show t
@@ -274,7 +270,7 @@ data GenericKey dim rs ts where
 instance Eq (GenericKey IKeyDimension rs ts) where
     (K1 x) == (K1 y) = x == y
     (KN x xt) == (KN y yt) = x == y && xt == yt
-    _ == _ = False    
+    _ == _ = False
 
     (K1 x) /= (K1 y) = x /= y
     (KN x xt) /= (KN y yt) = x /= y || xt /= yt
@@ -323,28 +319,24 @@ instance (Ser.SafeCopy (GenericKey dim rt tt), Ser.SafeCopy (dim r t)) => Ser.Sa
     putCopy (KN d dt) = Ser.contain $ Ser.safePut d >> Ser.safePut dt
     putCopy (K1 _) = error $ moduleName <> ".GenricKey.putCopy: The impossible happened."
 
-instance Typeable2 (GenericKey dim) where
-    typeOf2 (K1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "K1") []
-    typeOf2 (KN _ _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "KN") []
-
 type  Key = GenericKey  KeyDimension
 type IKey = GenericKey IKeyDimension
 
 instance Show t => Show (Key O t) where
-    show (K1 d) = show d 
+    show (K1 d) = show d
 
 instance Show t => Show (Key M t) where
-    show (K1 d) = show d 
+    show (K1 d) = show d
 
 instance (Show t, Show (Key rt tt)) => Show (Key (r :. rt) (t :. tt)) where
     show (KN d k) = show d <> ", " <> show k
     show (K1 _) = error $ moduleName <> ".Key.show: The impossible happened."
 
 instance Show t => Show (IKey O t) where
-    show (K1 d) = show d 
+    show (K1 d) = show d
 
 instance Show t => Show (IKey M t) where
-    show (K1 d) = show d 
+    show (K1 d) = show d
 
 instance (Show t, Show (IKey rt tt)) => Show (IKey (r :. rt) (t :. tt)) where
     show (KN d k) = show d <> ", " <> show k
@@ -390,10 +382,6 @@ instance (Ord t, Ser.SafeCopy t, Ser.SafeCopy (Index rt tt)) => Ser.SafeCopy (In
     putCopy (IN ixd ixt) = Ser.contain $ Ser.safePut ixd >> Ser.safePut ixt
     putCopy (I1 _) = error $ moduleName <> ".Index.putCopy: The impossible happened (#2)."
 
-instance Typeable2 Index where
-    typeOf2 (I1 _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "I1") []
-    typeOf2 (IN _ _) = Data.Data.mkTyConApp (Data.Data.mkTyCon3 "data-store" moduleName "IN") []
-
 instance Show t => Show (Index O t) where
     show (I1 d) = show d
 
@@ -408,8 +396,6 @@ data KeyDimension r t where
     KeyDimensionO :: Ord t =>  t  -> KeyDimension O t
     KeyDimensionM :: Ord t => [t] -> KeyDimension M t
     KeyDimensionA :: Auto t => KeyDimension O t
-
-deriving instance Typeable2 KeyDimension
 
 instance Show t => Show (KeyDimension r t) where
     show (KeyDimensionM ts) = show ts
@@ -427,9 +413,7 @@ instance Eq (IKeyDimension r t) where
 
     (IKeyDimensionM x) /= (IKeyDimensionM y) = x /= y
     (IKeyDimensionO x) /= (IKeyDimensionO y) = x /= y
-    _ /= _ = True    
-
-deriving instance Typeable2 IKeyDimension
+    _ /= _ = True
 
 instance (Ord t, Ser.Serialize t) => Ser.Serialize (IKeyDimension O t) where
     get = IKeyDimensionO <$> Ser.get
@@ -455,7 +439,7 @@ data IndexDimension r t where
     IndexDimensionO :: Ord t
                     => !(Data.Map.Map t Int)
                     -> IndexDimension O t
-    
+
     IndexDimensionM :: Ord t
                     => !(Data.Map.Map t Data.IntSet.IntSet)
                     -> IndexDimension M t
@@ -574,7 +558,7 @@ instance NFData t => NFData (IndexDimension r t) where
 
 instance NFData t => NFData (Index O t) where
     rnf (I1 kd) = rnf kd
-     
+
 instance NFData t => NFData (Index M t) where
     rnf (I1 kd) = rnf kd
 
@@ -588,7 +572,7 @@ instance NFData t => NFData (IKeyDimension r t) where
 
 instance NFData t => NFData (IKey O t) where
     rnf (K1 kd) = rnf kd
-     
+
 instance NFData t => NFData (IKey M t) where
     rnf (K1 kd) = rnf kd
 
@@ -598,5 +582,3 @@ instance (NFData t, NFData (IKey rt tt)) => NFData (IKey (r :. rt) (t :. tt)) wh
 
 instance (NFData a, NFData b) => NFData (a :. b) where
     rnf (a :. b) = rnf a `seq` rnf b
-
-

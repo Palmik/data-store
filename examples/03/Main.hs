@@ -16,7 +16,7 @@ import           Control.Exception (bracket)
 import           Data.List (intercalate)
 import           Data.Char (toLower)
 import           Data.Data (Data, Typeable)
-import           Data.SafeCopy (SafeCopy, base, deriveSafeCopy) 
+import           Data.SafeCopy (SafeCopy, base, deriveSafeCopy)
 import qualified Data.Acid
 --------------------------------------------------------------------------------
 import qualified Data.Store as S hiding (insert, update, updateWithRawKey)
@@ -33,8 +33,8 @@ $(deriveSafeCopy 0 'base ''ContentStatus)
 type ContentID = Int
 
 data Content = Content
-    { contentName :: String  
-    , contentBody :: String  
+    { contentName :: String
+    , contentBody :: String
     , contentTags :: [String]
     , contentRating :: Double
     , contentStatus :: ContentStatus
@@ -53,7 +53,7 @@ instance Storable Content where
      type StoreIRS Content = O         :. O      :. M   :. M      :. M      :. M
      type StoreTS  Content = ContentID :. String :. Int :. String :. Double :. ContentStatus
 
-     key (Content cn cb cts cr cs) = 
+     key (Content cn cb cts cr cs) =
          S.dimA .:
          S.dimO cn .:
          S.dimO (length $ words cb) .:
@@ -116,14 +116,14 @@ deleteContentByID cid = do
         }
 
 lookupContentByID :: ContentID -> Data.Acid.Query SiteData (Maybe Content)
-lookupContentByID cid = 
+lookupContentByID cid =
     go . S.lookup (sContentID .== cid) <$> Reader.asks siteContents
     where
       go [(_, c)] = Just c
       go _ = Nothing
 
 lookupContentByStatus :: ContentStatus -> Data.Acid.Query SiteData [(ContentID, Content)]
-lookupContentByStatus cs = 
+lookupContentByStatus cs =
     go . S.lookup (sContentStatus .== cs) <$> Reader.asks siteContents
     where
       go = map (\(cid :. _, c) -> (cid, c))
@@ -156,7 +156,7 @@ run db = do
         Nothing -> putStrLn "Such command does not exist." >> run db
 
     where
-      handleCommand (CQuit) = putStrLn "Good bye... cruel world." 
+      handleCommand (CQuit) = putStrLn "Good bye... cruel world."
       handleCommand (CCreate c) = do
         mcid <- Data.Acid.update db (CreateContent c)
         case mcid of
@@ -169,7 +169,7 @@ run db = do
         if succ
            then putStrLn $ "Content updated; ID " ++ show cid
            else putStrLn "ERROR! Content not updated (likely because of collision)."
-        run db      
+        run db
 
       handleCommand (CLookupByID cid) = do
         mc <- Data.Acid.query db (LookupContentByID cid)
@@ -180,7 +180,7 @@ run db = do
 
 getCommand :: IO (Maybe Command)
 getCommand = do
-    rc <- parseRawCommand . map toLower <$> getLine 
+    rc <- parseRawCommand . map toLower <$> getLine
     case rc of
       Just ("quit", _, _) -> return $ Just CQuit
       Just ("create", r, rr) -> handleCreate r rr
@@ -201,7 +201,7 @@ getCommand = do
         case safeRead scid of
           Just cid -> Just . CUpdate cid <$> getContent
           Nothing  -> return Nothing
-      
+
       handleLookupByID :: [String] -> String -> IO (Maybe Command)
       handleLookupByID [scid] _ =
         case safeRead scid of
@@ -222,7 +222,7 @@ getCommand = do
             , contentTags = ctags
             , contentRating = 0
             , contentStatus = ContentDraft
-            } 
+            }
 
 safeRead :: (Read a) => String -> Maybe a
 safeRead s =

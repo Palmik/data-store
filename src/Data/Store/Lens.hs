@@ -10,7 +10,7 @@ module Data.Store.Lens
 --------------------------------------------------------------------------------
 import qualified Control.Lens
 --------------------------------------------------------------------------------
-import           Data.Monoid 
+import           Data.Monoid
 import           Data.Functor.Identity
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type     as I
@@ -20,7 +20,7 @@ import qualified Data.Store                   as I ()
 --------------------------------------------------------------------------------
 
 class With sel where
-    with :: I.Empty (I.Index irs ts) 
+    with :: I.Empty (I.Index irs ts)
          => sel tag krs irs ts -> Control.Lens.Lens' (I.Store tag krs irs ts v)
                                                      (I.Store tag krs irs ts v)
 
