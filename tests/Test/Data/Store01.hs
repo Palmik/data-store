@@ -33,8 +33,8 @@ type DID = Int
 data DStoreTag = DStoreTag
 
 type DSTS  = DID :. Int :. Int :. Int
-type DSKRS = O       :. O   :. M   :. M 
-type DSIRS = O       :. M   :. O   :. M 
+type DSKRS = O       :. O   :. M   :. M
+type DSIRS = O       :. M   :. O   :. M
 type DS = S.Store DStoreTag DSKRS DSIRS DSTS D
 type DSKey = S.Key DSKRS DSTS
 type DSSelection = S.Selection DStoreTag DSKRS DSIRS DSTS
@@ -52,28 +52,28 @@ sMM :: (DStoreTag, S.N3)
 sMM = (DStoreTag, S.n3)
 
 makeKey :: Int -> Int -> [Int] -> [Int] -> DSKey
-makeKey oo om mo mm = 
+makeKey oo om mo mm =
     S.dimO oo .: S.dimO om .: S.dimM mo .:. S.dimM mm
 
 vkey :: D -> DSKey
-vkey (D om mo mm) =  
+vkey (D om mo mm) =
     S.dimA .: S.dimO om .: S.dimM mo .:. S.dimM mm
 
 
 vkey' :: Int -> D -> DSKey
-vkey' i (D om mo mm) = 
+vkey' i (D om mo mm) =
     S.dimO i .: S.dimO om .: S.dimM mo .:. S.dimM mm
 
 tests :: [Test]
 tests =
     [ testProperty "insert1" prop_insert1
     , testProperty "insert2" prop_insert2
-   
+
     , testProperty "insert'1" prop_insert'1
 
     , testProperty "lookup1" prop_lookup1
     , testProperty "lookupOrderBy1" prop_lookupOrderBy1
-    
+
     , testProperty "update1" prop_update1
     , testProperty "update2" prop_update2
     , testProperty "update3" prop_update3
@@ -145,7 +145,7 @@ prop_insert'1 xs =
 
     store1 :: DS
     store1 = S.fromList' kes
-    
+
     store2 :: DS
     store2 = foldl (\acc (k, x) -> snd $ S.insert' k x acc) store1 kes
 
@@ -202,7 +202,7 @@ prop_lookup1 = byOO_EQ  && byOM_EQ  && byMO_EQ  && byMM_EQ  &&
       byMM_GT :: Bool
       byMM_GT = all (\(k, r) -> length r == (99 - k)) $
         map (\k -> (k, S.lookup (sMM .> k) store)) mms
-      
+
       byOO_NEQ :: Bool
       byOO_NEQ = all (\(k, r) -> length r == 99) $
         map (\k -> (k, S.lookup (sOO ./= k) store)) oos
@@ -218,7 +218,7 @@ prop_lookup1 = byOO_EQ  && byOM_EQ  && byMO_EQ  && byMM_EQ  &&
       byMM_NEQ :: Bool
       byMM_NEQ = all (\(k, r) -> length r == (if k == 0 then 99 else 100)) $
         map (\k -> (k, S.lookup (sMM ./= k) store)) mms
-      
+
       store :: DS
       store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
 
@@ -246,19 +246,19 @@ prop_lookup1 = byOO_EQ  && byOM_EQ  && byMO_EQ  && byMM_EQ  &&
       mms = [0..99]
 
 -- | Tests insert, lookupOrderByA #1.
-prop_lookupOrderBy1 = l1 && l2 
+prop_lookupOrderBy1 = l1 && l2
     where
       l1 :: Bool
       l1 = isSortedOM (S.lookupOrderByA (sMM .>= 20) sOM store) &&
            isSortedOM (S.lookupOrderByA (sMM .<= 50 .&& sOM .== 5) sOM store) &&
            isSortedOM (S.lookupOrderByA (sOO .>= 20) sOM store) &&
-           isSortedOM (S.lookupOrderByA (sOM .>= 3) sOM store) 
+           isSortedOM (S.lookupOrderByA (sOM .>= 3) sOM store)
 
       isSortedOM :: [(S.RawKey DSKRS DSTS, D)] -> Bool
-      isSortedOM [] = True      
+      isSortedOM [] = True
       isSortedOM [_] = True
-      isSortedOM ((_ :. x1 :. _, _) : (_ :. x2 :. _, _) : t) = x1 <= x2 && isSortedOM t       
-      
+      isSortedOM ((_ :. x1 :. _, _) : (_ :. x2 :. _, _) : t) = x1 <= x2 && isSortedOM t
+
       l2 :: Bool
       l2 = isSortedOO (S.lookupOrderByA (sMM .>= 20) sOO store) &&
            isSortedOO (S.lookupOrderByA (sMM .<= 50 .&& sOM .== 1) sOO store) &&
@@ -266,9 +266,9 @@ prop_lookupOrderBy1 = l1 && l2
            isSortedOO (S.lookupOrderByA (sOM .>= 3) sOO store)
 
       isSortedOO :: [(S.RawKey DSKRS DSTS, D)] -> Bool
-      isSortedOO [] = True      
+      isSortedOO [] = True
       isSortedOO [_] = True
-      isSortedOO ((x1 :. _, _) : (x2 :. _, _) : t) = x1 <= x2 && isSortedOO t       
+      isSortedOO ((x1 :. _, _) : (x2 :. _, _) : t) = x1 <= x2 && isSortedOO t
 
       store :: DS
       store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
@@ -303,7 +303,7 @@ prop_update1 = deleteMM
       deleteMM = all (\(k, s, l) -> S.size s == k && length l == 0) $
         map (\k -> let res = S.delete (sMM .== k) store
                    in  (k, res, S.lookup (sMM .== k) res)
-            ) mms  
+            ) mms
 
       store :: DS
       store = foldl (\s v -> snd . fromJust $ S.insert (vkey v) v s) S.empty ds
@@ -313,7 +313,7 @@ prop_update1 = deleteMM
 
       mval :: Int -> D
       mval i = D (i `mod` 2) [i] [0..i]
-      
+
       mms :: [Int]
       mms = [0..99]
 
@@ -338,7 +338,7 @@ prop_update2 = test1
       v1 = D 1 [1] [1]
       v2 = D 1 [2] [2, 3]
       v3 = D 2 [3] [1, 2]
-  
+
 -- | Tests insert, update (changing key)
 prop_update3 = test1
     where

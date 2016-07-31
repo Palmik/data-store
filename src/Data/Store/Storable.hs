@@ -17,12 +17,12 @@ module Data.Store.Storable
 ) where
 
 --------------------------------------------------------------------------------
-import           Data.Functor.Identity 
+import           Data.Functor.Identity
 import qualified Data.List (map)
 --------------------------------------------------------------------------------
-import qualified Data.Store.Internal.Type as I 
-import qualified Data.Store.Internal.Function as I 
-import qualified Data.Store as S 
+import qualified Data.Store.Internal.Type as I
+import qualified Data.Store.Internal.Function as I
+import qualified Data.Store as S
 import qualified Data.Store.Selection as S (IsSelection())
 #if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
@@ -41,13 +41,13 @@ import Prelude hiding (map)
 -- like this:
 --
 -- > instance Storable Content where
--- >     type StoreKRS Content = O         :. O      :. O      :. M      :. O 
+-- >     type StoreKRS Content = O         :. O      :. O      :. M      :. O
 -- >     type StoreIRS Content = O         :. O      :. M      :. M      :. M
 -- >     type StoreTS  Content = ContentID :. String :. String :. String :. Double
 -- >
--- >     key (Content cn cb cts cr) = 
+-- >     key (Content cn cb cts cr) =
 -- >         S.dimA .: S.dimO cn .: S.dimO cb .: S.dimM cts .:. S.dimO cr
--- 
+--
 -- NOTE: Using functions outside of this module to update the store may
 -- cause inconsistencies with respect to the user defined
 -- @'Data.Store.Storable.Storable'@ instance.
@@ -144,4 +144,3 @@ fromList' :: (I.Empty (I.Index (StoreIRS v) (StoreTS v)), Storable v)
           -> I.Store tag (StoreKRS v) (StoreIRS v) (StoreTS v) v
 fromList' = S.fromList' . Data.List.map (\v -> (key v, v))
 {-# INLINE fromList' #-}
-

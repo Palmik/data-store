@@ -10,7 +10,7 @@ where
 import           Control.Applicative hiding (empty)
 --------------------------------------------------------------------------------
 import           Data.Monoid ((<>))
-import           Data.Functor.Identity 
+import           Data.Functor.Identity
 import qualified Data.List
 #if MIN_VERSION_containers(0,5,0)
 import qualified Data.IntMap.Strict as Data.IntMap
@@ -43,7 +43,7 @@ genericSubset ids (I.Store vs _ _) =
 genericLookup :: Data.IntSet.IntSet
               -> I.Store tag krs irs ts v
               -> [(I.RawKey krs ts, v)]
-genericLookup ids (I.Store vs _ _) = {-# SCC "genericLookup" #-} 
+genericLookup ids (I.Store vs _ _) = {-# SCC "genericLookup" #-}
   Data.IntSet.foldr (\i acc ->
     case Data.IntMap.lookup i vs of
       Just (ik, v) -> (keyInternalToRaw ik, v) : acc
@@ -99,7 +99,7 @@ genericUpdateWithKey ins tr ids old = Data.IntSet.Extra.foldlM' accum old ids
             Just (ik, v) ->
                 case tr (keyInternalToRaw ik) v of
                   -- User wants to update the element & key.
-                  Just (nv, Just nk) -> let nik = mergeKeys nk ik in 
+                  Just (nv, Just nk) -> let nik = mergeKeys nk ik in
                     if nik /= ik
                        -- The keys are different: update the element & key.
                        then insertPair i nik nv <$> ins nik i (store { I.storeI = indexDeleteID ik i ix })
@@ -117,8 +117,8 @@ genericUpdateWithKey ins tr ids old = Data.IntSet.Extra.foldlM' accum old ids
                     }
             _ -> pure store
       {-# INLINEABLE accum #-}
-      
-      insertPair i' ik' e' s'@(I.Store es' _ _) = s' 
+
+      insertPair i' ik' e' s'@(I.Store es' _ _) = s'
         { I.storeV = Data.IntMap.insert i' (ik', e') es'
         }
       {-# INLINE insertPair #-}
@@ -149,15 +149,15 @@ keyFromInternal (I.KN (I.IKeyDimensionO x) s) = I.KN (I.KeyDimensionO x) (keyFro
 keyFromInternal (I.KN (I.IKeyDimensionM x) s) = I.KN (I.KeyDimensionM x) (keyFromInternal s)
 
 keyToInternal :: I.Index irs ts -> I.Key krs ts -> I.IKey krs ts
-keyToInternal (I.I1 ix) (I.K1 I.KeyDimensionA) = I.K1 (I.IKeyDimensionO $! nextKey ix) 
-keyToInternal (I.I1 _) (I.K1 (I.KeyDimensionO x)) = I.K1 (I.IKeyDimensionO x) 
-keyToInternal (I.I1 _) (I.K1 (I.KeyDimensionM x)) = I.K1 (I.IKeyDimensionM x) 
+keyToInternal (I.I1 ix) (I.K1 I.KeyDimensionA) = I.K1 (I.IKeyDimensionO $! nextKey ix)
+keyToInternal (I.I1 _) (I.K1 (I.KeyDimensionO x)) = I.K1 (I.IKeyDimensionO x)
+keyToInternal (I.I1 _) (I.K1 (I.KeyDimensionM x)) = I.K1 (I.IKeyDimensionM x)
 keyToInternal (I.IN ix is) (I.KN I.KeyDimensionA s) = I.KN (I.IKeyDimensionO $! nextKey ix) $ keyToInternal is s
 keyToInternal (I.IN _ is) (I.KN (I.KeyDimensionO x) s) = I.KN (I.IKeyDimensionO x) $ keyToInternal is s
-keyToInternal (I.IN _ is) (I.KN (I.KeyDimensionM x) s) = I.KN (I.IKeyDimensionM x) $ keyToInternal is s 
+keyToInternal (I.IN _ is) (I.KN (I.KeyDimensionM x) s) = I.KN (I.IKeyDimensionM x) $ keyToInternal is s
 keyToInternal _ _ = error $ moduleName <> ".insert.keyToInternal: Impossible happened."
 {-# INLINE keyToInternal #-}
-      
+
 nextKey :: I.Auto t => I.IndexDimension r t -> t
 nextKey i =
   case i of
@@ -170,7 +170,7 @@ nextKey i =
     {-# INLINE nextKey' #-}
 {-# INLINE nextKey #-}
 
-genericInsert :: Applicative f 
+genericInsert :: Applicative f
               => (I.IKey krs ts -> Int -> I.Store tag krs irs ts e -> f (I.Store tag krs irs ts e))
               -> I.IKey krs ts
               -> e
@@ -207,7 +207,7 @@ indexInsertID' :: I.IKey krs ts
                -> Int
                -> I.Store tag krs irs ts e
                -> Identity (I.Store tag krs irs ts e)
-indexInsertID' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID'" #-} 
+indexInsertID' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID'" #-}
   indexInsertID'' ik eid $! Data.IntSet.foldl' go old collisions
   where
     go s'@(I.Store es' ix' _) i =
@@ -215,7 +215,7 @@ indexInsertID' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID'" #-}
         (Just (ik', _), v'') -> s'
           { I.storeV = v''
           , I.storeI = indexDeleteID ik' i ix'
-          } 
+          }
         _ -> error $ moduleName <> ".insertInternal'.go: The impossible happened."
     {-# INLINEABLE go #-}
 
@@ -225,7 +225,7 @@ indexInsertID' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID'" #-}
 
 -- | UNSAFE. Inserts the given element identifier into the store's index under the given
 -- internal key.
--- 
+--
 -- In case of collisions: ignores them.
 indexInsertID'' :: I.IKey krs ts
                 -> Int
@@ -247,9 +247,9 @@ indexInsertID'' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID''" #-}
       case (ixd, kd) of
         (I.IndexDimensionO m, I.IKeyDimensionO k)  ->
           I.IndexDimensionO $! goO k eid m
-        
+
         (I.IndexDimensionO m, I.IKeyDimensionM ks) ->
-          I.IndexDimensionO $! Data.List.foldl' (\acc k -> goO k eid acc) m ks 
+          I.IndexDimensionO $! Data.List.foldl' (\acc k -> goO k eid acc) m ks
 
         (I.IndexDimensionM m, I.IKeyDimensionO k)  ->
           I.IndexDimensionM $! goM k eid $! m
@@ -259,7 +259,7 @@ indexInsertID'' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID''" #-}
     {-# INLINEABLE combine #-}
 
     goO :: Ord k => k -> Int -> Data.Map.Map k Int -> Data.Map.Map k Int
-    goO = Data.Map.insert 
+    goO = Data.Map.insert
     {-# INLINE goO #-}
 
     goM :: Ord k => k -> Int -> Data.Map.Map k Data.IntSet.IntSet -> Data.Map.Map k Data.IntSet.IntSet
@@ -268,7 +268,7 @@ indexInsertID'' ik eid old@(I.Store _ index _) = --{-# SCC "indexInsertID''" #-}
 {-# INLINE indexInsertID'' #-}
 
 findCollisions :: I.IKey krs ts -> I.Index irs ts -> [Int]
-findCollisions ik ix = {-# SCC "findCollisions" #-} zipD ik ix [] 
+findCollisions ik ix = {-# SCC "findCollisions" #-} zipD ik ix []
   where
     zipD :: I.IKey krs ts -> I.Index irs ts -> [Int] -> [Int]
     zipD (I.KN kd kt) (I.IN ixd it) = combine kd ixd . zipD kt it
@@ -276,7 +276,7 @@ findCollisions ik ix = {-# SCC "findCollisions" #-} zipD ik ix []
     zipD _ _ = error $ moduleName <> ".findCollisions.zipD: The impossible happened."
 
     combine :: I.IKeyDimension krs ts -> I.IndexDimension irs ts -> [Int] -> [Int]
-    combine kd ixd = 
+    combine kd ixd =
       case (ixd, kd) of
         (I.IndexDimensionO m, I.IKeyDimensionO k)  -> goO k m
         (I.IndexDimensionO m, I.IKeyDimensionM ks) -> foldr (\k acc -> goO k m . acc) id ks
@@ -325,4 +325,3 @@ indexDeleteID ik eid = zipD ik
       ) k m
     {-# INLINE goM #-}
 {-# INLINE indexDeleteID #-}
-

@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE CPP                 #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-} 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 --------------------------------------------------------------------------------
 -- |
@@ -25,10 +25,10 @@
 -- code:
 --
 -- > {-# LANGUAGE TypeOperators #-}
--- > 
+-- >
 -- > module Example01
 -- > where
--- > 
+-- >
 -- > --------------------------------------------------------------------------------
 -- > import           Control.Applicative
 -- > import qualified Control.Monad.State as State
@@ -36,43 +36,43 @@
 -- > import qualified Data.Store as S
 -- > import           Data.Store (M, O, (.:), (.:.), (:.)(..), (.<), (.<=), (.>), (.>=), (./=), (.==), (.&&), (.||))
 -- > --------------------------------------------------------------------------------
--- > 
+-- >
 -- > data Content = Content
--- >     { contentName :: String  
--- >     , contentBody :: String  
+-- >     { contentName :: String
+-- >     , contentBody :: String
 -- >     , contentTags :: [String]
 -- >     , contentRating :: Double
 -- >     }
--- > 
+-- >
 -- > type ContentID = Int
--- > 
+-- >
 -- > -- Content has one ID, only one content can have a given ID.
 -- > -- Content has one name, only one content can have a given name.
 -- > -- Content has one body, many contents can have the same content.
 -- > -- Content has many tags, many contents can have the same tag.
 -- > -- Content has one rating, many contents can have the same rating.
--- > 
+-- >
 -- > data ContentStoreTag = ContentStoreTag
--- > 
+-- >
 -- > type ContentStoreTS  = ContentID :. String :. String :. String :. Double
 -- > type ContentStoreKRS = O         :. O      :. O      :. M      :. O
 -- > type ContentStoreIRS = O         :. O      :. M      :. M      :. M
 -- > type ContentStore = S.Store ContentStoreTag ContentStoreKRS ContentStoreIRS ContentStoreTS Content
 -- > type ContentStoreKey = S.Key ContentStoreKRS ContentStoreTS
 -- > type ContentStoreSelection = S.Selection ContentStoreTag ContentStoreKRS ContentStoreIRS ContentStoreTS
--- > 
+-- >
 -- > sContentID :: (ContentStoreTag, S.N0)
 -- > sContentID = (ContentStoreTag, S.n0)
--- > 
+-- >
 -- > sContentName :: (ContentStoreTag, S.N1)
 -- > sContentName = (ContentStoreTag, S.n1)
--- > 
+-- >
 -- > sContentBody :: (ContentStoreTag, S.N2)
 -- > sContentBody = (ContentStoreTag, S.n2)
--- > 
+-- >
 -- > sContentTag :: (ContentStoreTag, S.N3)
 -- > sContentTag = (ContentStoreTag, S.n3)
--- > 
+-- >
 -- > sContentRating :: (ContentStoreTag, S.N4)
 -- > sContentRating = (ContentStoreTag, S.n4)
 --
@@ -98,9 +98,9 @@
 -- The following variables and constants are used in Big-O notation:
 --
 -- * /W/ -- the (constant) number of bits of "Int" (32 or 64).
--- 
+--
 -- * /d/ -- the (constant) number of dimensions of the store.
--- 
+--
 -- * /k/ -- the (variable) number of key dimensions values of a key (or
 -- maximum of the number of key dimension values over all keys in case of for example
 -- @'Data.Store.updateWithKey'@).
@@ -108,7 +108,7 @@
 -- * /s/ -- the (variable) size of the output of the operation or the
 -- (variable) number of elements affected by the operation. This is
 -- often the number of key-element pairs that correspond to some selection.
--- 
+--
 -- * /s(sel)/ -- the (variable) number of key-element pairs that correspond
 -- to a selection /sel/ if /s/ would otherwise be ambigious.
 --
@@ -187,7 +187,7 @@ module Data.Store
 , (.||)
 
   -- * Constructing Key
-  -- 
+  --
   -- $constructing-key
 , dimA
 , dimO
@@ -245,7 +245,7 @@ import qualified Data.Foldable
 --------------------------------------------------------------------------------
 import qualified Data.Store.Internal.Type     as I
 import qualified Data.Store.Internal.Function as I
-import           Data.Store.Selection 
+import           Data.Store.Selection
 --------------------------------------------------------------------------------
 
 -- | The name of this module.
@@ -272,7 +272,7 @@ moduleName = "Data.Store"
 --
 -- These selections can be then used in functions like lookup, update,
 -- delete, etc.
---  
+--
 -- >>> lookup sel3 store
 -- > -- key-element pairs that match the selection
 --
@@ -280,7 +280,7 @@ moduleName = "Data.Store"
 -- > -- store with the key-element pairs that do not match the selection
 --
 -- >>> updateElements (\v -> Just v { contentRating = 5 }) sel3 store
--- > -- store with the selected key-element pairs updated 
+-- > -- store with the selected key-element pairs updated
 
 
 -- $constructing-key
@@ -329,7 +329,7 @@ dimM = I.KeyDimensionM
 
 -- | Function for connecting one dimension and rest of the key.
 (.:) :: dim r t
-     -> I.GenericKey dim rs1 ts1 
+     -> I.GenericKey dim rs1 ts1
      -> I.GenericKey dim (r I.:. rs1) (t I.:. ts1)
 (.:) = I.KN
 {-# INLINE (.:) #-}
@@ -360,7 +360,7 @@ singleton k v = snd . fromJust $ insert k v I.empty
 -- @Nothing@ if inserting the @(k, e)@ key-element pair would cause
 -- a collision or (@Just (rk, new)@), where @rk@ is the raw key of
 -- @k@ and @new@ is store containing the same key-element pairs as @old@ plus
--- @(k, e)@. 
+-- @(k, e)@.
 --
 -- Examples:
 --
@@ -455,7 +455,7 @@ map tr store@(I.Store vs _ _) = store
 
 -- | The expression (@'Data.Store.Selection.lookup' sel store@) is
 -- list of (raw key)-element pairs that match the selection.
--- 
+--
 -- Complexity: /O(c + s * min(n, W))/
 --
 -- See also:
@@ -512,7 +512,7 @@ lookupOrderByD sel (_, n) s = I.genericLookupDesc (resolve sel s) n s
 {-# INLINE lookupOrderByD #-}
 
 -- | The expression (@'Data.Store.size' store@) is the number of elements
--- in @store@. 
+-- in @store@.
 size :: I.Store tag krs irs ts v -> Int
 size (I.Store vs _ _) = Data.IntMap.size vs
 {-# INLINE size #-}
@@ -558,7 +558,7 @@ updateWithKey tr sel s = I.genericUpdateWithKey I.indexInsertID tr (resolve sel 
 -- * If @(tr k e)@ is (@Just (e', Just k')@) the pair is replaced by pair @(k', e')@.
 --
 -- Any pairs of the original store @old@ that would, after the update, cause collisons
--- are not included in @new@. 
+-- are not included in @new@.
 --
 -- Complexity: /O(c + s * d * (min(n, W) + k * (log n + min(n, W))))/
 --
@@ -577,7 +577,7 @@ updateWithKey' tr sel s = runIdentity $! I.genericUpdateWithKey I.indexInsertID'
 -- to (@'Data.Store.Selection.updateWithKey' tr' sel s@) where
 -- (@tr' = (\_ v -> tr v) = const tr@).
 --
--- Complexity: /O(c + s * (min(n, W) + q * log n))/ 
+-- Complexity: /O(c + s * (min(n, W) + q * log n))/
 --
 -- NOTE: This function does not affect the keys of the updated elements. In
 -- case you need to update the elements as well as the keys, see
@@ -595,7 +595,7 @@ update tr = updateWithKey (const tr)
 -- to (@'Data.Store.Selection.updateWithKey'' tr' sel s@) where
 -- (@tr' = (\_ v -> tr v) = const tr@).
 --
--- Complexity: /O(c + d * s * (min(n, W) + q * log n))/ 
+-- Complexity: /O(c + d * s * (min(n, W) + q * log n))/
 --
 -- NOTE: This function does not affect the keys of the updated elements. In
 -- case you need to update the elements as well as the keys, see
@@ -613,7 +613,7 @@ update' tr = updateWithKey' (const tr)
 -- to (@'Data.Store.Selection.update' tr' sel s@) where
 -- (@tr' = (maybe Nothing (\v -> Just (v, Nothing)) . tr)@).
 --
--- Complexity: /O(c + s * min(n, W))/ 
+-- Complexity: /O(c + s * min(n, W))/
 updateElements :: IsSelection sel
                => (v -> Maybe v)
                -> sel tag krs irs ts
@@ -624,13 +624,13 @@ updateElements tr sel s =
   where
     tr' _ = maybe Nothing (\v -> Just (v, Nothing)) . tr
     {-# INLINE tr' #-}
-{-# INLINE updateElements #-}             
+{-# INLINE updateElements #-}
 
 -- | The expression (@'Data.Store.Selection.delete' sel old@) is
 -- equivalent to
 -- (@'Data.Store.fromJust' $ 'Data.Store.Selection.update' (const Nothing) sel old@).
 --
--- Complexity: /O(c + s * (min(n, W) + q * log n)/ 
+-- Complexity: /O(c + s * (min(n, W) + q * log n)/
 delete :: IsSelection sel
        => sel tag krs irs ts
        -> I.Store tag krs irs ts v
@@ -664,7 +664,7 @@ foldr accum start (I.Store vs _ _) =
 -- | The expression (@'Data.Store.foldlWithKey' f z s@) folds the store
 -- using the given left-associative operator.
 foldlWithKey :: (b -> I.RawKey krs ts -> v -> b)
-              -> b 
+              -> b
               -> I.Store tag krs irs ts v
               -> b
 foldlWithKey accum start (I.Store vs _ _) =
@@ -731,7 +731,7 @@ fromList = insertList I.empty
 --
 -- * 'Data.Store.fromList''
 insertList :: I.Empty (I.Index irs ts) => I.Store tag krs irs ts v -> [(I.Key krs ts, v)] -> Maybe (I.Store tag krs irs ts v)
-insertList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s) 
+insertList = Data.Foldable.foldlM (\s (k, v) -> snd <$> insert k v s)
 {-# INLINE insertList #-}
 
 -- | The expression (@'Data.Store.fromList'' kes@) is @store@
@@ -764,7 +764,7 @@ insertList' = Data.List.foldl' (\s (k, v) -> snd $! insert' k v $! s)
 {-# INLINE insertList' #-}
 
 -- | UNSAFE! This function can corrupt the store.
--- 
+--
 -- The expression (@'Data.Store.unsafeFromList' kes@) is @store@
 -- containing the given key-element pairs (colliding pairs cause UNDEFINED BEHAVIOUR).
 --
@@ -774,11 +774,11 @@ insertList' = Data.List.foldl' (\s (k, v) -> snd $! insert' k v $! s)
 --
 -- * 'Data.Store.fromList'
 unsafeFromList :: I.Empty (I.Index irs ts) => [(I.Key krs ts, v)] -> I.Store tag krs irs ts v
-unsafeFromList = unsafeInsertList I.empty 
+unsafeFromList = unsafeInsertList I.empty
 {-# INLINE unsafeFromList #-}
 
 -- | UNSAFE! This function can corrupt the store.
--- 
+--
 -- The expression (@'Data.Store.unsafeInsertList' old kvs@) is @store@
 -- containing the key-element pairs of @old@ plus the given key-element pairs @kvs@
 -- (colliding pairs cause UNDEFINED BEHAVIOUR).

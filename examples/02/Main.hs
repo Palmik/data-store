@@ -14,8 +14,8 @@ import           Data.Store.Storable as S
 --------------------------------------------------------------------------------
 
 data Content = Content
-    { contentName :: String  
-    , contentBody :: String  
+    { contentName :: String
+    , contentBody :: String
     , contentTags :: [String]
     , contentRating :: Double
     }
@@ -42,7 +42,7 @@ instance Storable Content where
      type StoreIRS Content = ContentStoreIRS
      type StoreTS  Content = ContentStoreTS
 
-     key (Content cn cb cts cr) = 
+     key (Content cn cb cts cr) =
          S.dimA .: S.dimO cn .: S.dimO cb .: S.dimM cts .:. S.dimO cr
 
 sContentID :: (ContentStoreTag, S.N0)
@@ -72,7 +72,7 @@ insertContent c = do
 lookupBySelection :: ContentStoreSelection -> Model [Content]
 lookupBySelection sel = go . S.lookup sel <$> State.get
     where
-      go = map snd 
+      go = map snd
 
 lookupByID :: ContentID -> Model (Maybe Content)
 lookupByID cid = go . S.lookup (sContentID .== cid) <$> State.get
@@ -81,7 +81,7 @@ lookupByID cid = go . S.lookup (sContentID .== cid) <$> State.get
       go _        = Nothing
 
 deleteByID :: ContentID -> Model ()
-deleteByID cid = deleteBySelection (sContentID .== cid) 
+deleteByID cid = deleteBySelection (sContentID .== cid)
 
 deleteBySelection :: ContentStoreSelection -> Model ()
 deleteBySelection sel = State.modify $ S.delete sel

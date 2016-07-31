@@ -51,7 +51,7 @@ infixr 3  .&&
 infixr 2  .||
 
 -- | The expression (@not' sel@) is a selection that includes all values
--- except those that match the selection @sel@. 
+-- except those that match the selection @sel@.
 not :: IsSelection sel => sel tag krs irs ts -> Selection tag krs irs ts
 not = SelectionNot
 {-# INLINE not #-}
@@ -178,18 +178,18 @@ instance IsSelection (SelectionDimension n) where
     resolve = resolveSD
     {-# INLINE resolve #-}
 
-resolveSD :: forall tag n krs irs ts v . SelectionDimension n tag krs irs ts 
+resolveSD :: forall tag n krs irs ts v . SelectionDimension n tag krs irs ts
           -> I.Store tag krs irs ts v
           -> Data.IntSet.IntSet
 resolveSD (SelectionDimension _ (Condition False False False) _) _ = {-# SCC "resolveSD" #-} Data.IntSet.empty
 resolveSD (SelectionDimension _ (Condition True True True) _) (I.Store vs _ _) = {-# SCC "resolveSD" #-}  Data.IntSet.fromList $ Data.IntMap.keys vs
-resolveSD (SelectionDimension n (Condition lt eq gt) v) (I.Store _ ix _) = {-# SCC "resolveSD" #-} 
+resolveSD (SelectionDimension n (Condition lt eq gt) v) (I.Store _ ix _) = {-# SCC "resolveSD" #-}
     go $! I.getDimension n ix
     where
       go (I.IndexDimensionO m) = m `seq` case Data.Map.splitLookup v m of
           (lk, ek, gk) -> (if lt then trO lk else Data.IntSet.empty) <>
                           (if eq then trMaybeO ek else Data.IntSet.empty) <>
-                          (if gt then trO gk else Data.IntSet.empty)                         
+                          (if gt then trO gk else Data.IntSet.empty)
       go (I.IndexDimensionM m) = m `seq` case Data.Map.splitLookup v m of
           (lk, ek, gk) -> (if lt then trM lk else Data.IntSet.empty) <>
                           (if eq then trMaybeM ek else Data.IntSet.empty) <>
@@ -226,7 +226,7 @@ data SelectionDimension n tag krs irs ts where
                        -> SelectionDimension n tag krs irs ts
 
 data Selection tag krs irs ts where
-    SelectionType :: IsSelection sel => sel tag krs irs ts -> Selection tag krs irs ts    
+    SelectionType :: IsSelection sel => sel tag krs irs ts -> Selection tag krs irs ts
 
     SelectionA :: (IsSelection s1, IsSelection s2)
                => s1 tag krs irs ts -> s2 tag krs irs ts -> Selection tag krs irs ts
@@ -240,4 +240,4 @@ data Condition = Condition !Bool !Bool !Bool
 
 class IsSelection sel where
     resolve :: sel tag krs irs ts -> I.Store tag krs irs ts v -> Data.IntSet.IntSet
-   
+
